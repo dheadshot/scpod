@@ -1,0 +1,113 @@
+#ifndef __INC_PARSER_H__
+#define __INC_PARSER_H__ 1
+
+/* Remember to ignore unknown elements! */
+
+typedef struct rssdate_struct {
+  char *fulldate;
+  /*-------------*/
+  char dayname[10];
+  int daynum;
+  int month;
+  long year;
+  char tzone[10];
+  int gmtoffset;
+  int hour;
+  int minute;
+  int second;
+} rssdate;
+
+typedef struct rssimage_struct {
+  char *url;
+  char *title;
+  char *link;
+  /* Optional: */
+  long width;
+  long height;
+  char *description;
+} rssimage;
+
+typedef long * m1tna; /* Defines a minus-one terminated numerical array */
+typedef char ** ntsa; /* Defines a NULL-terminated String Array. */
+
+typedef struct chanpropnode_struct {
+  unsigned long chanid;
+  char *title;
+  char *link;
+  char *description;
+  /* These are optional: */
+  char *language_main;
+  char *language_sub;
+  char *copyright;
+  char *managingeditor;
+  char *webmaster;
+  rssdate pubdate;
+  rssdate lastbuilddate;
+  char *generator;
+  char *docs;
+  /* Ignore "cloud" */
+  long ttl;
+  rssimage image;
+  /* Ignore "rating" - PICS is obselete anyway... */
+  /* Ignore "textinput" */
+  m1tna skiphours;
+  ntsa skipdays;
+  
+  struct chanpropnode_struct *next;
+} chanpropnode;
+
+typedef struct rssenclosure_struct {
+  char *url;
+  unsigned long length;
+  char *type;
+} rssenclosure;
+
+typedef struct rssguid_struct {
+  char *guid;
+  int ispermalink;
+} rssguid;
+
+typedef struct rsssource_struct {
+  char *url;
+  char *name;
+} rsssource;
+
+typedef struct itempropnode_struct {
+  unsigned long itemid;
+  char *title;
+  char *link;
+  char *description;
+  /* Optional: */
+  char *author;
+  char *comments;
+  rssenclosure enclosure;
+  rssguid guid;
+  rssdate pubdate;
+  rsssource source;
+  
+  struct itempropnode_struct *next;
+} itempropnode;
+
+enum categorytype {channel_cat, item_cat, none_cat};
+union chanitemid {
+  unsigned long chanid;
+  unsigned long itemid;
+};
+
+typedef struct categorynode_struct {
+  enum categorytype type;
+  union chanitemid id;
+  char *domain;
+  char *category;
+  
+  struct categorynode_struct *next;
+} catnode;
+
+int createcategory(enum categorytype ctype, unsigned long refid, char *domain, 
+                   char *category);
+chanpropnode *createchanpropnode(char *title, char *link, char *description); 
+/* Assign optional elements later */
+
+int parsersstoll(FILE *rf);
+
+#endif
