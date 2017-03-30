@@ -103,10 +103,25 @@ typedef struct categorynode_struct {
   struct categorynode_struct *next;
 } catnode;
 
+typedef struct elementpnode_struct {
+  char *name;
+  char *data;
+  int isattribute; /* 0 for element, 1 for attribute */
+  struct elementpnode_struct *attlist;
+  
+  struct elementpnode_struct *next;
+} elementpnode;
+
+
 int createcategory(enum categorytype ctype, unsigned long refid, char *domain, 
                    char *category);
 chanpropnode *createchanpropnode(char *title, char *link, char *description); 
 /* Assign optional elements later */
+itempropnode *createitempropnode(char *title, char *link, char *description);
+/* Assign optional elements later */
+elementpnode *createelementpnode(char *name, char *data);
+elementpnode *addatttoepn(char *name, char *data, elementpnode *epn);
+void freeepn(elementpnode *epn);
 
 int parsersstoll(FILE *rf);
 
