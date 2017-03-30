@@ -74,6 +74,7 @@ typedef struct rsssource_struct {
 
 typedef struct itempropnode_struct {
   unsigned long itemid;
+  unsigned long chanid; /* ID of associated channel. */
   char *title;
   char *link;
   char *description;
@@ -84,6 +85,8 @@ typedef struct itempropnode_struct {
   rssguid guid;
   rssdate pubdate;
   rsssource source;
+  /* Used by the BBC */
+  rssimage image;
   
   struct itempropnode_struct *next;
 } itempropnode;
@@ -117,7 +120,8 @@ int createcategory(enum categorytype ctype, unsigned long refid, char *domain,
                    char *category);
 chanpropnode *createchanpropnode(char *title, char *link, char *description); 
 /* Assign optional elements later */
-itempropnode *createitempropnode(char *title, char *link, char *description);
+itempropnode *createitempropnode(char *title, char *link, char *description, 
+                                 unsigned long chanid);
 /* Assign optional elements later */
 elementpnode *createelementpnode(char *name, char *data);
 elementpnode *addatttoepn(char *name, char *data, elementpnode *epn);
