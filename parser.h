@@ -11,7 +11,8 @@ typedef struct rssdate_struct {
   int month;
   long year;
   char tzone[10];
-  int gmtoffset;
+  int gmtoffseth;
+  int gmtoffsetm;
   int hour;
   int minute;
   int second;

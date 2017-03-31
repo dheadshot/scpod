@@ -292,7 +292,8 @@ int parsersstoll(FILE *rf)
   char *title = NULL, *link = NULL, *desc = NULL;
   char cchar = 0;
   int inatt = 0, inelename = 0, ineletag = 0, inctag = 0, inattname = 0, 
-      inattdata = 0, issingletag = 0, initem = 0, inchan = 0, inimage = 0;
+      inattdata = 0, issingletag = 0, initem = 0, inchan = 0, inimage = 0, 
+      intxtinp = 0;
   elementpnode *curepn = NULL;
   itempropnode *curitem = NULL;
   chanpropnode *curchan = NULL;
@@ -366,6 +367,7 @@ int parsersstoll(FILE *rf)
         if (streq_i(curepn->name,"item")) initem = 1;
         else if (streq_i(curepn->name,"channel")) inchan = 1;
         else if (streq_i(curepn->name,"image")) inimage = 1;
+        else if (streq_i(curepn->name,"textinput")) intxtinp = 1;
       }
       else if (inattname)
       {
@@ -456,7 +458,31 @@ int parsersstoll(FILE *rf)
         
       }
     }
-    else if (cchar == '>')
+    else if (cchar == '>' && ineletag == 0)
+    {
+      /* Add to whatever... */
+      if (inelename)
+      {
+        curelementname[ceni] = cchar;
+        ceni++;
+      }
+      else if (inattname)
+      {
+        curattname[cani] = cchar;
+        cchar++;
+      }
+      else if (inattdata)
+      {
+        curattdata[cadi] = cchar;
+        cchar++;
+      }
+      else if (!ineletag && curepn != NULL)
+      {
+        curelementdata[cedi] = cchar;
+        cchar++;
+      }
+    }
+    else if (cchar == '>' && ineletag != 0)
     {
       if (inelename)
       {
@@ -469,6 +495,10 @@ int parsersstoll(FILE *rf)
         }
         
         ceni = 0;
+        if (streq_i(curepn->name,"item")) initem = 1;
+        else if (streq_i(curepn->name,"channel")) inchan = 1;
+        else if (streq_i(curepn->name,"image")) inimage = 1;
+        else if (streq_i(curepn->name,"textinput")) intxtinp = 1;
       }
       else if (inattdata)
       {
@@ -581,7 +611,7 @@ int parsersstoll(FILE *rf)
             strcpy(title,curepn->data);
             if (title!=NULL && link!=NULL && desc!=NULL)
             {
-              if (initem && !inimage)
+              if (initem && !inimage && !intxtinp)
               {
                 if (curitem == NULL)
                 {
@@ -604,7 +634,7 @@ int parsersstoll(FILE *rf)
                   strcpy(curitem->title, title);
                 }
               }
-              else if (inchan && !inimage)
+              else if (inchan && !inimage && !intxtinp)
               {
                 if (curchan == NULL)
                 {
@@ -624,7 +654,7 @@ int parsersstoll(FILE *rf)
                   strcpy(curchan->title, title);
                 }
               }
-              else if (inimage)
+              else if (inimage && !intxtinp)
               {
                 /* Find above epn */
                 for (epptr = eproot; epptr != NULL; epptr = epptr->next)
@@ -632,6 +662,23 @@ int parsersstoll(FILE *rf)
                   if (epptr->next == curepn) break;
                 }
                 if (epptr != NULL && streq_i(epptr->name,"image"))
+                {
+                  /* Assign data as attribute */
+                  if (addatttoepn(curepn->name,curepn->data,epptr)==NULL)
+                  {
+                    /* Free everything and end. */
+                  }
+                }
+                
+              }
+              else if (intxtinp && !inimage)
+              {
+                /* Find above epn */
+                for (epptr = eproot; epptr != NULL; epptr = epptr->next)
+                {
+                  if (epptr->next == curepn) break;
+                }
+                if (epptr != NULL && streq_i(epptr->name,"textinput"))
                 {
                   /* Assign data as attribute */
                   if (addatttoepn(curepn->name,curepn->data,epptr)==NULL)
@@ -662,7 +709,7 @@ int parsersstoll(FILE *rf)
             strcpy(link,curepn->data);
             if (title!=NULL && link!=NULL && desc!=NULL)
             {
-              if (initem && !inimage)
+              if (initem && !inimage && !intxtinp)
               {
                 if (curitem == NULL)
                 {
@@ -685,7 +732,7 @@ int parsersstoll(FILE *rf)
                   strcpy(curitem->link, link);
                 }
               }
-              else if (inchan && !inimage)
+              else if (inchan && !inimage && !intxtinp)
               {
                 if (curchan == NULL)
                 {
@@ -705,7 +752,7 @@ int parsersstoll(FILE *rf)
                   strcpy(curchan->link, link);
                 }
               }
-              else if (inimage)
+              else if (inimage && !intxtinp)
               {
                 /* Find above epn */
                 for (epptr = eproot; epptr != NULL; epptr = epptr->next)
@@ -713,6 +760,23 @@ int parsersstoll(FILE *rf)
                   if (epptr->next == curepn) break;
                 }
                 if (epptr != NULL && streq_i(epptr->name,"image"))
+                {
+                  /* Assign data as attribute */
+                  if (addatttoepn(curepn->name,curepn->data,epptr)==NULL)
+                  {
+                    /* Free everything and end. */
+                  }
+                }
+                
+              }
+              else if (intxtinp && !inimage)
+              {
+                /* Find above epn */
+                for (epptr = eproot; epptr != NULL; epptr = epptr->next)
+                {
+                  if (epptr->next == curepn) break;
+                }
+                if (epptr != NULL && streq_i(epptr->name,"textinput"))
                 {
                   /* Assign data as attribute */
                   if (addatttoepn(curepn->name,curepn->data,epptr)==NULL)
@@ -744,7 +808,7 @@ int parsersstoll(FILE *rf)
             strcpy(desc,curepn->data);
             if (title!=NULL && link!=NULL && desc!=NULL)
             {
-              if (initem && !inimage)
+              if (initem && !inimage && !intxtinp)
               {
                 if (curitem == NULL)
                 {
@@ -767,7 +831,7 @@ int parsersstoll(FILE *rf)
                   strcpy(curitem->desc, desc);
                 }
               }
-              else if (inchan && !inimage)
+              else if (inchan && !inimage && !intxtinp)
               {
                 if (curchan == NULL)
                 {
@@ -787,7 +851,7 @@ int parsersstoll(FILE *rf)
                   strcpy(curchan->desc, desc);
                 }
               }
-              else if (inimage)
+              else if (inimage && !intxtinp)
               {
                 /* Find above epn */
                 for (epptr = eproot; epptr != NULL; epptr = epptr->next)
@@ -795,6 +859,23 @@ int parsersstoll(FILE *rf)
                   if (epptr->next == curepn) break;
                 }
                 if (epptr != NULL && streq_i(epptr->name,"image"))
+                {
+                  /* Assign data as attribute */
+                  if (addatttoepn(curepn->name,curepn->data,epptr)==NULL)
+                  {
+                    /* Free everything and end. */
+                  }
+                }
+                
+              }
+              else if (intxtinp && !inimage)
+              {
+                /* Find above epn */
+                for (epptr = eproot; epptr != NULL; epptr = epptr->next)
+                {
+                  if (epptr->next == curepn) break;
+                }
+                if (epptr != NULL && streq_i(epptr->name,"textinput"))
                 {
                   /* Assign data as attribute */
                   if (addatttoepn(curepn->name,curepn->data,epptr)==NULL)
@@ -816,7 +897,7 @@ int parsersstoll(FILE *rf)
         }
         else if (streq_i(curepn->name,"language"))
         {
-          if ((!initem) && inchan && !inimage)
+          if ((!initem) && inchan && !inimage && !intxtinp)
           {
             if (curchan == NULL)
             {
@@ -865,7 +946,7 @@ int parsersstoll(FILE *rf)
         }
         else if (streq_i(curepn->name, "copyright"))
         {
-          if (inchan && !initem && !inimage)
+          if (inchan && !initem && !inimage && !intxtinp)
           {
             if (curchan == NULL)
             {
@@ -892,7 +973,7 @@ int parsersstoll(FILE *rf)
         }
         else if (streq_i(curepn->name,"managingeditor")
         {
-          if (inchan && !initem && !inimage)
+          if (inchan && !initem && !inimage && !intxtinp)
           {
             if (curchan == NULL)
             {
@@ -919,7 +1000,7 @@ int parsersstoll(FILE *rf)
         }
         else if (streq_i(curepn->name,"webmaster"))
         {
-          if (inchan && !initem && !inimage)
+          if (inchan && !initem && !inimage && !intxtinp)
           {
             if (curchan == NULL)
             {
@@ -946,16 +1027,332 @@ int parsersstoll(FILE *rf)
         }
         else if (streq_i(curepn->name, "pubdate"))
         {
+          if (initem && !inimage && !intxtinp)
+          {
+          }
+          else if (inchan && !initem && !inimage && !intxtinp)
+          {
+            if (curchan == NULL)
+            {
+              curchan = createchanpropnode(title,link,desc);
+              if (curchan == NULL)
+              {
+                /* Free everything and end. */
+              }
+              if (title != NULL) free(title);
+              if (link != NULL) free(link);
+              if (desc != NULL) free(desc);
+            }
+            if (curchan->pubdate.fulldate == NULL)
+            {
+              curchan->pubdate.fulldate = (char *) malloc(sizeof(char)*(1+strlen(curepn->data)));
+              if (curchan->pubdate.fulldate == NULL)
+              {
+                /* Free everything and end. */
+              }
+              strcpy(curchan->pubdate.fulldate,curepn->data);
+              /* Create other date items... */
+              char *datetok = NULL;
+              int tokn = 0;
+              datetok = strtok(curchan->pubdate.fulldate,", :");
+              while (datetok != NULL)
+              {
+                if (tokn == 0)
+                {
+                  if (isalpha(datetok[0]))
+                  {
+                    strcpy(curchan->pubdate.dayname,datetok);
+                  }
+                  else
+                  {
+                    curchan->pubdate.dayname[0] = 0;
+                  }
+                  tokn++;
+                }
+                else if (tokn == 1)
+                {
+                  curchan->pubdate.daynum = atoi(datetok);
+                  tokn++;
+                }
+                else if (tokn == 2)
+                {
+                  if (startsame_i(datetok,"Jan"))
+                  {
+                    curchan->pubdate.month = 1;
+                  }
+                  else if (startsame_i(datetok,"Feb"))
+                  {
+                    curchan->pubdate.month = 2;
+                  }
+                  else if (startsame_i(datetok,"Mar"))
+                  {
+                    curchan->pubdate.month = 3;
+                  }
+                  else if (startsame_i(datetok,"Apr"))
+                  {
+                    curchan->pubdate.month = 4;
+                  }
+                  else if (startsame_i(datetok,"May"))
+                  {
+                    curchan->pubdate.month = 5;
+                  }
+                  else if (startsame_i(datetok,"Jun"))
+                  {
+                    curchan->pubdate.month = 6;
+                  }
+                  else if (startsame_i(datetok,"Jul"))
+                  {
+                    curchan->pubdate.month = 7;
+                  }
+                  else if (startsame_i(datetok,"Aug"))
+                  {
+                    curchan->pubdate.month = 8;
+                  }
+                  else if (startsame_i(datetok,"Sep"))
+                  {
+                    curchan->pubdate.month = 9;
+                  }
+                  else if (startsame_i(datetok,"Oct"))
+                  {
+                    curchan->pubdate.month = 10;
+                  }
+                  else if (startsame_i(datetok,"Nov"))
+                  {
+                    curchan->pubdate.month = 11;
+                  }
+                  else if (startsame_i(datetok,"Dec"))
+                  {
+                    curchan->pubdate.month = 12;
+                  }
+                  else
+                  {
+                    curchan->pubdate.month = 0;
+                  }
+                  tokn++;
+                }
+                else if (tokn == 3)
+                {
+                  long pdcyear = atol(datetok);
+                  if (pdcyear<51) pdcyear += 2000;
+                  else if (pdcyear<100) pdcyear += 1900;
+                  curchan->pubdate.year = pdcyear;
+                  tokn++;
+                }
+                else if (tokn == 4)
+                {
+                  curchan->pubdate.hour = atoi(datetok);
+                  tokn++;
+                }
+                else if (tokn == 5)
+                {
+                  curchan->pubdate.minute = atoi(datetok);
+                  tokn++;
+                }
+                else if (tokn == 6)
+                {
+                  if (isdigit(datetok[0]) && strlen(datetok)<=2)
+                  {
+                    curchan->pubdate.second = atoi(datetok);
+                  }
+                  else curchan->pubdate.second = 0;
+                  tokn++;
+                }
+                else if (tokn == 7)
+                {
+                  char pdcoh[3] = "";
+                  strcpy(curchan->pubdate.tzone,datetok);
+                  curchan->pubdate.gmtoffsetm = 0;
+                  if (streq_i(datetok,"UT") || streq_i(datetok, "UTC") || streq_i(datetok,"GMT") || streq_i(datetok,"Z"))
+                  {
+                    curchan->pubdate.gmtoffseth = 0;
+                  }
+                  else if (streq_i(datetok,"BST") || streq_i(datetok,"N"))
+                  {
+                    curchan->pubdate.gmtoffseth = 1;
+                  }
+                  else if (streq_i(datetok,"O"))
+                  {
+                    curchan->pubdate.gmtoffseth = 2;
+                  }
+                  else if (streq_i(datetok,"P"))
+                  {
+                    curchan->pubdate.gmtoffseth = 3;
+                  }
+                  else if (streq_i(datetok,"Q"))
+                  {
+                    curchan->pubdate.gmtoffseth = 4;
+                  }
+                  else if (streq_i(datetok,"R"))
+                  {
+                    curchan->pubdate.gmtoffseth = 5;
+                  }
+                  else if (streq_i(datetok,"S"))
+                  {
+                    curchan->pubdate.gmtoffseth = 6;
+                  }
+                  else if (streq_i(datetok,"T"))
+                  {
+                    curchan->pubdate.gmtoffseth = 7;
+                  }
+                  else if (streq_i(datetok,"U"))
+                  {
+                    curchan->pubdate.gmtoffseth = 8;
+                  }
+                  else if (streq_i(datetok,"V"))
+                  {
+                    curchan->pubdate.gmtoffseth = 9;
+                  }
+                  else if (streq_i(datetok,"W"))
+                  {
+                    curchan->pubdate.gmtoffseth = 10;
+                  }
+                  else if (streq_i(datetok,"X"))
+                  {
+                    curchan->pubdate.gmtoffseth = 11;
+                  }
+                  else if (streq_i(datetok,"Y"))
+                  {
+                    curchan->pubdate.gmtoffseth = 12;
+                  }
+                  else if (streq_i(datetok,"A"))
+                  {
+                    curchan->pubdate.gmtoffseth = -1;
+                  }
+                  else if (streq_i(datetok,"B"))
+                  {
+                    curchan->pubdate.gmtoffseth = -2;
+                  }
+                  else if (streq_i(datetok,"C"))
+                  {
+                    curchan->pubdate.gmtoffseth = -3;
+                  }
+                  else if (streq_i(datetok,"D") || streq_i(datetok,"EDT"))
+                  {
+                    curchan->pubdate.gmtoffseth = -4;
+                  }
+                  else if (streq_i(datetok,"E") || streq_i(datetok,"EST") || streq_i(datetok,"CDT"))
+                  {
+                    curchan->pubdate.gmtoffseth = -5;
+                  }
+                  else if (streq_i(datetok,"F") || streq_i(datetok,"CST") || streq_i(datetok,"MDT"))
+                  {
+                    curchan->pubdate.gmtoffseth = -6;
+                  }
+                  else if (streq_i(datetok,"G") || streq_i(datetok,"MST") || streq_i(datetok,"PDT"))
+                  {
+                    curchan->pubdate.gmtoffseth = -7;
+                  }
+                  else if (streq_i(datetok,"H") || streq_i(datetok,"PST"))
+                  {
+                    curchan->pubdate.gmtoffseth = -8;
+                  }
+                  else if (streq_i(datetok,"I"))
+                  {
+                    curchan->pubdate.gmtoffseth = -9;
+                  }
+                  else if (streq_i(datetok,"K"))
+                  {
+                    curchan->pubdate.gmtoffseth = -10;
+                  }
+                  else if (streq_i(datetok,"L"))
+                  {
+                    curchan->pubdate.gmtoffseth = -11;
+                  }
+                  else if (streq_i(datetok,"M"))
+                  {
+                    curchan->pubdate.gmtoffseth = -12;
+                  }
+                  else if (datetok[0] == '+')
+                  {
+                    if (strlen(datetok)<=3)
+                    {
+                      curchan->pubdate.gmtoffseth = atoi(datetok+sizeof(char));
+                    }
+                    else if (strlen(datetok)==5)
+                    {
+                      pdcoh[0] = datetok[1];
+                      pdcoh[1] = datetok[2];
+                      pdcoh[2] = 0;
+                      curchan->pubdate.gmtoffseth = atoi(pdcoh);
+                      curchan->pubdate.gmtoffsetm = atoi(datetok+(sizeof(char)*3);
+                      
+                    }
+                  }
+                  else if (datetok[0] == '-')
+                  {
+                    if (strlen(datetok)<=3)
+                    {
+                      curchan->pubdate.gmtoffseth = 0 - atoi(datetok+sizeof(char));
+                    }
+                    else if (strlen(datetok)==5)
+                    {
+                      pdcoh[0] = datetok[1];
+                      pdcoh[1] = datetok[2];
+                      pdcoh[2] = 0;
+                      curchan->pubdate.gmtoffseth = 0 - atoi(pdcoh);
+                      curchan->pubdate.gmtoffsetm = 0 - atoi(datetok+(sizeof(char)*3);
+                      
+                    }
+                  }
+                  tokn++;
+                }
+                datetok = strtok(NULL,", :");
+              }
+            }
+          }
         }
         else if (streq_i(curepn->name, "lastbuilddate"))
         {
         }
         else if (streq_i(curepn->name, "category"))
         {
+          char *domainptr = NULL;
+          for (epptr = curepn->attlist; epptr != NULL; epptr = epptr->next)
+          {
+            if (streq_i(epptr->name, "domain"))
+            {
+              domainptr = epptr->data;
+              break;
+            }
+          }
+          if (initem && !inimage && !intxtinp)
+          {
+            if (curitem == NULL)
+            {
+              if (createcategory(item_cat,nextitemid,domainptr,curepn->data)==0)
+              {
+                /* Free everything and end. */
+              }
+            }
+            else
+            {
+              if (createcategory(item_cat,curitem->itemid,domainptr,curepn->data)==0)
+              {
+                /* Free everything and end. */
+              }
+            }
+          }
+          else if (inchan && !initem && !inimage && !intxtinp)
+          {
+            if (curchan == NULL)
+            {
+              if (createcategory(channel_cat,nextchanid,domainptr,curepn->data)==0)
+              {
+                /* Free everything and end. */
+              }
+            }
+            else
+            {
+              if (createcategory(channel_cat,curchan->chanid,domainptr,curepn->data)==0)
+              {
+                /* Free everything and end. */
+              }
+            }
+          }
         }
         else if (streq_i(curepn->name, "generator"))
         {
-          if (inchan && !initem && !inimage)
+          if (inchan && !initem && !inimage && !intxtinp)
           {
             if (curchan == NULL)
             {
@@ -982,7 +1379,7 @@ int parsersstoll(FILE *rf)
         }
         else if (streq_i(curepn->name, "docs"))
         {
-          if (inchan && !initem && !inimage)
+          if (inchan && !initem && !inimage && !intxtinp)
           {
             if (curchan == NULL)
             {
@@ -1009,7 +1406,7 @@ int parsersstoll(FILE *rf)
         }
         else if (streq_i(curepn->name,"ttl"))
         {
-          if (inchan && !initem && !inimage)
+          if (inchan && !initem && !inimage && !intxtinp)
           {
             if (curchan == NULL)
             {
@@ -1028,7 +1425,7 @@ int parsersstoll(FILE *rf)
         else if (streq_i(curepn->name, "image"))
         {
           inimage = 0;
-          if (inchan && !initem)
+          if (inchan && !initem && !intxtinp)
           {
             if (curchan == NULL)
             {
@@ -1042,7 +1439,7 @@ int parsersstoll(FILE *rf)
               if (desc != NULL) free(desc);
             }
           }
-          else if (initem)
+          else if (initem && !intxtinp)
           {
             if (curitem == NULL)
             {
@@ -1063,7 +1460,7 @@ int parsersstoll(FILE *rf)
           {
             if (streq_i(epptr->name, "url"))
             {
-              if (initem)
+              if (initem && !intxtinp)
               {
                 if (curitem->image.url == NULL)
                 {
@@ -1075,7 +1472,7 @@ int parsersstoll(FILE *rf)
                   strcpy(curitem->image.url,epptr->data);
                 }
               }
-              else if (inchan)
+              else if (inchan && !intxtinp)
               {
                 if (curchan->image.url == NULL)
                 {
@@ -1090,7 +1487,7 @@ int parsersstoll(FILE *rf)
             }
             else if (streq_i(epptr->name, "title"))
             {
-              if (initem)
+              if (initem && !intxtinp)
               {
                 if (curitem->image.title == NULL)
                 {
@@ -1102,7 +1499,7 @@ int parsersstoll(FILE *rf)
                   strcpy(curitem->image.title,epptr->data);
                 }
               }
-              else if (inchan)
+              else if (inchan && !intxtinp)
               {
                 if (curchan->image.title == NULL)
                 {
@@ -1117,7 +1514,7 @@ int parsersstoll(FILE *rf)
             }
             else if (streq_i(epptr->name, "link"))
             {
-              if (initem)
+              if (initem && !intxtinp)
               {
                 if (curitem->image.link == NULL)
                 {
@@ -1129,7 +1526,7 @@ int parsersstoll(FILE *rf)
                   strcpy(curitem->image.link,epptr->data);
                 }
               }
-              else if (inchan)
+              else if (inchan && !intxtinp)
               {
                 if (curchan->image.link == NULL)
                 {
@@ -1144,7 +1541,7 @@ int parsersstoll(FILE *rf)
             }
             else if (streq_i(epptr->name, "description"))
             {
-              if (initem)
+              if (initem && !intxtinp)
               {
                 if (curitem->image.description == NULL)
                 {
@@ -1156,7 +1553,7 @@ int parsersstoll(FILE *rf)
                   strcpy(curitem->image.description,epptr->data);
                 }
               }
-              else if (inchan)
+              else if (inchan && !intxtinp)
               {
                 if (curchan->image.description == NULL)
                 {
@@ -1171,22 +1568,22 @@ int parsersstoll(FILE *rf)
             }
             else if (streq_i(epptr->name, "width"))
             {
-              if (initem)
+              if (initem && !intxtinp)
               {
                 curitem->image.width = atol(epptr->data);
               }
-              else if (inchan)
+              else if (inchan && !intxtinp)
               {
                 curchan->image.width = atol(epptr->data);
               }
             }
             else if (streq_i(epptr->name, "height"))
             {
-              if (initem)
+              if (initem && !intxtinp)
               {
                 curitem->image.height = atol(epptr->data);
               }
-              else if (inchan)
+              else if (inchan && !intxtinp)
               {
                 curchan->image.height = atol(epptr->data);
               }
@@ -1195,18 +1592,124 @@ int parsersstoll(FILE *rf)
           }
           
         }
+        else if (streq_i(curepn->name,"textinput"))
+        {
+          intxtinp = 0;
+          /* Otherwise, ignore this. */
+        }
         else if (streq_i(curepn->name,"skiphours"))
         {
           /* Suck attributes into channel's skiphours property */
+          if (inchan && !initem && !intxtinp && !inimage)
+          {
+            if (curchan == NULL)
+            {
+              curchan = createchanpropnode(title,link,desc);
+              if (curchan == NULL)
+              {
+                /* Free everything and end. */
+              }
+              if (title != NULL) free(title);
+              if (link != NULL) free(link);
+              if (desc != NULL) free(desc);
+            }
+            int hoursn = 0, hoursi = 0;
+            long hourd = 0;
+            for (epptr = curepn->attlist; epptr != NULL; epptr = epptr->next)
+            {
+              if (streq_i(epptr->name,"hour"))
+              {
+                hoursn++;
+              }
+            }
+            if (curchan->skiphours == NULL)
+            {
+              curchan->skiphours = (m1tna) malloc(sizeof(long)*(hoursn+1));
+              if (curchan->skiphours == NULL)
+              {
+                /* Free everything and end. */
+              }
+              memset(curchan->skiphours,0,sizeof(long)*(hoursn+1));
+              curchan->skiphours[hoursn] = -1;
+              for (epptr = curepn->attlist; epptr != NULL; epptr = epptr->next)
+              {
+                if (streq_i(epptr->name,"hour"))
+                {
+                  hourd = atol(epptr->data);
+                  if (hourd < 0) hourd = 0 - hourd;
+                  if (hoursi<hoursn)
+                  {
+                    curchan->skiphours[hoursi] = hourd;
+                    hoursi++;
+                  }
+                }
+              }
+              curchan->skiphours[hoursi] = -1;
+            }
+            
+          }
         }
         else if (streq_i(curepn->name,"skipdays"))
         {
           /* Suck attributes into channel's skipdays property */
+          if (inchan && !initem && !intxtinp && !inimage)
+          {
+            if (curchan == NULL)
+            {
+              curchan = createchanpropnode(title,link,desc);
+              if (curchan == NULL)
+              {
+                /* Free everything and end. */
+              }
+              if (title != NULL) free(title);
+              if (link != NULL) free(link);
+              if (desc != NULL) free(desc);
+            }
+            int daysn = 0, daysi = 0;
+            for (epptr = curepn->attlist; epptr != NULL; epptr = epptr->next)
+            {
+              if (streq_i(epptr->name,"day"))
+              {
+                daysn++;
+              }
+            }
+            if (curchan->skipdays == NULL)
+            {
+              curchan->skipdays = (ntsa) malloc(sizeof(char *)*(daysn+1));
+              if (curchan->skipdays == NULL)
+              {
+                /* Free everything and end. */
+              }
+              memset(curchan->skipdays,0,sizeof(char *)*(daysn+1));
+              curchan->skipdays[daysn] = NULL;
+              for (epptr = curepn->attlist; epptr != NULL; epptr = epptr->next)
+              {
+                if (streq_i(epptr->name,"day"))
+                {
+                  if (daysi<daysn)
+                  {
+                    curchan->skipdays[daysi] = (char *) malloc(sizeof(char)*(1+strlen(epptr->data)));
+                    if (curchan->skipdays[daysi] == NULL)
+                    {
+                      for (daysn=0;daysn<daysi;daysn++) free(curchan->skipdays[daysn]);
+                      free(curchan->skipdays);
+                      curchan->skipdays = NULL;
+                      /* Free everything and end. */
+                    }
+                    strcpy(curchan->skipdays,epptr->data);
+                    daysi++;
+                  }
+                }
+              }
+              curchan->skipdays[daysi] = NULL;
+            }
+            
+          }
         }
         /* Subelements of channel */
         else if (streq_i(curepn->name,"hour"))
         {
-          if (inchan && !initem && !inimage)
+          if (inchan && !initem && !inimage && !intxtinp)
           {
             /* Find above epn */
             for (epptr = eproot; epptr != NULL; epptr = epptr->next)
@@ -1225,7 +1728,7 @@ int parsersstoll(FILE *rf)
         }
         else if (streq_i(curepn->name,"day"))
         {
-          if (inchan && !initem && !inimage)
+          if (inchan && !initem && !inimage && !intxtinp)
           {
             /* Find above epn */
             for (epptr = eproot; epptr != NULL; epptr = epptr->next)
@@ -1244,7 +1747,7 @@ int parsersstoll(FILE *rf)
         }
         else if (streq_i(curepn->name,"url"))
         {
-          if (inimage)
+          if (inimage && !intxtinp)
           {
             /* Find above epn */
             for (epptr = eproot; epptr != NULL; epptr = epptr->next)
@@ -1263,7 +1766,7 @@ int parsersstoll(FILE *rf)
         }
         else if (streq_i(curepn->name,"width"))
         {
-          if (inimage)
+          if (inimage && !intxtinp)
           {
             /* Find above epn */
             for (epptr = eproot; epptr != NULL; epptr = epptr->next)
@@ -1282,7 +1785,7 @@ int parsersstoll(FILE *rf)
         }
         else if (streq_i(curepn->name,"height"))
         {
-          if (inimage)
+          if (inimage && !intxtinp)
           {
             /* Find above epn */
             for (epptr = eproot; epptr != NULL; epptr = epptr->next)
@@ -1299,7 +1802,57 @@ int parsersstoll(FILE *rf)
             }
           }
         }
+        else if (streq_i(curepn->name,"name"))
+        {
+          if (intxtinp && !inimage)
+          {
+            /* Find above epn */
+            for (epptr = eproot; epptr != NULL; epptr = epptr->next)
+            {
+              if (epptr->next == curepn) break;
+            }
+            if (epptr != NULL && streq_i(epptr->name,"textinput"))
+            {
+              /* Assign data as attribute */
+              if (addatttoepn(curepn->name,curepn->data,epptr)==NULL)
+              {
+                /* Free everything and end. */
+              }
+            }
+          }
+        }
         
+        
+        /* Remove the epn and revert to the previous one */
+        elementpnode *tepn = NULL;
+        if (eproot == curepn)
+        {
+          eproot = eproot->next;
+          freeepn(curepn);
+          curepn = eproot;
+        }
+        else
+        {
+          for (epptr = eproot; epptr != NULL; epptr = epptr->next)
+          {
+            if (epptr == curepn) break;
+            tepn = epptr;
+          }
+          if (tepn != NULL)
+          {
+            tepn->next = curepn->next;
+            freeepn(curepn);
+            curepn = tepn;
+          }
+          else
+          {
+            /* Should not happen! */
+            eproot = eproot->next;
+            freeepn(eproot);
+            curepn = eproot;
+          }
+        }
+        tepn = NULL;
         
       }
     }

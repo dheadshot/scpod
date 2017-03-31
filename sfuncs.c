@@ -62,6 +62,26 @@ int startsame_(char *a, char *b)
   return 0;
 }
 
+int startsame_i(char *a, char *b)
+{
+  char *ai, *bi;
+  if (a==NULL || b==NULL) return 0;
+  ai = (char *) malloc(sizeof(char)*(1+strlen(a)));
+  if (ai==NULL) return 0;
+  bi = (char *) malloc(sizeof(char)*(1+strlen(b)));
+  if (bi==NULL)
+  {
+    free(ai);
+    return 0;
+  }
+  strtoupper(ai,a);
+  strtoupper(bi,b);
+  int ans = startsame_(ai,bi);
+  free(ai);
+  free(bi);
+  return ans;
+}
+
 void strltrim(char *ostr, char *istr)
 {
   long n;
