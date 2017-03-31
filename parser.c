@@ -2595,6 +2595,66 @@ int parsersstoll(FILE *rf)
             }
           }
         }
+        else if (streq_i(curepn->name,"enclosure"))
+        {
+          if (initem && !inimage && !intxtinp)
+          {
+            if (curitem == NULL)
+            {
+              if (curchan != NULL)
+                curitem = createitempropnode(title,link,desc,curchan->chanid);
+              else
+                curitem = createitempropnode(title,link,desc,nextchanid);
+              if (curitem == NULL)
+              {
+                /* Free everything and end. */
+              }
+              if (title != NULL) free(title);
+              if (link != NULL) free(link);
+              if (desc != NULL) free(desc);
+              title = NULL;
+              link = NULL;
+              desc = NULL;
+            }
+            if (curitem->enclosure.url == NULL && curitem->enclosure.type == NULL)
+            {
+              for (epptr = curepn->attlist; epptr != NULL; epptr = epptr->next)
+              {
+                if (streq_i(epptr->name,"url"))
+                {
+                  if (curitem->enclosure.url == NULL)
+                  {
+                    curitem->enclosure.url = (char *) malloc(sizeof(char)*(1+strlen(epptr->data)));
+                    if (curitem->enclosure.url == NULL)
+                    {
+                      /* Free everything and end. */
+                    }
+                    strcpy(curitem->enclosure.url,epptr->data);
+                  }
+                }
+                else if (streq_i(epptr->name,"length"))
+                {
+                  curitem->enclosure.length = atol(epptr->data);
+                }
+                else if (streq_i(epptr->name,"type"))
+                {
+                  if (curitem->enclosure.type == NULL)
+                  {
+                    curitem->enclosure.type = (char *) malloc(sizeof(char)*(1+strlen(epptr->data)));
+                    if (curitem->enclosure.type == NULL)
+                    {
+                      /* Free everything and end. */
+                    }
+                    strcpy(curitem->enclosure.type,epptr->data);
+                  }
+                }
+                
+              }
+              
+            }
+          }
+        }
+        
         
         
         /* Remove the epn and revert to the previous one */
