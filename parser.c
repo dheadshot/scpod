@@ -287,6 +287,7 @@ void freeepn(elementpnode *epn)
 
 int parsersstoll(FILE *rf)
 {
+  /* Returns: 1=worked, 0=File reading error, -1=Memory error, -2=Not RSS */
   char curelementname[256] = "", curattname[256] = "", *curelementdata, *curattdata;
   long ceni=0,cani=0,cedi=0,cadi=0;
   char *title = NULL, *link = NULL, *desc = NULL;
@@ -310,9 +311,9 @@ int parsersstoll(FILE *rf)
   curelementdata[0] = 0;
   curattdata[0] = 0;
   
-  /* Hopefully, this won't fall down on comments... */
+  /* Hopefully, this won't fall down on XML comments... */
   
-  while ((cchar = (char *) fgetc(rf)) != EOF)
+  while ((cchar = (char) fgetc(rf)) != EOF)
   {
     if (cchar == '<')
     {
@@ -364,6 +365,7 @@ int parsersstoll(FILE *rf)
         if (curepn == NULL)
         {
           /* Free everything and end */
+          goto OOMEMERROR;
         }
         inattname = 1;
         ceni = 0;
@@ -411,6 +413,7 @@ int parsersstoll(FILE *rf)
           if (addatttoepn(curattname, curattdata, curepn) == NULL)
           {
             /* Free everything and end! */
+            goto OOMEMERROR;
           }
         }
       }
@@ -572,6 +575,7 @@ int parsersstoll(FILE *rf)
         if (curepn == NULL)
         {
           /* Free everything and end */
+          goto OOMEMERROR;
         }
         
         ceni = 0;
@@ -589,6 +593,7 @@ int parsersstoll(FILE *rf)
         if (addatttoepn(curattname, curattdata, curepn) == NULL)
         {
           /* Free everything and end! */
+          goto OOMEMERROR;
         }
       }
       
@@ -619,6 +624,7 @@ int parsersstoll(FILE *rf)
         if (curepn->data == NULL)
         {
           /* Free everything and end! */
+          goto OOMEMERROR;
         }
         strcpy(curepn->data, curelementdata);
       }
@@ -644,6 +650,7 @@ int parsersstoll(FILE *rf)
             if (curitem == NULL)
             {
               /* Free everything and end. */
+              goto OOMEMERROR;
             }
             if (title != NULL) free(title);
             if (link != NULL) free(link);
@@ -680,6 +687,7 @@ int parsersstoll(FILE *rf)
             if (curchan == NULL)
             {
               /* Free everything and end. */
+              goto OOMEMERROR;
             }
             if (title != NULL) free(title);
             if (link != NULL) free(link);
@@ -713,6 +721,7 @@ int parsersstoll(FILE *rf)
             if (title == NULL)
             {
               /* Free everything and end. */
+              goto OOMEMERROR;
             }
             strcpy(title,curepn->data);
             if (title!=NULL && link!=NULL && desc!=NULL)
@@ -728,6 +737,7 @@ int parsersstoll(FILE *rf)
                   if (curitem == NULL)
                   {
                     /* Free everything and end. */
+                    goto OOMEMERROR;
                   }
                 }
                 else if (curitem->title == NULL)
@@ -736,6 +746,7 @@ int parsersstoll(FILE *rf)
                   if (curitem->title == NULL)
                   {
                     /* Free everything and end. */
+                    goto OOMEMERROR;
                   }
                   strcpy(curitem->title, title);
                 }
@@ -748,6 +759,7 @@ int parsersstoll(FILE *rf)
                   if (curchan == NULL)
                   {
                     /* Free everything and end. */
+                    goto OOMEMERROR;
                   }
                 }
                 else if (curchan->title == NULL)
@@ -756,6 +768,7 @@ int parsersstoll(FILE *rf)
                   if (curchan->title == NULL)
                   {
                     /* Free everything and end. */
+                    goto OOMEMERROR;
                   }
                   strcpy(curchan->title, title);
                 }
@@ -773,6 +786,7 @@ int parsersstoll(FILE *rf)
                   if (addatttoepn(curepn->name,curepn->data,epptr)==NULL)
                   {
                     /* Free everything and end. */
+                    goto OOMEMERROR;
                   }
                 }
                 
@@ -790,6 +804,7 @@ int parsersstoll(FILE *rf)
                   if (addatttoepn(curepn->name,curepn->data,epptr)==NULL)
                   {
                     /* Free everything and end. */
+                    goto OOMEMERROR;
                   }
                 }
                 
@@ -811,6 +826,7 @@ int parsersstoll(FILE *rf)
             if (link == NULL)
             {
               /* Free everything and end. */
+              goto OOMEMERROR;
             }
             strcpy(link,curepn->data);
             if (title!=NULL && link!=NULL && desc!=NULL)
@@ -826,6 +842,7 @@ int parsersstoll(FILE *rf)
                   if (curitem == NULL)
                   {
                     /* Free everything and end. */
+                    goto OOMEMERROR;
                   }
                 }
                 else if (curitem->link == NULL)
@@ -834,6 +851,7 @@ int parsersstoll(FILE *rf)
                   if (curitem->link == NULL)
                   {
                     /* Free everything and end. */
+                    goto OOMEMERROR;
                   }
                   strcpy(curitem->link, link);
                 }
@@ -846,6 +864,8 @@ int parsersstoll(FILE *rf)
                   if (curchan == NULL)
                   {
                     /* Free everything and end. */
+                    goto OOMEMERROR;
+                    
                   }
                 }
                 else if (curchan->link == NULL)
@@ -854,6 +874,7 @@ int parsersstoll(FILE *rf)
                   if (curitem->link == NULL)
                   {
                     /* Free everything and end. */
+                    goto OOMEMERROR;
                   }
                   strcpy(curchan->link, link);
                 }
@@ -871,6 +892,7 @@ int parsersstoll(FILE *rf)
                   if (addatttoepn(curepn->name,curepn->data,epptr)==NULL)
                   {
                     /* Free everything and end. */
+                    goto OOMEMERROR;
                   }
                 }
                 
@@ -888,6 +910,7 @@ int parsersstoll(FILE *rf)
                   if (addatttoepn(curepn->name,curepn->data,epptr)==NULL)
                   {
                     /* Free everything and end. */
+                    goto OOMEMERROR;
                   }
                 }
                 
@@ -910,6 +933,7 @@ int parsersstoll(FILE *rf)
             if (desc == NULL)
             {
               /* Free everything and end. */
+              goto OOMEMERROR;
             }
             strcpy(desc,curepn->data);
             if (title!=NULL && link!=NULL && desc!=NULL)
@@ -925,6 +949,7 @@ int parsersstoll(FILE *rf)
                   if (curitem == NULL)
                   {
                     /* Free everything and end. */
+                    goto OOMEMERROR;
                   }
                 }
                 else if (curitem->desc == NULL)
@@ -933,6 +958,7 @@ int parsersstoll(FILE *rf)
                   if (curitem->desc == NULL)
                   {
                     /* Free everything and end. */
+                    goto OOMEMERROR;
                   }
                   strcpy(curitem->desc, desc);
                 }
@@ -945,6 +971,7 @@ int parsersstoll(FILE *rf)
                   if (curchan == NULL)
                   {
                     /* Free everything and end. */
+                    goto OOMEMERROR;
                   }
                 }
                 else if (curchan->desc == NULL)
@@ -953,6 +980,7 @@ int parsersstoll(FILE *rf)
                   if (curitem->desc == NULL)
                   {
                     /* Free everything and end. */
+                    goto OOMEMERROR;
                   }
                   strcpy(curchan->desc, desc);
                 }
@@ -970,6 +998,7 @@ int parsersstoll(FILE *rf)
                   if (addatttoepn(curepn->name,curepn->data,epptr)==NULL)
                   {
                     /* Free everything and end. */
+                    goto OOMEMERROR;
                   }
                 }
                 
@@ -987,6 +1016,7 @@ int parsersstoll(FILE *rf)
                   if (addatttoepn(curepn->name,curepn->data,epptr)==NULL)
                   {
                     /* Free everything and end. */
+                    goto OOMEMERROR;
                   }
                 }
                 
@@ -1011,6 +1041,7 @@ int parsersstoll(FILE *rf)
               if (curchan == NULL)
               {
                 /* Free everything and end. */
+                goto OOMEMERROR;
               }
               if (title != NULL) free(title);
               if (link != NULL) free(link);
@@ -1030,11 +1061,13 @@ int parsersstoll(FILE *rf)
                 if (curchan->language_main == NULL)
                 {
                   /* Free everything and end. */
+                  goto OOMEMERROR;
                 }
                 curchan->language_sub = (char *) malloc(sizeof(char)*(1+strlen(dashloc)));
                 if (curchan->language_sub == NULL)
                 {
                   /* Free everything and end. */
+                  goto OOMEMERROR;
                 }
                 strcpy(curchan->language_main,curepn->data);
                 strcpy(curchan->language_sub, dashloc);
@@ -1045,6 +1078,7 @@ int parsersstoll(FILE *rf)
                 if (curchan->language_main == NULL)
                 {
                   /* Free everything and end. */
+                  goto OOMEMERROR;
                 }
                 strcpy(curchan->language_main,curepn->data);
                 curchan->language_sub = NULL;
@@ -1063,6 +1097,7 @@ int parsersstoll(FILE *rf)
               if (curchan == NULL)
               {
                 /* Free everything and end. */
+                goto OOMEMERROR;
               }
               if (title != NULL) free(title);
               if (link != NULL) free(link);
@@ -1077,6 +1112,7 @@ int parsersstoll(FILE *rf)
               if (curchan->copyright == NULL)
               {
                 /* Free everything and end. */
+                goto OOMEMERROR;
               }
               strcpy(curchan->copyright,curepn->data);
             }
@@ -1093,6 +1129,7 @@ int parsersstoll(FILE *rf)
               if (curchan == NULL)
               {
                 /* Free everything and end. */
+                goto OOMEMERROR;
               }
               if (title != NULL) free(title);
               if (link != NULL) free(link);
@@ -1107,6 +1144,7 @@ int parsersstoll(FILE *rf)
               if (curchan->managingeditor == NULL)
               {
                 /* Free everything and end. */
+                goto OOMEMERROR;
               }
               strcpy(curchan->managingeditor,curepn->data);
             }
@@ -1123,6 +1161,7 @@ int parsersstoll(FILE *rf)
               if (curchan == NULL)
               {
                 /* Free everything and end. */
+                goto OOMEMERROR;
               }
               if (title != NULL) free(title);
               if (link != NULL) free(link);
@@ -1137,6 +1176,7 @@ int parsersstoll(FILE *rf)
               if (curchan->webmaster == NULL)
               {
                 /* Free everything and end. */
+                goto OOMEMERROR;
               }
               strcpy(curchan->webmaster,curepn->data);
             }
@@ -1156,6 +1196,7 @@ int parsersstoll(FILE *rf)
               if (curitem == NULL)
               {
                 /* Free everything and end. */
+                goto OOMEMERROR;
               }
               if (title != NULL) free(title);
               if (link != NULL) free(link);
@@ -1170,6 +1211,7 @@ int parsersstoll(FILE *rf)
               if (curitem->pubdate.fulldate == NULL)
               {
                 /* Free everything and end. */
+                goto OOMEMERROR;
               }
               strcpy(curitem->pubdate.fulldate,curepn->data);
               /* Create other date items... */
@@ -1437,6 +1479,7 @@ int parsersstoll(FILE *rf)
               if (curchan == NULL)
               {
                 /* Free everything and end. */
+                goto OOMEMERROR;
               }
               if (title != NULL) free(title);
               if (link != NULL) free(link);
@@ -1451,6 +1494,7 @@ int parsersstoll(FILE *rf)
               if (curchan->pubdate.fulldate == NULL)
               {
                 /* Free everything and end. */
+                goto OOMEMERROR;
               }
               strcpy(curchan->pubdate.fulldate,curepn->data);
               /* Create other date items... */
@@ -1721,6 +1765,7 @@ int parsersstoll(FILE *rf)
               if (curchan == NULL)
               {
                 /* Free everything and end. */
+                goto OOMEMERROR;
               }
               if (title != NULL) free(title);
               if (link != NULL) free(link);
@@ -1735,6 +1780,7 @@ int parsersstoll(FILE *rf)
               if (curchan->lastbuilddate.fulldate == NULL)
               {
                 /* Free everything and end. */
+                goto OOMEMERROR;
               }
               strcpy(curchan->lastbuilddate.fulldate,curepn->data);
               /* Create other date items... */
@@ -2013,6 +2059,7 @@ int parsersstoll(FILE *rf)
               if (createcategory(item_cat,nextitemid,domainptr,curepn->data)==0)
               {
                 /* Free everything and end. */
+                goto OOMEMERROR;
               }
             }
             else
@@ -2020,6 +2067,7 @@ int parsersstoll(FILE *rf)
               if (createcategory(item_cat,curitem->itemid,domainptr,curepn->data)==0)
               {
                 /* Free everything and end. */
+                goto OOMEMERROR;
               }
             }
           }
@@ -2030,6 +2078,7 @@ int parsersstoll(FILE *rf)
               if (createcategory(channel_cat,nextchanid,domainptr,curepn->data)==0)
               {
                 /* Free everything and end. */
+                goto OOMEMERROR;
               }
             }
             else
@@ -2037,6 +2086,7 @@ int parsersstoll(FILE *rf)
               if (createcategory(channel_cat,curchan->chanid,domainptr,curepn->data)==0)
               {
                 /* Free everything and end. */
+                goto OOMEMERROR;
               }
             }
           }
@@ -2051,6 +2101,7 @@ int parsersstoll(FILE *rf)
               if (curchan == NULL)
               {
                 /* Free everything and end. */
+                goto OOMEMERROR;
               }
               if (title != NULL) free(title);
               if (link != NULL) free(link);
@@ -2065,6 +2116,7 @@ int parsersstoll(FILE *rf)
               if (curchan->generator == NULL)
               {
                 /* Free everything and end. */
+                goto OOMEMERROR;
               }
               strcpy(curchan->generator,curepn->data);
             }
@@ -2081,6 +2133,7 @@ int parsersstoll(FILE *rf)
               if (curchan == NULL)
               {
                 /* Free everything and end. */
+                goto OOMEMERROR;
               }
               if (title != NULL) free(title);
               if (link != NULL) free(link);
@@ -2095,6 +2148,7 @@ int parsersstoll(FILE *rf)
               if (curchan->docs == NULL)
               {
                 /* Free everything and end. */
+                goto OOMEMERROR;
               }
               strcpy(curchan->docs,curepn->data);
             }
@@ -2111,6 +2165,7 @@ int parsersstoll(FILE *rf)
               if (curchan == NULL)
               {
                 /* Free everything and end. */
+                goto OOMEMERROR;
               }
               if (title != NULL) free(title);
               if (link != NULL) free(link);
@@ -2133,6 +2188,7 @@ int parsersstoll(FILE *rf)
               if (curchan == NULL)
               {
                 /* Free everything and end. */
+                goto OOMEMERROR;
               }
               if (title != NULL) free(title);
               if (link != NULL) free(link);
@@ -2153,6 +2209,7 @@ int parsersstoll(FILE *rf)
               if (curitem == NULL)
               {
                 /* Free everything and end. */
+                goto OOMEMERROR;
               }
               if (title != NULL) free(title);
               if (link != NULL) free(link);
@@ -2174,6 +2231,7 @@ int parsersstoll(FILE *rf)
                   if (curitem->image.url == NULL)
                   {
                     /* Free everything and end. */
+                    goto OOMEMERROR;
                   }
                   strcpy(curitem->image.url,epptr->data);
                 }
@@ -2186,6 +2244,7 @@ int parsersstoll(FILE *rf)
                   if (curchan->image.url == NULL)
                   {
                     /* Free everything and end. */
+                    goto OOMEMERROR;
                   }
                   strcpy(curchan->image.url,epptr->data);
                 }
@@ -2201,6 +2260,7 @@ int parsersstoll(FILE *rf)
                   if (curitem->image.title == NULL)
                   {
                     /* Free everything and end. */
+                    goto OOMEMERROR;
                   }
                   strcpy(curitem->image.title,epptr->data);
                 }
@@ -2213,6 +2273,7 @@ int parsersstoll(FILE *rf)
                   if (curchan->image.title == NULL)
                   {
                     /* Free everything and end. */
+                    goto OOMEMERROR;
                   }
                   strcpy(curchan->image.title,epptr->data);
                 }
@@ -2228,6 +2289,7 @@ int parsersstoll(FILE *rf)
                   if (curitem->image.link == NULL)
                   {
                     /* Free everything and end. */
+                    goto OOMEMERROR;
                   }
                   strcpy(curitem->image.link,epptr->data);
                 }
@@ -2240,6 +2302,7 @@ int parsersstoll(FILE *rf)
                   if (curchan->image.link == NULL)
                   {
                     /* Free everything and end. */
+                    goto OOMEMERROR;
                   }
                   strcpy(curchan->image.link,epptr->data);
                 }
@@ -2255,6 +2318,7 @@ int parsersstoll(FILE *rf)
                   if (curitem->image.description == NULL)
                   {
                     /* Free everything and end. */
+                    goto OOMEMERROR;
                   }
                   strcpy(curitem->image.description,epptr->data);
                 }
@@ -2267,6 +2331,7 @@ int parsersstoll(FILE *rf)
                   if (curchan->image.description == NULL)
                   {
                     /* Free everything and end. */
+                    goto OOMEMERROR;
                   }
                   strcpy(curchan->image.description,epptr->data);
                 }
@@ -2314,6 +2379,7 @@ int parsersstoll(FILE *rf)
               if (curchan == NULL)
               {
                 /* Free everything and end. */
+                goto OOMEMERROR;
               }
               if (title != NULL) free(title);
               if (link != NULL) free(link);
@@ -2337,6 +2403,7 @@ int parsersstoll(FILE *rf)
               if (curchan->skiphours == NULL)
               {
                 /* Free everything and end. */
+                goto OOMEMERROR;
               }
               memset(curchan->skiphours,0,sizeof(long)*(hoursn+1));
               curchan->skiphours[hoursn] = -1;
@@ -2369,6 +2436,7 @@ int parsersstoll(FILE *rf)
               if (curchan == NULL)
               {
                 /* Free everything and end. */
+                goto OOMEMERROR;
               }
               if (title != NULL) free(title);
               if (link != NULL) free(link);
@@ -2391,6 +2459,7 @@ int parsersstoll(FILE *rf)
               if (curchan->skipdays == NULL)
               {
                 /* Free everything and end. */
+                goto OOMEMERROR;
               }
               memset(curchan->skipdays,0,sizeof(char *)*(daysn+1));
               curchan->skipdays[daysn] = NULL;
@@ -2407,6 +2476,7 @@ int parsersstoll(FILE *rf)
                       free(curchan->skipdays);
                       curchan->skipdays = NULL;
                       /* Free everything and end. */
+                      goto OOMEMERROR;
                     }
                     strcpy(curchan->skipdays,epptr->data);
                     daysi++;
@@ -2434,6 +2504,7 @@ int parsersstoll(FILE *rf)
               if (addatttoepn(curepn->name,curepn->data,epptr)==NULL)
               {
                 /* Free everything and end. */
+                goto OOMEMERROR;
               }
             }
           }
@@ -2453,6 +2524,7 @@ int parsersstoll(FILE *rf)
               if (addatttoepn(curepn->name,curepn->data,epptr)==NULL)
               {
                 /* Free everything and end. */
+                goto OOMEMERROR;
               }
             }
           }
@@ -2472,6 +2544,7 @@ int parsersstoll(FILE *rf)
               if (addatttoepn(curepn->name,curepn->data,epptr)==NULL)
               {
                 /* Free everything and end. */
+                goto OOMEMERROR;
               }
             }
           }
@@ -2491,6 +2564,7 @@ int parsersstoll(FILE *rf)
               if (addatttoepn(curepn->name,curepn->data,epptr)==NULL)
               {
                 /* Free everything and end. */
+                goto OOMEMERROR;
               }
             }
           }
@@ -2510,6 +2584,7 @@ int parsersstoll(FILE *rf)
               if (addatttoepn(curepn->name,curepn->data,epptr)==NULL)
               {
                 /* Free everything and end. */
+                goto OOMEMERROR;
               }
             }
           }
@@ -2529,6 +2604,7 @@ int parsersstoll(FILE *rf)
               if (addatttoepn(curepn->name,curepn->data,epptr)==NULL)
               {
                 /* Free everything and end. */
+                goto OOMEMERROR;
               }
             }
           }
@@ -2547,6 +2623,7 @@ int parsersstoll(FILE *rf)
               if (curitem == NULL)
               {
                 /* Free everything and end. */
+                goto OOMEMERROR;
               }
               if (title != NULL) free(title);
               if (link != NULL) free(link);
@@ -2561,6 +2638,7 @@ int parsersstoll(FILE *rf)
               if (curitem->author == NULL)
               {
                 /* Free everything and end. */
+                goto OOMEMERROR;
               }
               strcpy(curitem->author,curepn->data);
             }
@@ -2579,6 +2657,7 @@ int parsersstoll(FILE *rf)
               if (curitem == NULL)
               {
                 /* Free everything and end. */
+                goto OOMEMERROR;
               }
               if (title != NULL) free(title);
               if (link != NULL) free(link);
@@ -2593,6 +2672,7 @@ int parsersstoll(FILE *rf)
               if (curitem->comments == NULL)
               {
                 /* Free everything and end. */
+                goto OOMEMERROR;
               }
               strcpy(curitem->comments,curepn->data);
             }
@@ -2611,6 +2691,7 @@ int parsersstoll(FILE *rf)
               if (curitem == NULL)
               {
                 /* Free everything and end. */
+                goto OOMEMERROR;
               }
               if (title != NULL) free(title);
               if (link != NULL) free(link);
@@ -2631,6 +2712,7 @@ int parsersstoll(FILE *rf)
                     if (curitem->enclosure.url == NULL)
                     {
                       /* Free everything and end. */
+                      goto OOMEMERROR;
                     }
                     strcpy(curitem->enclosure.url,epptr->data);
                   }
@@ -2647,6 +2729,7 @@ int parsersstoll(FILE *rf)
                     if (curitem->enclosure.type == NULL)
                     {
                       /* Free everything and end. */
+                      goto OOMEMERROR;
                     }
                     strcpy(curitem->enclosure.type,epptr->data);
                   }
@@ -2670,6 +2753,7 @@ int parsersstoll(FILE *rf)
               if (curitem == NULL)
               {
                 /* Free everything and end. */
+                goto OOMEMERROR;
               }
               if (title != NULL) free(title);
               if (link != NULL) free(link);
@@ -2684,6 +2768,7 @@ int parsersstoll(FILE *rf)
               if (curitem->guid.guid == NULL)
               {
                 /* Free everything and end. */
+                goto OOMEMERROR;
               }
               strcpy(curitem->guid.guid,curepn->data);
               curitem->guid.ispermalink = 0;
@@ -2717,6 +2802,7 @@ int parsersstoll(FILE *rf)
               if (curitem == NULL)
               {
                 /* Free everything and end. */
+                goto OOMEMERROR;
               }
               if (title != NULL) free(title);
               if (link != NULL) free(link);
@@ -2731,6 +2817,7 @@ int parsersstoll(FILE *rf)
               if (curitem->source.name == NULL)
               {
                 /* Free everything and end. */
+                goto OOMEMERROR;
               }
               strcpy(curitem->source.name,curepn->data);
               for (epptr = curepn->attlist; epptr != NULL; epptr = epptr->next)
@@ -2741,6 +2828,7 @@ int parsersstoll(FILE *rf)
                   if (curitem->source.url == NULL)
                   {
                     /* Free everything and end. */
+                    goto OOMEMERROR;
                   }
                   if (epptr->data[0] == '"' && epptr->data[strlen(epptr->data)-1] == '"' && strlen(epptr->data)>1)
                   {
@@ -2761,6 +2849,7 @@ int parsersstoll(FILE *rf)
         else if (streq_i(curepn->name,"feed"))
         {
           /* It's ATOM!  Abort!  Abort! */
+          goto ISATOM;
         }
         
         
@@ -2825,14 +2914,47 @@ int parsersstoll(FILE *rf)
   }
   if (ferror(rf))
   {
+    /* Deal with errors. */
   }
   return 1;
   
-ISATOM:
+  /* This next bit is kind of a bodge. */
   
-  return -2;
+  int err_end_val;
+  
+ISATOM:
+  err_end_val = -2;
+  goto ERROREND;
   
 OOMEMERROR:
+  err_end_val = -1;
+  goto ERROREND;
   
-  return -1;
+ERROREND:
+  /* Free Everything! */
+  /* Free local strings */
+  free(curelementdata);
+  free(curattdata);
+  if (title != NULL) free(title);
+  title = NULL;
+  if (link != NULL) free(link);
+  link = NULL;
+  if (desc != NULL) free(desc);
+  desc = NULL;
+  /* Free all epns */
+  epptr = eproot;
+  while (epptr != NULL)
+  {
+    curepn = epptr->next;
+    freeepn(epptr);
+    epptr = curepn;
+  }
+  eproot = NULL;
+  epptr = NULL;
+  /* Free All items */
+  destroyitems();    /* Doesn't exist yet */
+  /* Free all channels */
+  destroychannels(); /* Doesn't exist yet */
+  
+  return err_end_val;
 }
