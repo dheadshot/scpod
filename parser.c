@@ -1589,6 +1589,284 @@ int parsersstoll(FILE *rf)
         }
         else if (streq_i(curepn->name, "lastbuilddate"))
         {
+          if (inchan && !initem && !inimage && !intxtinp)
+          {
+            if (curchan == NULL)
+            {
+              curchan = createchanpropnode(title,link,desc);
+              if (curchan == NULL)
+              {
+                /* Free everything and end. */
+              }
+              if (title != NULL) free(title);
+              if (link != NULL) free(link);
+              if (desc != NULL) free(desc);
+            }
+            if (curchan->lastbuilddate.fulldate == NULL)
+            {
+              curchan->lastbuilddate.fulldate = (char *) malloc(sizeof(char)*(1+strlen(curepn->data)));
+              if (curchan->lastbuilddate.fulldate == NULL)
+              {
+                /* Free everything and end. */
+              }
+              strcpy(curchan->lastbuilddate.fulldate,curepn->data);
+              /* Create other date items... */
+              char *datetok = NULL;
+              int tokn = 0;
+              datetok = strtok(curchan->lastbuilddate.fulldate,", :");
+              while (datetok != NULL)
+              {
+                if (tokn == 0)
+                {
+                  if (isalpha(datetok[0]))
+                  {
+                    strcpy(curchan->lastbuilddate.dayname,datetok);
+                  }
+                  else
+                  {
+                    curchan->lastbuilddate.dayname[0] = 0;
+                  }
+                  tokn++;
+                }
+                else if (tokn == 1)
+                {
+                  curchan->lastbuilddate.daynum = atoi(datetok);
+                  tokn++;
+                }
+                else if (tokn == 2)
+                {
+                  if (startsame_i(datetok,"Jan"))
+                  {
+                    curchan->lastbuilddate.month = 1;
+                  }
+                  else if (startsame_i(datetok,"Feb"))
+                  {
+                    curchan->lastbuilddate.month = 2;
+                  }
+                  else if (startsame_i(datetok,"Mar"))
+                  {
+                    curchan->lastbuilddate.month = 3;
+                  }
+                  else if (startsame_i(datetok,"Apr"))
+                  {
+                    curchan->lastbuilddate.month = 4;
+                  }
+                  else if (startsame_i(datetok,"May"))
+                  {
+                    curchan->lastbuilddate.month = 5;
+                  }
+                  else if (startsame_i(datetok,"Jun"))
+                  {
+                    curchan->lastbuilddate.month = 6;
+                  }
+                  else if (startsame_i(datetok,"Jul"))
+                  {
+                    curchan->lastbuilddate.month = 7;
+                  }
+                  else if (startsame_i(datetok,"Aug"))
+                  {
+                    curchan->lastbuilddate.month = 8;
+                  }
+                  else if (startsame_i(datetok,"Sep"))
+                  {
+                    curchan->lastbuilddate.month = 9;
+                  }
+                  else if (startsame_i(datetok,"Oct"))
+                  {
+                    curchan->lastbuilddate.month = 10;
+                  }
+                  else if (startsame_i(datetok,"Nov"))
+                  {
+                    curchan->lastbuilddate.month = 11;
+                  }
+                  else if (startsame_i(datetok,"Dec"))
+                  {
+                    curchan->lastbuilddate.month = 12;
+                  }
+                  else
+                  {
+                    curchan->lastbuilddate.month = 0;
+                  }
+                  tokn++;
+                }
+                else if (tokn == 3)
+                {
+                  long lbdcyear = atol(datetok);
+                  if (lbdcyear<51) lbdcyear += 2000;
+                  else if (lbdcyear<100) lbdcyear += 1900;
+                  curchan->lastbuilddate.year = lbdcyear;
+                  tokn++;
+                }
+                else if (tokn == 4)
+                {
+                  curchan->lastbuilddate.hour = atoi(datetok);
+                  tokn++;
+                }
+                else if (tokn == 5)
+                {
+                  curchan->lastbuilddate.minute = atoi(datetok);
+                  tokn++;
+                }
+                else if (tokn == 6)
+                {
+                  if (isdigit(datetok[0]) && strlen(datetok)<=2)
+                  {
+                    curchan->lastbuilddate.second = atoi(datetok);
+                  }
+                  else curchan->lastbuilddate.second = 0;
+                  tokn++;
+                }
+                else if (tokn == 7)
+                {
+                  char lbdcoh[3] = "";
+                  strcpy(curchan->lastbuilddate.tzone,datetok);
+                  curchan->lastbuilddate.gmtoffsetm = 0;
+                  if (streq_i(datetok,"UT") || streq_i(datetok, "UTC") || streq_i(datetok,"GMT") || streq_i(datetok,"Z"))
+                  {
+                    curchan->lastbuilddate.gmtoffseth = 0;
+                  }
+                  else if (streq_i(datetok,"BST") || streq_i(datetok,"N"))
+                  {
+                    curchan->lastbuilddate.gmtoffseth = 1;
+                  }
+                  else if (streq_i(datetok,"O"))
+                  {
+                    curchan->lastbuilddate.gmtoffseth = 2;
+                  }
+                  else if (streq_i(datetok,"P"))
+                  {
+                    curchan->lastbuilddate.gmtoffseth = 3;
+                  }
+                  else if (streq_i(datetok,"Q"))
+                  {
+                    curchan->lastbuilddate.gmtoffseth = 4;
+                  }
+                  else if (streq_i(datetok,"R"))
+                  {
+                    curchan->lastbuilddate.gmtoffseth = 5;
+                  }
+                  else if (streq_i(datetok,"S"))
+                  {
+                    curchan->lastbuilddate.gmtoffseth = 6;
+                  }
+                  else if (streq_i(datetok,"T"))
+                  {
+                    curchan->lastbuilddate.gmtoffseth = 7;
+                  }
+                  else if (streq_i(datetok,"U"))
+                  {
+                    curchan->lastbuilddate.gmtoffseth = 8;
+                  }
+                  else if (streq_i(datetok,"V"))
+                  {
+                    curchan->lastbuilddate.gmtoffseth = 9;
+                  }
+                  else if (streq_i(datetok,"W"))
+                  {
+                    curchan->lastbuilddate.gmtoffseth = 10;
+                  }
+                  else if (streq_i(datetok,"X"))
+                  {
+                    curchan->lastbuilddate.gmtoffseth = 11;
+                  }
+                  else if (streq_i(datetok,"Y"))
+                  {
+                    curchan->lastbuilddate.gmtoffseth = 12;
+                  }
+                  else if (streq_i(datetok,"A"))
+                  {
+                    curchan->lastbuilddate.gmtoffseth = -1;
+                  }
+                  else if (streq_i(datetok,"B"))
+                  {
+                    curchan->lastbuilddate.gmtoffseth = -2;
+                  }
+                  else if (streq_i(datetok,"C"))
+                  {
+                    curchan->lastbuilddate.gmtoffseth = -3;
+                  }
+                  else if (streq_i(datetok,"D") || streq_i(datetok,"EDT"))
+                  {
+                    curchan->lastbuilddate.gmtoffseth = -4;
+                  }
+                  else if (streq_i(datetok,"E") || streq_i(datetok,"EST") || streq_i(datetok,"CDT"))
+                  {
+                    curchan->lastbuilddate.gmtoffseth = -5;
+                  }
+                  else if (streq_i(datetok,"F") || streq_i(datetok,"CST") || streq_i(datetok,"MDT"))
+                  {
+                    curchan->lastbuilddate.gmtoffseth = -6;
+                  }
+                  else if (streq_i(datetok,"G") || streq_i(datetok,"MST") || streq_i(datetok,"PDT"))
+                  {
+                    curchan->lastbuilddate.gmtoffseth = -7;
+                  }
+                  else if (streq_i(datetok,"H") || streq_i(datetok,"PST"))
+                  {
+                    curchan->lastbuilddate.gmtoffseth = -8;
+                  }
+                  else if (streq_i(datetok,"I"))
+                  {
+                    curchan->lastbuilddate.gmtoffseth = -9;
+                  }
+                  else if (streq_i(datetok,"K"))
+                  {
+                    curchan->lastbuilddate.gmtoffseth = -10;
+                  }
+                  else if (streq_i(datetok,"L"))
+                  {
+                    curchan->lastbuilddate.gmtoffseth = -11;
+                  }
+                  else if (streq_i(datetok,"M"))
+                  {
+                    curchan->lastbuilddate.gmtoffseth = -12;
+                  }
+                  else if (datetok[0] == '+')
+                  {
+                    if (strlen(datetok)<=3)
+                    {
+                      curchan->lastbuilddate.gmtoffseth = atoi(datetok+sizeof(char));
+                    }
+                    else if (strlen(datetok)==5)
+                    {
+                      lbdcoh[0] = datetok[1];
+                      lbdcoh[1] = datetok[2];
+                      lbdcoh[2] = 0;
+                      curchan->lastbuilddate.gmtoffseth = atoi(lbdcoh);
+                      curchan->lastbuilddate.gmtoffsetm = atoi(datetok+(sizeof(char)*3);
+                      
+                    }
+                  }
+                  else if (isdigit(datetok[0]) && strlen(datetok)==4)
+                  {
+                    lbdcoh[0] = datetok[0];
+                    lbdcoh[1] = datetok[1];
+                    lbdcoh[2] = 0;
+                    curchan->lastbuilddate.gmtoffseth = atoi(lbdcoh);
+                    curchan->lastbuilddate.gmtoffsetm = atoi(datetok+(sizeof(char)*2);
+                  }
+                  else if (datetok[0] == '-')
+                  {
+                    if (strlen(datetok)<=3)
+                    {
+                      curchan->lastbuilddate.gmtoffseth = 0 - atoi(datetok+sizeof(char));
+                    }
+                    else if (strlen(datetok)==5)
+                    {
+                      lbdcoh[0] = datetok[1];
+                      lbdcoh[1] = datetok[2];
+                      lbdcoh[2] = 0;
+                      curchan->lastbuilddate.gmtoffseth = 0 - atoi(lbdcoh);
+                      curchan->lastbuilddate.gmtoffsetm = 0 - atoi(datetok+(sizeof(char)*3);
+                      
+                    }
+                  }
+                  tokn++;
+                }
+                datetok = strtok(NULL,", :");
+              }
+            }
+          }
         }
         else if (streq_i(curepn->name, "category"))
         {
