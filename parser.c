@@ -2654,6 +2654,53 @@ int parsersstoll(FILE *rf)
             }
           }
         }
+        else if (streq_i(curepn->name,"guid"))
+        {
+          if (initem && !inimage && !intxtinp)
+          {
+            if (curitem == NULL)
+            {
+              if (curchan != NULL)
+                curitem = createitempropnode(title,link,desc,curchan->chanid);
+              else
+                curitem = createitempropnode(title,link,desc,nextchanid);
+              if (curitem == NULL)
+              {
+                /* Free everything and end. */
+              }
+              if (title != NULL) free(title);
+              if (link != NULL) free(link);
+              if (desc != NULL) free(desc);
+              title = NULL;
+              link = NULL;
+              desc = NULL;
+            }
+            if (curitem->guid.guid == NULL)
+            {
+              curitem->guid.guid = (char *) malloc(sizeof(char)*(1+strlen(curepn->data)));
+              if (curitem->guid.guid == NULL)
+              {
+                /* Free everything and end. */
+              }
+              strcpy(curitem->guid.guid,curepn->data);
+              curitem->guid.ispermalink = 0;
+              for (epptr = curepn->attlist; epptr != NULL; epptr = epptr->next)
+              {
+                if (streq_i(epptr->name,"ispermalink"))
+                {
+                  if (streq_i(epptr->data, "\"true\"") || streq_i(epptr->data, "true"))
+                  {
+                    curitem->guid.ispermalink = 1;
+                  }
+                  else if (streq_i(epptr->data, "\"false\"") || streq_i(epptr->data, "false"))
+                  {
+                    curitem->guid.ispermalink = 0;
+                  }
+                }
+              }
+            }
+          }
+        }
         
         
         
