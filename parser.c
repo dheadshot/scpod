@@ -310,6 +310,8 @@ int parsersstoll(FILE *rf)
   curelementdata[0] = 0;
   curattdata[0] = 0;
   
+  /* Hopefully, this won't fall down on comments... */
+  
   while ((cchar = (char *) fgetc(rf)) != EOF)
   {
     if (cchar == '<')
@@ -318,6 +320,7 @@ int parsersstoll(FILE *rf)
       ineletag = 1;
       curelementdata[cedi] = 0;
       cedi = 0;
+      indq = 0; /* Force indq to be off, as quotes outside the tag don't matter! */
     }
     else if (cchar == '?')
     {
@@ -2701,7 +2704,64 @@ int parsersstoll(FILE *rf)
             }
           }
         }
-        
+        else if (streq_i(curepn->name,"source"))
+        {
+          if (initem && !inimage && !intxtinp)
+          {
+            if (curitem == NULL)
+            {
+              if (curchan != NULL)
+                curitem = createitempropnode(title,link,desc,curchan->chanid);
+              else
+                curitem = createitempropnode(title,link,desc,nextchanid);
+              if (curitem == NULL)
+              {
+                /* Free everything and end. */
+              }
+              if (title != NULL) free(title);
+              if (link != NULL) free(link);
+              if (desc != NULL) free(desc);
+              title = NULL;
+              link = NULL;
+              desc = NULL;
+            }
+            if (curitem->source.url == NULL && curitem->source.name == NULL)
+            {
+              curitem->source.name = (char *) malloc(sizeof(char)*(1+strlen(curepn->data)));
+              if (curitem->source.name == NULL)
+              {
+                /* Free everything and end. */
+              }
+              strcpy(curitem->source.name,curepn->data);
+              for (epptr = curepn->attlist; epptr != NULL; epptr = epptr->next)
+              {
+                if (streq_i(epptr->name,"url"))
+                {
+                  curitem->source.url = (char *) malloc(sizeof(char)*(1+strlen(epptr->data)));
+                  if (curitem->source.url == NULL)
+                  {
+                    /* Free everything and end. */
+                  }
+                  if (epptr->data[0] == '"' && epptr->data[strlen(epptr->data)-1] == '"' && strlen(epptr->data)>1)
+                  {
+                    epptr->data[strlen(epptr->data)-1] = 0;
+                    strcpy(curitem->source.url,epptr->data+sizeof(char));
+                  }
+                  else
+                  {
+                    strcpy(curitem->source.url,epptr->data);
+                  }
+                  break;
+                }
+              }
+              
+            }
+          }
+        }
+        else if (streq_i(curepn->name,"feed"))
+        {
+          /* It's ATOM!  Abort!  Abort! */
+        }
         
         
         /* Remove the epn and revert to the previous one */
@@ -2766,4 +2826,13 @@ int parsersstoll(FILE *rf)
   if (ferror(rf))
   {
   }
+  return 1;
+  
+ISATOM:
+  
+  return -2;
+  
+OOMEMERROR:
+  
+  return -1;
 }
