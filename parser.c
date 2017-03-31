@@ -293,7 +293,7 @@ int parsersstoll(FILE *rf)
   char cchar = 0;
   int inatt = 0, inelename = 0, ineletag = 0, inctag = 0, inattname = 0, 
       inattdata = 0, issingletag = 0, initem = 0, inchan = 0, inimage = 0, 
-      intxtinp = 0;
+      intxtinp = 0, indq = 0;
   elementpnode *curepn = NULL;
   itempropnode *curitem = NULL;
   chanpropnode *curchan = NULL;
@@ -375,14 +375,90 @@ int parsersstoll(FILE *rf)
       }
       else if (inattdata)
       {
-        inattdata = 0;
-        inattname = 1;
-        curattdata[cadi] = 0;
-        cadi = 0;
-        if (addatttoepn(curattname, curattdata, curepn) == NULL)
+        if (indq)
         {
-          /* Free everything and end! */
+          /* Add to whatever... */
+          if (inelename)
+          {
+            curelementname[ceni] = cchar;
+            ceni++;
+          }
+          else if (inattname)
+          {
+            curattname[cani] = cchar;
+            cchar++;
+          }
+          else if (inattdata)
+          {
+            curattdata[cadi] = cchar;
+            cchar++;
+          }
+          else if (!ineletag && curepn != NULL)
+          {
+            curelementdata[cedi] = cchar;
+            cchar++;
+          }
         }
+        else
+        {
+          inattdata = 0;
+          inattname = 1;
+          curattdata[cadi] = 0;
+          cadi = 0;
+          if (addatttoepn(curattname, curattdata, curepn) == NULL)
+          {
+            /* Free everything and end! */
+          }
+        }
+      }
+      else
+      {
+        /* Add to whatever... */
+        if (inelename && !inctag) /* Warning: non-standard! */
+        {
+          curelementname[ceni] = cchar;
+          ceni++;
+        }
+        else if (inattname)
+        {
+          curattname[cani] = cchar;
+          cchar++;
+        }
+        else if (inattdata)
+        {
+          curattdata[cadi] = cchar;
+          cchar++;
+        }
+        else if (!ineletag && curepn != NULL)
+        {
+          curelementdata[cedi] = cchar;
+          cchar++;
+        }
+      }
+    }
+    else if (cchar == '"')
+    {
+      indq = 1 - indq;
+      /* Add to whatever... */
+      if (inelename)
+      {
+        curelementname[ceni] = cchar;
+        ceni++;
+      }
+      else if (inattname)
+      {
+        curattname[cani] = cchar;
+        cchar++;
+      }
+      else if (inattdata)
+      {
+        curattdata[cadi] = cchar;
+        cchar++;
+      }
+      else if (!ineletag && curepn != NULL)
+      {
+        curelementdata[cedi] = cchar;
+        cchar++;
       }
       
     }
@@ -500,7 +576,7 @@ int parsersstoll(FILE *rf)
         else if (streq_i(curepn->name,"image")) inimage = 1;
         else if (streq_i(curepn->name,"textinput")) intxtinp = 1;
       }
-      else if (inattdata)
+      else if (inattdata && !indq)
       {
         inattdata = 0;
         inattname = 0;
@@ -512,7 +588,27 @@ int parsersstoll(FILE *rf)
         }
       }
       
-      ineletag = 0;
+      if (inattdata && indq && !inelename)
+      {
+        /* Add to whatever... (Non-Standard) */
+        if (inattname)
+        {
+          curattname[cani] = cchar;
+          cchar++;
+        }
+        else if (inattdata)
+        {
+          curattdata[cadi] = cchar;
+          cchar++;
+        }
+        else if (!ineletag && curepn != NULL)
+        {
+          curelementdata[cedi] = cchar;
+          cchar++;
+        }
+      }
+      else ineletag = 0;
+      
       if (inctag)
       {
         curepn->data = (char *) malloc(sizeof(char)*(1+strlen(curelementdata)));
@@ -522,7 +618,7 @@ int parsersstoll(FILE *rf)
         }
         strcpy(curepn->data, curelementdata);
       }
-      if (inctag || issingletag)
+      if ((inctag || issingletag) && !indq)
       {
         issingletag = 0;
         inctag = 0;
@@ -2455,7 +2551,15 @@ int parsersstoll(FILE *rf)
               link = NULL;
               desc = NULL;
             }
-            
+            if (curitem == NULL)
+            {
+              curitem->author = (char *) malloc(sizeof(char)*(1+strlen(curepn->data)));
+              if (curitem->author == NULL)
+              {
+                /* Free everything and end. */
+              }
+              strcpy(curitem->author,curepn->data);
+            }
           }
         }
         
