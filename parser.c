@@ -548,6 +548,9 @@ int parsersstoll(FILE *rf)
             if (title != NULL) free(title);
             if (link != NULL) free(link);
             if (desc != NULL) free(desc);
+            title = NULL;
+            link = NULL;
+            desc = NULL;
           }
           if (curitem->title == NULL && title != NULL)
           {
@@ -581,6 +584,9 @@ int parsersstoll(FILE *rf)
             if (title != NULL) free(title);
             if (link != NULL) free(link);
             if (desc != NULL) free(desc);
+            title = NULL;
+            link = NULL;
+            desc = NULL;
           }
           if (curchan->title == NULL && title != NULL)
           {
@@ -909,6 +915,9 @@ int parsersstoll(FILE *rf)
               if (title != NULL) free(title);
               if (link != NULL) free(link);
               if (desc != NULL) free(desc);
+              title = NULL;
+              link = NULL;
+              desc = NULL;
             }
             if (curchan->language_main == NULL && curchan->language_sub == NULL)
             {
@@ -958,6 +967,9 @@ int parsersstoll(FILE *rf)
               if (title != NULL) free(title);
               if (link != NULL) free(link);
               if (desc != NULL) free(desc);
+              title = NULL;
+              link = NULL;
+              desc = NULL;
             }
             if (curchan->copyright == NULL)
             {
@@ -985,6 +997,9 @@ int parsersstoll(FILE *rf)
               if (title != NULL) free(title);
               if (link != NULL) free(link);
               if (desc != NULL) free(desc);
+              title = NULL;
+              link = NULL;
+              desc = NULL;
             }
             if (curchan->managingeditor == NULL)
             {
@@ -1012,6 +1027,9 @@ int parsersstoll(FILE *rf)
               if (title != NULL) free(title);
               if (link != NULL) free(link);
               if (desc != NULL) free(desc);
+              title = NULL;
+              link = NULL;
+              desc = NULL;
             }
             if (curchan->webmaster == NULL)
             {
@@ -1042,6 +1060,9 @@ int parsersstoll(FILE *rf)
               if (title != NULL) free(title);
               if (link != NULL) free(link);
               if (desc != NULL) free(desc);
+              title = NULL;
+              link = NULL;
+              desc = NULL;
             }
             if (curitem->pubdate.fulldate == NULL)
             {
@@ -1320,6 +1341,9 @@ int parsersstoll(FILE *rf)
               if (title != NULL) free(title);
               if (link != NULL) free(link);
               if (desc != NULL) free(desc);
+              title = NULL;
+              link = NULL;
+              desc = NULL;
             }
             if (curchan->pubdate.fulldate == NULL)
             {
@@ -1601,6 +1625,9 @@ int parsersstoll(FILE *rf)
               if (title != NULL) free(title);
               if (link != NULL) free(link);
               if (desc != NULL) free(desc);
+              title = NULL;
+              link = NULL;
+              desc = NULL;
             }
             if (curchan->lastbuilddate.fulldate == NULL)
             {
@@ -1928,6 +1955,9 @@ int parsersstoll(FILE *rf)
               if (title != NULL) free(title);
               if (link != NULL) free(link);
               if (desc != NULL) free(desc);
+              title = NULL;
+              link = NULL;
+              desc = NULL;
             }
             if (curchan->generator == NULL)
             {
@@ -1955,6 +1985,9 @@ int parsersstoll(FILE *rf)
               if (title != NULL) free(title);
               if (link != NULL) free(link);
               if (desc != NULL) free(desc);
+              title = NULL;
+              link = NULL;
+              desc = NULL;
             }
             if (curchan->docs == NULL)
             {
@@ -1982,6 +2015,9 @@ int parsersstoll(FILE *rf)
               if (title != NULL) free(title);
               if (link != NULL) free(link);
               if (desc != NULL) free(desc);
+              title = NULL;
+              link = NULL;
+              desc = NULL;
             }
             curchan->ttl = atol(curepn->data);
           }
@@ -2001,6 +2037,9 @@ int parsersstoll(FILE *rf)
               if (title != NULL) free(title);
               if (link != NULL) free(link);
               if (desc != NULL) free(desc);
+              title = NULL;
+              link = NULL;
+              desc = NULL;
             }
           }
           else if (initem && !intxtinp)
@@ -2018,6 +2057,9 @@ int parsersstoll(FILE *rf)
               if (title != NULL) free(title);
               if (link != NULL) free(link);
               if (desc != NULL) free(desc);
+              title = NULL;
+              link = NULL;
+              desc = NULL;
             }
           }
           for (epptr = curepn->attlist; epptr != NULL; epptr = epptr->next)
@@ -2176,6 +2218,9 @@ int parsersstoll(FILE *rf)
               if (title != NULL) free(title);
               if (link != NULL) free(link);
               if (desc != NULL) free(desc);
+              title = NULL;
+              link = NULL;
+              desc = NULL;
             }
             int hoursn = 0, hoursi = 0;
             long hourd = 0;
@@ -2228,6 +2273,9 @@ int parsersstoll(FILE *rf)
               if (title != NULL) free(title);
               if (link != NULL) free(link);
               if (desc != NULL) free(desc);
+              title = NULL;
+              link = NULL;
+              desc = NULL;
             }
             int daysn = 0, daysi = 0;
             for (epptr = curepn->attlist; epptr != NULL; epptr = epptr->next)
@@ -2383,6 +2431,31 @@ int parsersstoll(FILE *rf)
                 /* Free everything and end. */
               }
             }
+          }
+        }
+        /* Elements of Item */
+        else if (streq_i(curepn->name,"author"))
+        {
+          if (initem && !inimage && !intxtinp)
+          {
+            if (curitem == NULL)
+            {
+              if (curchan != NULL)
+                curitem = createitempropnode(title,link,desc,curchan->chanid);
+              else
+                curitem = createitempropnode(title,link,desc,nextchanid);
+              if (curitem == NULL)
+              {
+                /* Free everything and end. */
+              }
+              if (title != NULL) free(title);
+              if (link != NULL) free(link);
+              if (desc != NULL) free(desc);
+              title = NULL;
+              link = NULL;
+              desc = NULL;
+            }
+            
           }
         }
         
