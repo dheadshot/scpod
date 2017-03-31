@@ -508,6 +508,7 @@ int parsersstoll(FILE *rf)
       {
         issingletag = 1;
       }
+      else if (ineletag && inattdata && !indq) issingletag = 1;
       else
       {
         /* Add to whatever... */
