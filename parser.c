@@ -1029,6 +1029,284 @@ int parsersstoll(FILE *rf)
         {
           if (initem && !inimage && !intxtinp)
           {
+            if (curitem == NULL)
+            {
+              if (curchan != NULL)
+                curitem = createitempropnode(title,link,desc,curchan->chanid);
+              else
+                curitem = createitempropnode(title,link,desc,nextchanid);
+              if (curitem == NULL)
+              {
+                /* Free everything and end. */
+              }
+              if (title != NULL) free(title);
+              if (link != NULL) free(link);
+              if (desc != NULL) free(desc);
+            }
+            if (curitem->pubdate.fulldate == NULL)
+            {
+              curitem->pubdate.fulldate = (char *) malloc(sizeof(char)*(1+strlen(curepn->data)));
+              if (curitem->pubdate.fulldate == NULL)
+              {
+                /* Free everything and end. */
+              }
+              strcpy(curitem->pubdate.fulldate,curepn->data);
+              /* Create other date items... */
+              char *datetok = NULL;
+              int tokn = 0;
+              datetok = strtok(curitem->pubdate.fulldate,", :");
+              while (datetok != NULL)
+              {
+                if (tokn == 0)
+                {
+                  if (isalpha(datetok[0]))
+                  {
+                    strcpy(curitem->pubdate.dayname,datetok);
+                  }
+                  else
+                  {
+                    curitem->pubdate.dayname[0] = 0;
+                  }
+                  tokn++;
+                }
+                else if (tokn == 1)
+                {
+                  curitem->pubdate.daynum = atoi(datetok);
+                  tokn++;
+                }
+                else if (tokn == 2)
+                {
+                  if (startsame_i(datetok,"Jan"))
+                  {
+                    curitem->pubdate.month = 1;
+                  }
+                  else if (startsame_i(datetok,"Feb"))
+                  {
+                    curitem->pubdate.month = 2;
+                  }
+                  else if (startsame_i(datetok,"Mar"))
+                  {
+                    curitem->pubdate.month = 3;
+                  }
+                  else if (startsame_i(datetok,"Apr"))
+                  {
+                    curitem->pubdate.month = 4;
+                  }
+                  else if (startsame_i(datetok,"May"))
+                  {
+                    curitem->pubdate.month = 5;
+                  }
+                  else if (startsame_i(datetok,"Jun"))
+                  {
+                    curitem->pubdate.month = 6;
+                  }
+                  else if (startsame_i(datetok,"Jul"))
+                  {
+                    curitem->pubdate.month = 7;
+                  }
+                  else if (startsame_i(datetok,"Aug"))
+                  {
+                    curitem->pubdate.month = 8;
+                  }
+                  else if (startsame_i(datetok,"Sep"))
+                  {
+                    curitem->pubdate.month = 9;
+                  }
+                  else if (startsame_i(datetok,"Oct"))
+                  {
+                    curitem->pubdate.month = 10;
+                  }
+                  else if (startsame_i(datetok,"Nov"))
+                  {
+                    curitem->pubdate.month = 11;
+                  }
+                  else if (startsame_i(datetok,"Dec"))
+                  {
+                    curitem->pubdate.month = 12;
+                  }
+                  else
+                  {
+                    curitem->pubdate.month = 0;
+                  }
+                  tokn++;
+                }
+                else if (tokn == 3)
+                {
+                  long pdiyear = atol(datetok);
+                  if (pdiyear<51) pdiyear += 2000;
+                  else if (pdiyear<100) pdiyear += 1900;
+                  curitem->pubdate.year = pdiyear;
+                  tokn++;
+                }
+                else if (tokn == 4)
+                {
+                  curitem->pubdate.hour = atoi(datetok);
+                  tokn++;
+                }
+                else if (tokn == 5)
+                {
+                  curitem->pubdate.minute = atoi(datetok);
+                  tokn++;
+                }
+                else if (tokn == 6)
+                {
+                  if (isdigit(datetok[0]) && strlen(datetok)<=2)
+                  {
+                    curitem->pubdate.second = atoi(datetok);
+                  }
+                  else curitem->pubdate.second = 0;
+                  tokn++;
+                }
+                else if (tokn == 7)
+                {
+                  char pdioh[3] = "";
+                  strcpy(curitem->pubdate.tzone,datetok);
+                  curitem->pubdate.gmtoffsetm = 0;
+                  if (streq_i(datetok,"UT") || streq_i(datetok, "UTC") || streq_i(datetok,"GMT") || streq_i(datetok,"Z"))
+                  {
+                    curitem->pubdate.gmtoffseth = 0;
+                  }
+                  else if (streq_i(datetok,"BST") || streq_i(datetok,"N"))
+                  {
+                    curitem->pubdate.gmtoffseth = 1;
+                  }
+                  else if (streq_i(datetok,"O"))
+                  {
+                    curitem->pubdate.gmtoffseth = 2;
+                  }
+                  else if (streq_i(datetok,"P"))
+                  {
+                    curitem->pubdate.gmtoffseth = 3;
+                  }
+                  else if (streq_i(datetok,"Q"))
+                  {
+                    curitem->pubdate.gmtoffseth = 4;
+                  }
+                  else if (streq_i(datetok,"R"))
+                  {
+                    curitem->pubdate.gmtoffseth = 5;
+                  }
+                  else if (streq_i(datetok,"S"))
+                  {
+                    curitem->pubdate.gmtoffseth = 6;
+                  }
+                  else if (streq_i(datetok,"T"))
+                  {
+                    curitem->pubdate.gmtoffseth = 7;
+                  }
+                  else if (streq_i(datetok,"U"))
+                  {
+                    curitem->pubdate.gmtoffseth = 8;
+                  }
+                  else if (streq_i(datetok,"V"))
+                  {
+                    curitem->pubdate.gmtoffseth = 9;
+                  }
+                  else if (streq_i(datetok,"W"))
+                  {
+                    curitem->pubdate.gmtoffseth = 10;
+                  }
+                  else if (streq_i(datetok,"X"))
+                  {
+                    curitem->pubdate.gmtoffseth = 11;
+                  }
+                  else if (streq_i(datetok,"Y"))
+                  {
+                    curitem->pubdate.gmtoffseth = 12;
+                  }
+                  else if (streq_i(datetok,"A"))
+                  {
+                    curitem->pubdate.gmtoffseth = -1;
+                  }
+                  else if (streq_i(datetok,"B"))
+                  {
+                    curitem->pubdate.gmtoffseth = -2;
+                  }
+                  else if (streq_i(datetok,"C"))
+                  {
+                    curitem->pubdate.gmtoffseth = -3;
+                  }
+                  else if (streq_i(datetok,"D") || streq_i(datetok,"EDT"))
+                  {
+                    curitem->pubdate.gmtoffseth = -4;
+                  }
+                  else if (streq_i(datetok,"E") || streq_i(datetok,"EST") || streq_i(datetok,"CDT"))
+                  {
+                    curitem->pubdate.gmtoffseth = -5;
+                  }
+                  else if (streq_i(datetok,"F") || streq_i(datetok,"CST") || streq_i(datetok,"MDT"))
+                  {
+                    curitem->pubdate.gmtoffseth = -6;
+                  }
+                  else if (streq_i(datetok,"G") || streq_i(datetok,"MST") || streq_i(datetok,"PDT"))
+                  {
+                    curitem->pubdate.gmtoffseth = -7;
+                  }
+                  else if (streq_i(datetok,"H") || streq_i(datetok,"PST"))
+                  {
+                    curitem->pubdate.gmtoffseth = -8;
+                  }
+                  else if (streq_i(datetok,"I"))
+                  {
+                    curitem->pubdate.gmtoffseth = -9;
+                  }
+                  else if (streq_i(datetok,"K"))
+                  {
+                    curitem->pubdate.gmtoffseth = -10;
+                  }
+                  else if (streq_i(datetok,"L"))
+                  {
+                    curitem->pubdate.gmtoffseth = -11;
+                  }
+                  else if (streq_i(datetok,"M"))
+                  {
+                    curitem->pubdate.gmtoffseth = -12;
+                  }
+                  else if (datetok[0] == '+')
+                  {
+                    if (strlen(datetok)<=3)
+                    {
+                      curitem->pubdate.gmtoffseth = atoi(datetok+sizeof(char));
+                    }
+                    else if (strlen(datetok)==5)
+                    {
+                      pdioh[0] = datetok[1];
+                      pdioh[1] = datetok[2];
+                      pdioh[2] = 0;
+                      curitem->pubdate.gmtoffseth = atoi(pdioh);
+                      curitem->pubdate.gmtoffsetm = atoi(datetok+(sizeof(char)*3);
+                      
+                    }
+                  }
+                  else if (isdigit(datetok[0]) && strlen(datetok)==4)
+                  {
+                    pdioh[0] = datetok[0];
+                    pdioh[1] = datetok[1];
+                    pdioh[2] = 0;
+                    curitem->pubdate.gmtoffseth = atoi(pdioh);
+                    curitem->pubdate.gmtoffsetm = atoi(datetok+(sizeof(char)*2);
+                  }
+                  else if (datetok[0] == '-')
+                  {
+                    if (strlen(datetok)<=3)
+                    {
+                      curitem->pubdate.gmtoffseth = 0 - atoi(datetok+sizeof(char));
+                    }
+                    else if (strlen(datetok)==5)
+                    {
+                      pdioh[0] = datetok[1];
+                      pdioh[1] = datetok[2];
+                      pdioh[2] = 0;
+                      curitem->pubdate.gmtoffseth = 0 - atoi(pdioh);
+                      curitem->pubdate.gmtoffsetm = 0 - atoi(datetok+(sizeof(char)*3);
+                      
+                    }
+                  }
+                  tokn++;
+                }
+                datetok = strtok(NULL,", :");
+              }
+            }
           }
           else if (inchan && !initem && !inimage && !intxtinp)
           {
@@ -1277,6 +1555,14 @@ int parsersstoll(FILE *rf)
                       curchan->pubdate.gmtoffsetm = atoi(datetok+(sizeof(char)*3);
                       
                     }
+                  }
+                  else if (isdigit(datetok[0]) && strlen(datetok)==4)
+                  {
+                    pdcoh[0] = datetok[0];
+                    pdcoh[1] = datetok[1];
+                    pdcoh[2] = 0;
+                    curchan->pubdate.gmtoffseth = atoi(pdcoh);
+                    curchan->pubdate.gmtoffsetm = atoi(datetok+(sizeof(char)*2);
                   }
                   else if (datetok[0] == '-')
                   {
