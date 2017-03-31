@@ -2551,7 +2551,7 @@ int parsersstoll(FILE *rf)
               link = NULL;
               desc = NULL;
             }
-            if (curitem == NULL)
+            if (curitem->author == NULL)
             {
               curitem->author = (char *) malloc(sizeof(char)*(1+strlen(curepn->data)));
               if (curitem->author == NULL)
@@ -2559,6 +2559,38 @@ int parsersstoll(FILE *rf)
                 /* Free everything and end. */
               }
               strcpy(curitem->author,curepn->data);
+            }
+          }
+        }
+        else if (streq_i(curepn->name,"comments"))
+        {
+          if (initem && !inimage && !intxtinp)
+          {
+            if (curitem == NULL)
+            {
+              if (curchan != NULL)
+                curitem = createitempropnode(title,link,desc,curchan->chanid);
+              else
+                curitem = createitempropnode(title,link,desc,nextchanid);
+              if (curitem == NULL)
+              {
+                /* Free everything and end. */
+              }
+              if (title != NULL) free(title);
+              if (link != NULL) free(link);
+              if (desc != NULL) free(desc);
+              title = NULL;
+              link = NULL;
+              desc = NULL;
+            }
+            if (curitem->comments == NULL)
+            {
+              curitem->comments = (char *) malloc(sizeof(char)*(1+strlen(curepn->data)));
+              if (curitem->comments == NULL)
+              {
+                /* Free everything and end. */
+              }
+              strcpy(curitem->comments,curepn->data);
             }
           }
         }
