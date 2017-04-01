@@ -119,11 +119,17 @@ typedef struct elementpnode_struct {
 
 int createcategory(enum categorytype ctype, unsigned long refid, char *domain, 
                    char *category);
+void freeacatn(catnode *acatn);
+void destroycategories();
 chanpropnode *createchanpropnode(char *title, char *link, char *description); 
 /* Assign optional elements later */
+void freeacpn(chanpropnode *acpn);
+void destroychannels();
 itempropnode *createitempropnode(char *title, char *link, char *description, 
                                  unsigned long chanid);
 /* Assign optional elements later */
+void freeanipn(itempropnode *anipn);
+void destroyitems();
 elementpnode *createelementpnode(char *name, char *data);
 elementpnode *addatttoepn(char *name, char *data, elementpnode *epn);
 void freeepn(elementpnode *epn);

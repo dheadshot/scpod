@@ -15,6 +15,8 @@ elementpnode *eproot = NULL, *epptr = NULL;
 unsigned long nextitemid = 1;
 unsigned long nextchanid = 1;
 
+char *rssversion = NULL;
+
 
 int createcategory(enum categorytype ctype, unsigned long refid, char *domain, 
                    char *category)
@@ -59,6 +61,28 @@ int createcategory(enum categorytype ctype, unsigned long refid, char *domain,
     catptr->next = acat;
   }
   return 1;
+}
+
+void freeacatn(catnode *acatn)
+{
+  if (acatn == NULL) return;
+  if (acatn->domain != NULL) free(acatn->domain);
+  if (acatn->category != NULL) free(acatn->category);
+  free(acatn);
+}
+
+void destroycategories()
+{
+  catnode *tcatn = NULL;
+  catptr = catroot;
+  while (catptr != NULL)
+  {
+    tcatn = catptr->next;
+    freeacatn(catptr);
+    catptr = tcatn;
+  }
+  catroot = NULL;
+  catptr = NULL;
 }
 
 chanpropnode *createchanpropnode(char *title, char *link, char *description)
@@ -118,6 +142,44 @@ chanpropnode *createchanpropnode(char *title, char *link, char *description)
   return acpn;
 }
 
+void freeacpn(chanpropnode *acpn)
+{
+  if (acpn == NULL) return;
+  if (acpn->title != NULL) free(acpn->title);
+  if (acpn->link != NULL) free(acpn->link);
+  if (acpn->description != NULL) free(acpn->description);
+  if (acpn->language_main != NULL) free(acpn->language_main);
+  if (acpn->language_sub != NULL) free(acpn->language_sub);
+  if (acpn->copyright != NULL) free(acpn->copyright);
+  if (acpn->managingeditor != NULL) free(acpn->managingeditor);
+  if (acpn->webmaster != NULL) free(acpn->webmaster);
+  if (acpn->generator != NULL) free(acpn->generator);
+  if (acpn->docs != NULL) free(acpn->docs);
+  if (acpn->pubdate.fulldate != NULL) free(acpn->pubdate.fulldate);
+  if (acpn->lastbuilddate.fulldate != NULL) free(acpn->lastbuilddate.fulldate);
+  if (acpn->image.url != NULL) free(acpn->image.url);
+  if (acpn->image.title != NULL) free(acpn->image.title);
+  if (acpn->image.link != NULL) free(acpn->image.link);
+  if (acpn->image.description != NULL) free(acpn->image.description);
+  if (acpn->skiphours != NULL) free(acpn->skiphours);
+  if (acpn->skipdays != NULL) freentsa(acpn->skipdays);
+  free(acpn);
+}
+
+void destroychannels()
+{
+  chanpropnode *tcpn = NULL;
+  cpptr = cproot;
+  while (cpptr != NULL)
+  {
+    tcpn = cpptr->next;
+    freeacpn(cpptr);
+    cpptr = tcpn;
+  }
+  cproot = NULL;
+  cpptr = NULL;
+}
+
 itempropnode *createitempropnode(char *title, char *link, char *description, 
                                  unsigned long chanid)
 /* Assign optional elements later */
@@ -175,6 +237,41 @@ itempropnode *createitempropnode(char *title, char *link, char *description,
     ipptr->next = anipn;
   }
   return anipn;
+}
+
+void freeanipn(itempropnode *anipn)
+{
+  if (anipn == NULL) return;
+  if (anipn->title != NULL) free(anipn->title);
+  if (anipn->link != NULL) free(anipn->link);
+  if (anipn->description != NULL) free(anipn->description);
+  if (anipn->author != NULL) free(anipn->author);
+  if (anipn->comments != NULL) free(anipn->comments);
+  if (anipn->enclosure.url != NULL) free(anipn->enclosure.url);
+  if (anipn->enclosure.type != NULL) free(anipn->enclosure.type);
+  if (anipn->guid.guid != NULL) free(anipn->guid.guid);
+  if (anipn->source.url != NULL) free(anipn->source.url);
+  if (anipn->source.name != NULL) free(anipn->source.name);
+  if (anipn->image.url != NULL) free(anipn->image.url);
+  if (anipn->image.title != NULL) free(anipn->image.title);
+  if (anipn->image.link != NULL) free(anipn->image.link);
+  if (anipn->image.description != NULL) free(anipn->image.description);
+  if (anipn->pubdate.fulldate != NULL) free(anipn->pubdate.fulldate);
+  free(anipn);
+}
+
+void destroyitems()
+{
+  itempropnode *tipn = NULL;
+  ipptr = iproot;
+  while (ipptr != NULL)
+  {
+    tipn = ipptr->next;
+    freeanipn(ipptr);
+    ipptr = tipn;
+  }
+  iproot = NULL;
+  ipptr = NULL;
 }
 
 elementpnode *createelementpnode(char *name, char *data)
@@ -323,7 +420,7 @@ int parsersstoll(FILE *rf)
       cedi = 0;
       indq = 0; /* Force indq to be off, as quotes outside the tag don't matter! */
     }
-    else if (cchar == '?')
+    else if (cchar == '?' || cchar == '!')
     {
       if (inelename)
       {
@@ -636,6 +733,29 @@ int parsersstoll(FILE *rf)
         if (streq_i(curepn->name, "rss"))
         {
           /* Ignore the overarching element (though maybe do something with version?) */
+          if (rssversion == NULL)
+          {
+            for (epptr = curepn->attlist; epptr != NULL; epptr = epptr->next)
+            {
+              if (streq_i(epptr->name,"version"))
+              {
+                rssversion = (char *) malloc(sizeof(char)*(1+strlen(epptr->data)));
+                if (rssversion == NULL)
+                {
+                  /* Free everything and end. */
+                  goto OOMEMERROR;
+                }
+                if (epptr->data[0] == '"' && epptr->data[strlen(epptr->data)-1] == '"')
+                {
+                  epptr->data[strlen(epptr->data)-1] = 0;
+                  strcpy(rssversion, epptr->data+sizeof(char));
+                }
+                else strcpy(rssversion,epptr->data);
+                break;
+              }
+            }
+            
+          }
         }
         else if (streq_i(curepn->name, "item"))
         {
@@ -2912,15 +3032,41 @@ int parsersstoll(FILE *rf)
     }
     
   }
+  int err_end_val;
+  
   if (ferror(rf))
   {
     /* Deal with errors. */
+    err_end_val = 0;
+    goto ERROREND;
   }
-  return 1;
+  else
+  {
+    /* Free stuff that we don't need... */
+    /* Free local strings */
+    free(curelementdata);
+    free(curattdata);
+    if (title != NULL) free(title);
+    title = NULL;
+    if (link != NULL) free(link);
+    link = NULL;
+    if (desc != NULL) free(desc);
+    desc = NULL;
+    /* Free all epns */
+    epptr = eproot;
+    while (epptr != NULL)
+    {
+      curepn = epptr->next;
+      freeepn(epptr);
+      epptr = curepn;
+    }
+    eproot = NULL;
+    epptr = NULL;
+    
+    return 1;
+  }
   
   /* This next bit is kind of a bodge. */
-  
-  int err_end_val;
   
 ISATOM:
   err_end_val = -2;
@@ -2951,10 +3097,15 @@ ERROREND:
   }
   eproot = NULL;
   epptr = NULL;
+  /* Free versioning info */
+  if (rssversion != NULL) free(rssversion);
+  rssversion = NULL;
   /* Free All items */
-  destroyitems();    /* Doesn't exist yet */
+  destroyitems();
   /* Free all channels */
-  destroychannels(); /* Doesn't exist yet */
+  destroychannels();
+  /* Free all categories */
+  destroycategories();
   
   return err_end_val;
 }
