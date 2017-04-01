@@ -15,5 +15,10 @@ advised to get the MSYS version of wget as this supports HTTPS.
 
 ## Prerequisites for Running
 
-* A non-interctive program for downloading, e.g. wget, curl, or, at a push, 
+* A non-interactive program for downloading, e.g. wget, curl, or (at a push) 
   lynx with the "-dump" option (though this method does not support HTTPS).
+
+## Licence
+
+scPOD uses a modified version of the MIT Licence.  See the file "LICENSE" for 
+details.
