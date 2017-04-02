@@ -8,7 +8,7 @@
 #include "main.h"
 
 
-int main(int argc char *argv[])
+int main(int argc, char *argv[])
 {
   if (argc != 2 || streq_i(argv[1],"--help"))
   {
