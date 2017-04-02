@@ -9,7 +9,7 @@
 
 chanpropnode *cproot = NULL, *cpptr = NULL;
 itempropnode *iproot = NULL, *ipptr = NULL;
-catnode *catroot = NULL; *catptr = NULL;
+catnode *catroot = NULL, *catptr = NULL;
 elementpnode *eproot = NULL, *epptr = NULL;
 
 unsigned long nextitemid = 1;
@@ -277,7 +277,7 @@ void destroyitems()
 elementpnode *createelementpnode(char *name, char *data)
 {
   elementpnode *anepn = (elementpnode *) malloc(sizeof(elementpnode));
-  if (anepn == NULL) return NULL /* OoM! */
+  if (anepn == NULL) return NULL; /* OoM! */
   anepn->next = NULL;
   anepn->attlist = NULL;
   anepn->isattribute = 0;
@@ -318,7 +318,7 @@ elementpnode *addatttoepn(char *name, char *data, elementpnode *epn)
   if (epn == NULL) return NULL;
   elementpnode *anepn = (elementpnode *) malloc(sizeof(elementpnode));
   elementpnode *epnaptr;
-  if (anepn == NULL) return NULL /* OoM! */
+  if (anepn == NULL) return NULL; /* OoM! */
   anepn->next = NULL;
   anepn->attlist = NULL;
   anepn->isattribute = 1;
@@ -359,7 +359,7 @@ void freeepn(elementpnode *epn)
   elementpnode *tepn = NULL;
   if (epn->name != NULL) free(epn->name);
   if (epn->data != NULL) free(epn->data);
-  if (isattribute == 0)
+  if (epn->isattribute == 0)
   {
     epptr = epn->attlist;
     while (epptr != NULL)
@@ -789,9 +789,9 @@ int parsersstoll(FILE *rf)
             curitem->link = link; /* Shouldn't really do it this way, but it saves memory... */
             link = NULL;
           }
-          if (curitem->desc == NULL && desc != NULL)
+          if (curitem->description == NULL && desc != NULL)
           {
-            curitem->desc = desc; /* Shouldn't really do it this way, but it saves memory... */
+            curitem->description = desc; /* Shouldn't really do it this way, but it saves memory... */
             desc = NULL;
           }
           
@@ -826,9 +826,9 @@ int parsersstoll(FILE *rf)
             curchan->link = link; /* Shouldn't really do it this way, but it saves memory... */
             link = NULL;
           }
-          if (curchan->desc == NULL && desc != NULL)
+          if (curchan->description == NULL && desc != NULL)
           {
-            curchan->desc = desc; /* Shouldn't really do it this way, but it saves memory... */
+            curchan->description = desc; /* Shouldn't really do it this way, but it saves memory... */
             desc = NULL;
           }
           curchan = NULL;
@@ -1072,15 +1072,15 @@ int parsersstoll(FILE *rf)
                     goto OOMEMERROR;
                   }
                 }
-                else if (curitem->desc == NULL)
+                else if (curitem->description == NULL)
                 {
-                  curitem->desc = (char *) malloc(sizeof(char)*(1+strlen(desc)));
-                  if (curitem->desc == NULL)
+                  curitem->description = (char *) malloc(sizeof(char)*(1+strlen(desc)));
+                  if (curitem->description == NULL)
                   {
                     /* Free everything and end. */
                     goto OOMEMERROR;
                   }
-                  strcpy(curitem->desc, desc);
+                  strcpy(curitem->description, desc);
                 }
               }
               else if (inchan && !inimage && !intxtinp)
@@ -1094,15 +1094,15 @@ int parsersstoll(FILE *rf)
                     goto OOMEMERROR;
                   }
                 }
-                else if (curchan->desc == NULL)
+                else if (curchan->description == NULL)
                 {
-                  curchan->desc = (char *) malloc(sizeof(char)*(1+strlen(desc)));
-                  if (curitem->desc == NULL)
+                  curchan->description = (char *) malloc(sizeof(char)*(1+strlen(desc)));
+                  if (curitem->description == NULL)
                   {
                     /* Free everything and end. */
                     goto OOMEMERROR;
                   }
-                  strcpy(curchan->desc, desc);
+                  strcpy(curchan->description, desc);
                 }
               }
               else if (inimage && !intxtinp)
@@ -1239,7 +1239,7 @@ int parsersstoll(FILE *rf)
             
           }
         }
-        else if (streq_i(curepn->name,"managingeditor")
+        else if (streq_i(curepn->name,"managingeditor"))
         {
           if (inchan && !initem && !inimage && !intxtinp)
           {
@@ -1557,7 +1557,7 @@ int parsersstoll(FILE *rf)
                       pdioh[1] = datetok[2];
                       pdioh[2] = 0;
                       curitem->pubdate.gmtoffseth = atoi(pdioh);
-                      curitem->pubdate.gmtoffsetm = atoi(datetok+(sizeof(char)*3);
+                      curitem->pubdate.gmtoffsetm = atoi(datetok+(sizeof(char)*3));
                       
                     }
                   }
@@ -1567,7 +1567,7 @@ int parsersstoll(FILE *rf)
                     pdioh[1] = datetok[1];
                     pdioh[2] = 0;
                     curitem->pubdate.gmtoffseth = atoi(pdioh);
-                    curitem->pubdate.gmtoffsetm = atoi(datetok+(sizeof(char)*2);
+                    curitem->pubdate.gmtoffsetm = atoi(datetok+(sizeof(char)*2));
                   }
                   else if (datetok[0] == '-')
                   {
@@ -1581,7 +1581,7 @@ int parsersstoll(FILE *rf)
                       pdioh[1] = datetok[2];
                       pdioh[2] = 0;
                       curitem->pubdate.gmtoffseth = 0 - atoi(pdioh);
-                      curitem->pubdate.gmtoffsetm = 0 - atoi(datetok+(sizeof(char)*3);
+                      curitem->pubdate.gmtoffsetm = 0 - atoi(datetok+(sizeof(char)*3));
                       
                     }
                   }
@@ -1840,7 +1840,7 @@ int parsersstoll(FILE *rf)
                       pdcoh[1] = datetok[2];
                       pdcoh[2] = 0;
                       curchan->pubdate.gmtoffseth = atoi(pdcoh);
-                      curchan->pubdate.gmtoffsetm = atoi(datetok+(sizeof(char)*3);
+                      curchan->pubdate.gmtoffsetm = atoi(datetok+(sizeof(char)*3));
                       
                     }
                   }
@@ -1850,7 +1850,7 @@ int parsersstoll(FILE *rf)
                     pdcoh[1] = datetok[1];
                     pdcoh[2] = 0;
                     curchan->pubdate.gmtoffseth = atoi(pdcoh);
-                    curchan->pubdate.gmtoffsetm = atoi(datetok+(sizeof(char)*2);
+                    curchan->pubdate.gmtoffsetm = atoi(datetok+(sizeof(char)*2));
                   }
                   else if (datetok[0] == '-')
                   {
@@ -1864,7 +1864,7 @@ int parsersstoll(FILE *rf)
                       pdcoh[1] = datetok[2];
                       pdcoh[2] = 0;
                       curchan->pubdate.gmtoffseth = 0 - atoi(pdcoh);
-                      curchan->pubdate.gmtoffsetm = 0 - atoi(datetok+(sizeof(char)*3);
+                      curchan->pubdate.gmtoffsetm = 0 - atoi(datetok+(sizeof(char)*3));
                       
                     }
                   }
@@ -2126,7 +2126,7 @@ int parsersstoll(FILE *rf)
                       lbdcoh[1] = datetok[2];
                       lbdcoh[2] = 0;
                       curchan->lastbuilddate.gmtoffseth = atoi(lbdcoh);
-                      curchan->lastbuilddate.gmtoffsetm = atoi(datetok+(sizeof(char)*3);
+                      curchan->lastbuilddate.gmtoffsetm = atoi(datetok+(sizeof(char)*3));
                       
                     }
                   }
@@ -2136,7 +2136,7 @@ int parsersstoll(FILE *rf)
                     lbdcoh[1] = datetok[1];
                     lbdcoh[2] = 0;
                     curchan->lastbuilddate.gmtoffseth = atoi(lbdcoh);
-                    curchan->lastbuilddate.gmtoffsetm = atoi(datetok+(sizeof(char)*2);
+                    curchan->lastbuilddate.gmtoffsetm = atoi(datetok+(sizeof(char)*2));
                   }
                   else if (datetok[0] == '-')
                   {
@@ -2150,7 +2150,7 @@ int parsersstoll(FILE *rf)
                       lbdcoh[1] = datetok[2];
                       lbdcoh[2] = 0;
                       curchan->lastbuilddate.gmtoffseth = 0 - atoi(lbdcoh);
-                      curchan->lastbuilddate.gmtoffsetm = 0 - atoi(datetok+(sizeof(char)*3);
+                      curchan->lastbuilddate.gmtoffsetm = 0 - atoi(datetok+(sizeof(char)*3));
                       
                     }
                   }
@@ -2598,7 +2598,7 @@ int parsersstoll(FILE *rf)
                       /* Free everything and end. */
                       goto OOMEMERROR;
                     }
-                    strcpy(curchan->skipdays,epptr->data);
+                    strcpy(curchan->skipdays[daysi],epptr->data);
                     daysi++;
                   }
                 }
@@ -3181,8 +3181,8 @@ void listdata()
       if (ipptr->chanid == cpptr->chanid)
       {
         printf("    Item %lu - %s\n", ipptr->itemid, ipptr->title);
-        printf("      Link: %s\n", ipptr->link;
-        printf("      Description: %s\n", ipptr->description;
+        printf("      Link: %s\n", ipptr->link);
+        printf("      Description: %s\n", ipptr->description);
         if (ipptr->author != NULL) printf("      Author: %s\n", ipptr->author);
         if (ipptr->comments != NULL) printf("      Comments: %s\n", ipptr->comments);
         if (ipptr->enclosure.url != NULL)
@@ -3198,7 +3198,7 @@ void listdata()
         }
         if (ipptr->source.name != NULL)
         {
-          printf("      Source: %s (%s)\n, ipptr->source.name, ipptr->source.url);
+          printf("      Source: %s (%s)\n", ipptr->source.name, ipptr->source.url);
         }
         if (ipptr->image.url != NULL)
         {
