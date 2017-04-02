@@ -357,6 +357,7 @@ elementpnode *addatttoepn(char *name, char *data, elementpnode *epn)
 void freeepn(elementpnode *epn)
 {
   elementpnode *tepn = NULL;
+  if (epn == NULL) return;
   if (epn->name != NULL) free(epn->name);
   if (epn->data != NULL) free(epn->data);
   if (epn->isattribute == 0)
@@ -368,13 +369,18 @@ void freeepn(elementpnode *epn)
       freeepn(epptr);
       epptr = tepn;
     }
+    epn->attlist = NULL;
     tepn = NULL;
     for (epptr = eproot; epptr != NULL; epptr = epptr->next)
     {
       if (epptr == epn) break;
       tepn = epptr;
     }
-    if (epptr == NULL) return;
+    if (epptr == NULL)
+    {
+      free(epn);
+      return;
+    }
     if (tepn == NULL) eproot = epptr->next;
     else tepn->next = epptr->next;
     free(epn);
@@ -385,7 +391,7 @@ void freeepn(elementpnode *epn)
 int parsersstoll(FILE *rf)
 {
   /* Returns: 1=worked, 0=File reading error, -1=Memory error, -2=Not RSS */
-  char curelementname[256] = "", curattname[256] = "", *curelementdata, *curattdata;
+  char curelementname[MAX_ELEN+1] = "", curattname[MAX_ATTN+1] = "", *curelementdata, *curattdata;
   long ceni=0,cani=0,cedi=0,cadi=0;
   char *title = NULL, *link = NULL, *desc = NULL;
   char cchar = 0;
@@ -397,28 +403,33 @@ int parsersstoll(FILE *rf)
   chanpropnode *curchan = NULL;
   
   
-  curelementdata = (char *) malloc(sizeof(char)*2048);
-  if (curelementdata == NULL) return 0; /* OoM! */
-  curattdata = (char *) malloc(sizeof(char)*1024);
+  curelementdata = (char *) malloc(sizeof(char)*(MAX_ELED+1));
+  if (curelementdata == NULL) return -1; /* OoM! */
+  curattdata = (char *) malloc(sizeof(char)*(MAX_ATTD+1));
   if (curattdata == NULL)
   {
     free(curelementdata);
-    return 0; /* OoM! */
+    return -1; /* OoM! */
   }
   curelementdata[0] = 0;
   curattdata[0] = 0;
   
   /* Hopefully, this won't fall down on XML comments... */
   
+  	unsigned long epndepth = 0;
+  
   while ((cchar = (char) fgetc(rf)) != EOF)
   {
     if (cchar == '<')
     {
-      inelename = 1;
-      ineletag = 1;
-      curelementdata[cedi] = 0;
-      cedi = 0;
-      indq = 0; /* Force indq to be off, as quotes outside the tag don't matter! */
+      if ((!ineletag))
+      {
+        inelename = 1;
+        ineletag = 1;
+        curelementdata[cedi] = 0;
+        cedi = 0;
+        indq = 0; /* Force indq to be off, as quotes outside the tag don't matter! */
+      }
     }
     else if (cchar == '?' || cchar == '!')
     {
@@ -429,36 +440,52 @@ int parsersstoll(FILE *rf)
       else
       {
         /* Add to whatever... */
-        if (inelename)
-        {
+        if (inelename && ceni<MAX_ELEN)
+        { /* Shouldn't occur */
           curelementname[ceni] = cchar;
           ceni++;
+          curelementname[ceni] = 0;
+          if (issingletag && endwith_(curelementname,"[CDATA["))
+          {
+            issingletag = 0;
+            inelename = 0;
+            ineletag = 0;
+            ceni = 0;
+            cedi = strlen(curelementdata);
+          }
         }
-        else if (inattname)
+        else if (inattname && cani<MAX_ATTN)
         {
           curattname[cani] = cchar;
-          cchar++;
+          cani++;
         }
-        else if (inattdata)
+        else if (inattdata && cadi<MAX_ATTD)
         {
           curattdata[cadi] = cchar;
-          cchar++;
+          cadi++;
         }
-        else if (!ineletag && curepn != NULL)
+        else if ((!ineletag) && curepn != NULL && cedi<MAX_ELED)
         {
           curelementdata[cedi] = cchar;
-          cchar++;
+          cedi++;
         }
         
       }
     }
-    else if (cchar == ' ')
+    else if (cchar == '\r')
     {
-      if (inelename && !inctag)
+      /* Ignore these */
+    }
+    else if (cchar == ' ' || cchar == '\t' || cchar == '\n')
+    {
+      if (inelename && !inctag && ceni>0)
       {
         inelename = 0;
         curelementname[ceni] = 0;
+        	printf("Found element \"%s\"",curelementname);
         curepn = createelementpnode(curelementname,NULL);
+        	epndepth++;
+        	printf("[%lu]\n",epndepth);
         if (curepn == NULL)
         {
           /* Free everything and end */
@@ -480,25 +507,34 @@ int parsersstoll(FILE *rf)
         if (indq)
         {
           /* Add to whatever... */
-          if (inelename)
+          if (inelename && ceni<MAX_ELEN)
           {
             curelementname[ceni] = cchar;
             ceni++;
+            curelementname[ceni] = 0;
+            if (issingletag && endwith_(curelementname,"[CDATA["))
+            {
+              issingletag = 0;
+              inelename = 0;
+              ineletag = 0;
+              ceni = 0;
+              cedi = strlen(curelementdata);
+            }
           }
-          else if (inattname)
+          else if (inattname && cani<MAX_ATTN)
           {
             curattname[cani] = cchar;
-            cchar++;
+            cani++;
           }
-          else if (inattdata)
+          else if (inattdata && cadi<MAX_ATTD)
           {
             curattdata[cadi] = cchar;
-            cchar++;
+            cadi++;
           }
-          else if (!ineletag && curepn != NULL)
+          else if ((!ineletag) && curepn != NULL && cedi<MAX_ELED)
           {
             curelementdata[cedi] = cchar;
-            cchar++;
+            cedi++;
           }
         }
         else
@@ -512,30 +548,40 @@ int parsersstoll(FILE *rf)
             /* Free everything and end! */
             goto OOMEMERROR;
           }
+          	printf("Attribute '%s' = '%s'\n",curattname, curattdata);
         }
       }
       else
       {
         /* Add to whatever... */
-        if (inelename && !inctag) /* Warning: non-standard! */
+        if (inelename && !inctag && ceni>0 && ceni<MAX_ELEN) /* Warning: non-standard! */
         {
           curelementname[ceni] = cchar;
           ceni++;
+          curelementname[ceni] = 0;
+          if (issingletag && endwith_(curelementname,"[CDATA["))
+          {
+            issingletag = 0;
+            inelename = 0;
+            ineletag = 0;
+            ceni = 0;
+            cedi = strlen(curelementdata);
+          }
         }
-        else if (inattname)
+        else if (inattname && cani<MAX_ATTN)
         {
           curattname[cani] = cchar;
-          cchar++;
+          cani++;
         }
-        else if (inattdata)
+        else if (inattdata && cadi<MAX_ATTD)
         {
           curattdata[cadi] = cchar;
-          cchar++;
+          cadi++;
         }
-        else if (!ineletag && curepn != NULL)
+        else if ((!ineletag) && curepn != NULL && cedi<MAX_ELED)
         {
           curelementdata[cedi] = cchar;
-          cchar++;
+          cedi++;
         }
       }
     }
@@ -543,25 +589,34 @@ int parsersstoll(FILE *rf)
     {
       indq = 1 - indq;
       /* Add to whatever... */
-      if (inelename)
+      if (inelename && ceni<MAX_ELEN)
       {
         curelementname[ceni] = cchar;
         ceni++;
+        curelementname[ceni] = 0;
+        if (issingletag && endwith_(curelementname,"[CDATA["))
+        {
+          issingletag = 0;
+          inelename = 0;
+          ineletag = 0;
+          ceni = 0;
+          cedi = strlen(curelementdata);
+        }
       }
-      else if (inattname)
+      else if (inattname && cani<MAX_ATTN)
       {
         curattname[cani] = cchar;
-        cchar++;
+        cani++;
       }
-      else if (inattdata)
+      else if (inattdata && cadi<MAX_ATTD)
       {
         curattdata[cadi] = cchar;
-        cchar++;
+        cadi++;
       }
-      else if (!ineletag && curepn != NULL)
+      else if ((!ineletag) && curepn != NULL && cedi<MAX_ELED)
       {
         curelementdata[cedi] = cchar;
-        cchar++;
+        cedi++;
       }
       
     }
@@ -573,29 +628,39 @@ int parsersstoll(FILE *rf)
         inattdata = 1;
         curattname[cani] = 0;
         cani = 0;
+        /*	printf("(Att='%s')\t",curattname);*/
       }
       else
       {
         /* Add to whatever... */
-        if (inelename)
+        if (inelename && ceni<MAX_ELEN)
         {
           curelementname[ceni] = cchar;
           ceni++;
+          curelementname[ceni] = 0;
+          if (issingletag && endwith_(curelementname,"[CDATA["))
+          {
+            issingletag = 0;
+            inelename = 0;
+            ineletag = 0;
+            ceni = 0;
+            cedi = strlen(curelementdata);
+          }
         }
-        else if (inattname)
+        else if (inattname && cani<MAX_ATTN) /* Shouldn't occur */
         {
           curattname[cani] = cchar;
-          cchar++;
+          cani++;
         }
-        else if (inattdata)
+        else if (inattdata && cadi<MAX_ATTD)
         {
           curattdata[cadi] = cchar;
-          cchar++;
+          cadi++;
         }
-        else if (!ineletag && curepn != NULL)
+        else if ((!ineletag) && curepn != NULL && cedi<MAX_ELED)
         {
           curelementdata[cedi] = cchar;
-          cchar++;
+          cedi++;
         }
         
       }
@@ -615,25 +680,34 @@ int parsersstoll(FILE *rf)
       else
       {
         /* Add to whatever... */
-        if (inelename)
+        if (inelename && ceni<MAX_ELEN)
         {
           curelementname[ceni] = cchar;
           ceni++;
+          curelementname[ceni] = 0;
+          if (issingletag && endwith_(curelementname,"[CDATA["))
+          {
+            issingletag = 0;
+            inelename = 0;
+            ineletag = 0;
+            ceni = 0;
+            cedi = strlen(curelementdata);
+          }
         }
-        else if (inattname)
+        else if (inattname && cani<MAX_ATTN)
         {
           curattname[cani] = cchar;
-          cchar++;
+          cani++;
         }
-        else if (inattdata)
+        else if (inattdata && cadi<MAX_ATTD)
         {
           curattdata[cadi] = cchar;
-          cchar++;
+          cadi++;
         }
-        else if (!ineletag && curepn != NULL)
+        else if (!ineletag && curepn != NULL && cedi<MAX_ELED)
         {
           curelementdata[cedi] = cchar;
-          cchar++;
+          cedi++;
         }
         
       }
@@ -641,25 +715,34 @@ int parsersstoll(FILE *rf)
     else if (cchar == '>' && ineletag == 0)
     {
       /* Add to whatever... */
-      if (inelename)
+      if (inelename && ceni<MAX_ELEN)
       {
         curelementname[ceni] = cchar;
         ceni++;
+        curelementname[ceni] = 0;
+        if (issingletag && endwith_(curelementname,"[CDATA["))
+        {
+          issingletag = 0;
+          inelename = 0;
+          ineletag = 0;
+          ceni = 0;
+          cedi = strlen(curelementdata);
+        }
       }
-      else if (inattname)
+      else if (inattname && cani<MAX_ATTN)
       {
         curattname[cani] = cchar;
-        cchar++;
+        cani++;
       }
-      else if (inattdata)
+      else if (inattdata && cadi<MAX_ATTD)
       {
         curattdata[cadi] = cchar;
-        cchar++;
+        cadi++;
       }
-      else if (!ineletag && curepn != NULL)
+      else if (!ineletag && curepn != NULL && cedi<MAX_ELED)
       {
         curelementdata[cedi] = cchar;
-        cchar++;
+        cedi++;
       }
     }
     else if (cchar == '>' && ineletag != 0)
@@ -668,11 +751,17 @@ int parsersstoll(FILE *rf)
       {
         inelename = 0;
         curelementname[ceni] = 0;
-        curepn = createelementpnode(curelementname,NULL);
-        if (curepn == NULL)
+        if (!inctag)
         {
-          /* Free everything and end */
-          goto OOMEMERROR;
+          curepn = createelementpnode(curelementname,NULL);
+          	epndepth++;
+        	printf("[%lu]",epndepth);
+          if (curepn == NULL)
+          {
+            /* Free everything and end */
+            goto OOMEMERROR;
+          }
+          	printf("Found element \"%s\"\n",curelementname);
         }
         
         ceni = 0;
@@ -693,6 +782,13 @@ int parsersstoll(FILE *rf)
           goto OOMEMERROR;
         }
       }
+      else if (inattname && cani>0)
+      {
+        inattname = 0;
+        curattname[cani] = 0;
+        cani = 0;
+        	printf("Attribute '%s' specified!\n", curattname);
+      }
       
       if (inattdata && indq && !inelename)
       {
@@ -700,23 +796,28 @@ int parsersstoll(FILE *rf)
         if (inattname)
         {
           curattname[cani] = cchar;
-          cchar++;
+          cani++;
         }
         else if (inattdata)
         {
           curattdata[cadi] = cchar;
-          cchar++;
+          cadi++;
         }
-        else if (!ineletag && curepn != NULL)
+        else if ((!ineletag) && curepn != NULL)
         {
           curelementdata[cedi] = cchar;
-          cchar++;
+          cedi++;
         }
       }
       else ineletag = 0;
       
       if (inctag)
       {
+        if (cedi>0)
+        {
+          curelementdata[cedi] = 0;
+          cedi = 0;
+        }
         curepn->data = (char *) malloc(sizeof(char)*(1+strlen(curelementdata)));
         if (curepn->data == NULL)
         {
@@ -724,14 +825,17 @@ int parsersstoll(FILE *rf)
           goto OOMEMERROR;
         }
         strcpy(curepn->data, curelementdata);
+        	printf("Element data: \"%s\"\n",curelementdata);
       }
       if ((inctag || issingletag) && !indq)
       {
+        	printf("End of element \"%s\".\n",curepn->name);
         issingletag = 0;
         inctag = 0;
         /*...*/
         if (streq_i(curepn->name, "rss"))
         {
+          	printf("\tRSS\n");
           /* Ignore the overarching element (though maybe do something with version?) */
           if (rssversion == NULL)
           {
@@ -760,6 +864,7 @@ int parsersstoll(FILE *rf)
         else if (streq_i(curepn->name, "item"))
         {
           /*...*/
+          	printf("\tITEM\n");
           initem = 0;
           if (curitem == NULL)
           {
@@ -799,6 +904,7 @@ int parsersstoll(FILE *rf)
         }
         else if (streq_i(curepn->name, "channel"))
         {
+          	printf("\tCHANNEL\n");
           /*...*/
           inchan = 0;
           if (curchan == NULL)
@@ -833,8 +939,9 @@ int parsersstoll(FILE *rf)
           }
           curchan = NULL;
         }
-        else if (streq_i(curepn->name, "title"))
+        else if (streq_i(curepn->name, "title") != 0)
         {
+        	printf("\tTITLE\n");
           if (title == NULL)
           {
             title = (char *) malloc(sizeof(char)*(1+strlen(curepn->data)));
@@ -940,6 +1047,7 @@ int parsersstoll(FILE *rf)
         }
         else if (streq_i(curepn->name, "link"))
         {
+        	printf("\tLINK\n");
           if (link == NULL)
           {
             link = (char *) malloc(sizeof(char)*(1+strlen(curepn->data)));
@@ -991,7 +1099,7 @@ int parsersstoll(FILE *rf)
                 else if (curchan->link == NULL)
                 {
                   curchan->link = (char *) malloc(sizeof(char)*(1+strlen(link)));
-                  if (curitem->link == NULL)
+                  if (curchan->link == NULL)
                   {
                     /* Free everything and end. */
                     goto OOMEMERROR;
@@ -1056,96 +1164,109 @@ int parsersstoll(FILE *rf)
               goto OOMEMERROR;
             }
             strcpy(desc,curepn->data);
-            if (title!=NULL && link!=NULL && desc!=NULL)
+            if (initem && !inimage && !intxtinp)
             {
-              if (initem && !inimage && !intxtinp)
-              {
-                if (curitem == NULL)
-                {
-                  if (curchan == NULL)
-                    curitem = createitempropnode(title, link, desc, nextchanid);
-                  else
-                    curitem = createitempropnode(title, link, desc, curchan->chanid);
-                  if (curitem == NULL)
-                  {
-                    /* Free everything and end. */
-                    goto OOMEMERROR;
-                  }
-                }
-                else if (curitem->description == NULL)
-                {
-                  curitem->description = (char *) malloc(sizeof(char)*(1+strlen(desc)));
-                  if (curitem->description == NULL)
-                  {
-                    /* Free everything and end. */
-                    goto OOMEMERROR;
-                  }
-                  strcpy(curitem->description, desc);
-                }
-              }
-              else if (inchan && !inimage && !intxtinp)
+              if (title!=NULL && link!=NULL && desc!=NULL && curitem == NULL)
               {
                 if (curchan == NULL)
+                  curitem = createitempropnode(title, link, desc, nextchanid);
+                else
+                  curitem = createitempropnode(title, link, desc, curchan->chanid);
+                if (curitem == NULL)
                 {
-                  curchan = createchanpropnode(title, link, desc);
-                  if (curchan == NULL)
-                  {
-                    /* Free everything and end. */
-                    goto OOMEMERROR;
-                  }
+                  /* Free everything and end. */
+                  goto OOMEMERROR;
                 }
-                else if (curchan->description == NULL)
-                {
-                  curchan->description = (char *) malloc(sizeof(char)*(1+strlen(desc)));
-                  if (curitem->description == NULL)
-                  {
-                    /* Free everything and end. */
-                    goto OOMEMERROR;
-                  }
-                  strcpy(curchan->description, desc);
-                }
+                free(title);
+                title = NULL;
+                free(link);
+                link = NULL;
+                free(desc);
+                desc = NULL;
               }
-              else if (inimage && !intxtinp)
+              else if (curitem != NULL && curitem->description == NULL)
               {
-                /* Find above epn */
-                for (epptr = eproot; epptr != NULL; epptr = epptr->next)
+                curitem->description = (char *) malloc(sizeof(char)*(1+strlen(desc)));
+                if (curitem->description == NULL)
                 {
-                  if (epptr->next == curepn) break;
+                  /* Free everything and end. */
+                  goto OOMEMERROR;
                 }
-                if (epptr != NULL && streq_i(epptr->name,"image"))
-                {
-                  /* Assign data as attribute */
-                  if (addatttoepn(curepn->name,curepn->data,epptr)==NULL)
-                  {
-                    /* Free everything and end. */
-                    goto OOMEMERROR;
-                  }
-                }
-                
+                strcpy(curitem->description, desc);
+                free(desc);
+                desc = NULL;
               }
-              else if (intxtinp && !inimage)
+            }
+            else if (inchan && !initem && !inimage && !intxtinp)
+            {
+              if (title!=NULL && link!=NULL && desc!=NULL && curchan == NULL)
               {
-                /* Find above epn */
-                for (epptr = eproot; epptr != NULL; epptr = epptr->next)
+                	printf("Creating Channel...\n");
+                curchan = createchanpropnode(title, link, desc);
+                if (curchan == NULL)
                 {
-                  if (epptr->next == curepn) break;
+                  /* Free everything and end. */
+                  goto OOMEMERROR;
                 }
-                if (epptr != NULL && streq_i(epptr->name,"textinput"))
-                {
-                  /* Assign data as attribute */
-                  if (addatttoepn(curepn->name,curepn->data,epptr)==NULL)
-                  {
-                    /* Free everything and end. */
-                    goto OOMEMERROR;
-                  }
-                }
-                
+                free(title);
+                title = NULL;
+                free(link);
+                link = NULL;
+                free(desc);
+                desc = NULL;
               }
-              free(title);
-              free(link);
+              else if (curchan != NULL && curchan->description == NULL)
+              {
+                	printf("Adding description '%s' to channel...\n",desc);
+                curchan->description = (char *) malloc(sizeof(char)*(1+strlen(desc)));
+                if (curchan->description == NULL)
+                {
+                  /* Free everything and end. */
+                  goto OOMEMERROR;
+                }
+                strcpy(curchan->description, desc);
+                	printf("Written channel description.\n");
+                free(desc);
+                desc = NULL;
+                	printf("Desc is free.\n");
+              }
+            }
+            else if (inimage && !intxtinp)
+            {
+              /* Find above epn */
+              for (epptr = eproot; epptr != NULL; epptr = epptr->next)
+              {
+                if (epptr->next == curepn) break;
+              }
+              if (epptr != NULL && streq_i(epptr->name,"image"))
+              {
+                /* Assign data as attribute */
+                if (addatttoepn(curepn->name,curepn->data,epptr)==NULL)
+                {
+                  /* Free everything and end. */
+                  goto OOMEMERROR;
+                }
+              }
               free(desc);
-              title = NULL;
-              link = NULL;
+              desc = NULL;
+            }
+            else if (intxtinp && !inimage)
+            {
+              /* Find above epn */
+              for (epptr = eproot; epptr != NULL; epptr = epptr->next)
+              {
+                if (epptr->next == curepn) break;
+              }
+              if (epptr != NULL && streq_i(epptr->name,"textinput"))
+              {
+                /* Assign data as attribute */
+                if (addatttoepn(curepn->name,curepn->data,epptr)==NULL)
+                {
+                  /* Free everything and end. */
+                  goto OOMEMERROR;
+                }
+              }
+              free(desc);
               desc = NULL;
               
             }
@@ -1337,7 +1458,7 @@ int parsersstoll(FILE *rf)
               /* Create other date items... */
               char *datetok = NULL;
               int tokn = 0;
-              datetok = strtok(curitem->pubdate.fulldate,", :");
+              datetok = strtok(curepn->data,", :");
               while (datetok != NULL)
               {
                 if (tokn == 0)
@@ -1906,7 +2027,7 @@ int parsersstoll(FILE *rf)
               /* Create other date items... */
               char *datetok = NULL;
               int tokn = 0;
-              datetok = strtok(curchan->lastbuilddate.fulldate,", :");
+              datetok = strtok(curepn->data,", :");
               while (datetok != NULL)
               {
                 if (tokn == 0)
@@ -2979,6 +3100,7 @@ int parsersstoll(FILE *rf)
         {
           eproot = eproot->next;
           freeepn(curepn);
+          	epndepth--;
           curepn = eproot;
         }
         else
@@ -2992,6 +3114,7 @@ int parsersstoll(FILE *rf)
           {
             tepn->next = curepn->next;
             freeepn(curepn);
+            	epndepth--;
             curepn = tepn;
           }
           else
@@ -2999,6 +3122,7 @@ int parsersstoll(FILE *rf)
             /* Should not happen! */
             eproot = eproot->next;
             freeepn(eproot);
+            	epndepth--;
             curepn = eproot;
           }
         }
@@ -3008,25 +3132,35 @@ int parsersstoll(FILE *rf)
     }
     else
     {
-      if (inelename)
+      /* Add to whatever... */
+      if (inelename && ceni<MAX_ELEN)
       {
         curelementname[ceni] = cchar;
         ceni++;
+        curelementname[ceni] = 0;
+        if (issingletag && endwith_(curelementname,"[CDATA["))
+        {
+          issingletag = 0;
+          inelename = 0;
+          ineletag = 0;
+          ceni = 0;
+          cedi = strlen(curelementdata);
+        }
       }
-      else if (inattname)
+      else if (inattname && cani<MAX_ATTN)
       {
         curattname[cani] = cchar;
-        cchar++;
+        cani++;
       }
-      else if (inattdata)
+      else if (inattdata && cadi<MAX_ATTD)
       {
         curattdata[cadi] = cchar;
-        cchar++;
+        cadi++;
       }
-      else if (!ineletag && curepn != NULL)
+      else if ((!ineletag) && curepn != NULL && cedi<MAX_ELED)
       {
         curelementdata[cedi] = cchar;
-        cchar++;
+        cedi++;
       }
       
     }
@@ -3113,6 +3247,7 @@ ERROREND:
 void listdata()
 {
   /* This function is for testing the parser-to-LL generation */
+  if (rssversion != NULL) printf("RSS Version: %s\n", rssversion);
   for (cpptr = cproot; cpptr != NULL; cpptr = cpptr->next)
   {
     printf("Channel %lu - %s:\n  Link: %s\n  Description: %s\n",cpptr->chanid,cpptr->title,cpptr->link,cpptr->description);
@@ -3123,7 +3258,7 @@ void listdata()
       printf("\n");
     }
     if (cpptr->copyright != NULL) printf("  Copyright: %s\n", cpptr->copyright);
-    if (cpptr->managingeditor != NULL) printf("  Managing Editor: %s\n", cpptr->managingeditor);
+    if (cpptr->managingeditor != NULL) printf("  Managing Editor: '%s'\n", cpptr->managingeditor);
     if (cpptr->webmaster != NULL) printf("  Webmaster: %s\n", cpptr->webmaster);
     if (cpptr->pubdate.fulldate != NULL)
     {

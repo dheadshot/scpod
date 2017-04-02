@@ -15,6 +15,9 @@ int main(int argc, char *argv[])
     printf("Test Usage: %s <feed file>\n   Where <feed file> is the file containing the RSS feed.\n", argv[0]);
     return 1;
   }
+  
+  	printf("%d\n",streq_i("title","titlE"));
+  
   FILE *feedfile = fopen(argv[1],"r");
   if (feedfile == NULL)
   {

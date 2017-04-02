@@ -1,6 +1,11 @@
 #ifndef __INC_PARSER_H__
 #define __INC_PARSER_H__ 1
 
+#define MAX_ELEN 255
+#define MAX_ELED 4095
+#define MAX_ATTN 1023
+#define MAX_ATTD 4095
+
 /* Remember to ignore unknown elements! */
 
 typedef struct rssdate_struct {
