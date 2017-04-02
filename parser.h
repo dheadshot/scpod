@@ -136,5 +136,6 @@ void freeepn(elementpnode *epn);
 
 int parsersstoll(FILE *rf);
 /* Returns: 1=worked, 0=File reading error, -1=Memory error, -2=Not RSS */
+void listdata();
 
 #endif

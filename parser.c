@@ -3109,3 +3109,117 @@ ERROREND:
   
   return err_end_val;
 }
+
+void listdata()
+{
+  /* This function is for testing the parser-to-LL generation */
+  for (cpptr = cproot; cpptr != NULL; cpptr = cpptr->next)
+  {
+    printf("Channel %lu - %s:\n  Link: %s\n  Description: %s\n",cpptr->chanid,cpptr->title,cpptr->link,cpptr->description);
+    if (cpptr->language_main != NULL)
+    {
+      printf("  Language: %s", cpptr->language_main);
+      if (cpptr->language_sub != NULL) printf(", %s", cpptr->language_sub);
+      printf("\n");
+    }
+    if (cpptr->copyright != NULL) printf("  Copyright: %s\n", cpptr->copyright);
+    if (cpptr->managingeditor != NULL) printf("  Managing Editor: %s\n", cpptr->managingeditor);
+    if (cpptr->webmaster != NULL) printf("  Webmaster: %s\n", cpptr->webmaster);
+    if (cpptr->pubdate.fulldate != NULL)
+    {
+      printf("  Publication Date: %s (%s, %d/%d/%ld %d:%d:%d %s (%d:%d))\n", 
+             cpptr->pubdate.fulldate, cpptr->pubdate.dayname, cpptr->pubdate.daynum, 
+             cpptr->pubdate.month, cpptr->pubdate.year, cpptr->pubdate.hour, 
+             cpptr->pubdate.minute, cpptr->pubdate.second, cpptr->pubdate.tzone, 
+             cpptr->pubdate.gmtoffseth, cpptr->pubdate.gmtoffsetm);
+    }
+    if (cpptr->lastbuilddate.fulldate != NULL)
+    {
+      printf("  Last Build Date: %s (%s, %d/%d/%ld %d:%d:%d %s (%d:%d))\n", 
+             cpptr->lastbuilddate.fulldate, cpptr->lastbuilddate.dayname, 
+             cpptr->lastbuilddate.daynum, cpptr->lastbuilddate.month, 
+             cpptr->lastbuilddate.year, cpptr->lastbuilddate.hour, 
+             cpptr->lastbuilddate.minute, cpptr->lastbuilddate.second, 
+             cpptr->lastbuilddate.tzone, cpptr->lastbuilddate.gmtoffseth, 
+             cpptr->lastbuilddate.gmtoffsetm);
+    }
+    if (cpptr->generator != NULL) printf("  Generator: %s\n", cpptr->generator);
+    if (cpptr->docs != NULL) printf("  Documentation: %s\n", cpptr->docs);
+    if (cpptr->ttl != 0) printf("  Time To Live: %ld\n", cpptr->ttl);
+    if (cpptr->image.url != NULL)
+    {
+      printf("  Image: %s (%s) --> %s\n", cpptr->image.url, cpptr->image.title, cpptr->image.link);
+      if (cpptr->image.description != NULL) printf("    Description: %s\n", cpptr->image.description);
+      if (cpptr->image.width > 0) printf("    Width: %ld\n", cpptr->image.width);
+      if (cpptr->image.height > 0) printf("    Height: %ld\n", cpptr->image.height);
+    }
+    int i;
+    if (cpptr->skiphours != NULL)
+    {
+      printf("  Skip Hours (GMT):\n");
+      for (i = 0; cpptr->skiphours[i] != -1; i++) printf("  *  %ld\n",cpptr->skiphours[i]);
+    }
+    if (cpptr->skipdays != NULL)
+    {
+      printf("  Skip Days:\n");
+      for (i = 0; cpptr->skipdays[i] != NULL; i++) printf("  *  %s\n",cpptr->skipdays[i]);
+    }
+    
+    printf("  Categories:\n");
+    for (catptr = catroot; catptr != NULL; catptr = catptr->next)
+    {
+      if (catptr->type == channel_cat && catptr->id.chanid == cpptr->chanid && catptr->category != NULL)
+      {
+        if (catptr->domain == NULL) printf("  *  %s\n", catptr->category);
+        else printf("  *  %s (%s)\n", catptr->category, catptr->domain);
+      }
+    }
+    
+    printf("  Items:\n");
+    for (ipptr = iproot; ipptr != NULL; ipptr = ipptr->next)
+    {
+      if (ipptr->chanid == cpptr->chanid)
+      {
+        printf("    Item %lu - %s\n", ipptr->itemid, ipptr->title);
+        printf("      Link: %s\n", ipptr->link;
+        printf("      Description: %s\n", ipptr->description;
+        if (ipptr->author != NULL) printf("      Author: %s\n", ipptr->author);
+        if (ipptr->comments != NULL) printf("      Comments: %s\n", ipptr->comments);
+        if (ipptr->enclosure.url != NULL)
+        {
+          printf("      Enclosure: %s, %lu Bytes", ipptr->enclosure.url, ipptr->enclosure.length);
+          if (ipptr->enclosure.type != NULL) printf(", %s", ipptr->enclosure.type);
+          printf("\n");
+        }
+        if (ipptr->guid.guid != NULL)
+        {
+          if (ipptr->guid.ispermalink != 0) printf("      GUID: %s (Permalink)\n", ipptr->guid.guid);
+          else printf("      GUID: %s (Not Permalink!)\n", ipptr->guid.guid);
+        }
+        if (ipptr->source.name != NULL)
+        {
+          printf("      Source: %s (%s)\n, ipptr->source.name, ipptr->source.url);
+        }
+        if (ipptr->image.url != NULL)
+        {
+          printf("      Image: %s (%s) --> %s\n", ipptr->image.url, ipptr->image.title, ipptr->image.link);
+          if (ipptr->image.description != NULL) printf("        Description: %s\n", ipptr->image.description);
+          if (ipptr->image.width > 0) printf("        Width: %ld\n", ipptr->image.width);
+          if (ipptr->image.height > 0) printf("        Height: %ld\n", ipptr->image.height);
+        }
+        printf("      Categories:\n");
+        for (catptr = catroot; catptr != NULL; catptr = catptr->next)
+        {
+          if (catptr->type == item_cat && catptr->id.itemid == ipptr->itemid && catptr->category != NULL)
+          {
+            if (catptr->domain == NULL) printf("      *  %s\n", catptr->category);
+            else printf("      *  %s (%s)\n", catptr->category, catptr->domain);
+          }
+        }
+        printf("    --\n");
+      }
+    }
+    
+  }
+  return;
+}
