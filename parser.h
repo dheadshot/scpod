@@ -97,6 +97,7 @@ typedef struct itempropnode_struct {
   rssimage image;
   
   unsigned long dbiid; /* Item_ID Database field */
+  int isnew; /* Is the item fresh to the DB or did it exist in the DB already? */
   
   struct itempropnode_struct *next;
 } itempropnode;
