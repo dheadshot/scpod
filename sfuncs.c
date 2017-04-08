@@ -117,6 +117,39 @@ void strltrim(char *ostr, char *istr)
   strcpy(ostr, istr+n);
 }
 
+void strtrimws(char *ostr, char *istr)
+{
+  long n;
+  for (n=0;istr[n]!=0;n++)
+  {
+    if (istr[n]!=' ' && istr[n]!='\n' && istr[n]!='\r' && istr[n]!='\t')
+    {
+      break;
+    }
+  }
+  strcpy(ostr,istr+n);
+  for (n=strlen(ostr)-1;n>=0;n--)
+  {
+    if (istr[n]!=' ' && istr[n]!='\n' && istr[n]!='\r' && istr[n]!='\t')
+    {
+      break;
+    }
+  }
+  n++;
+  ostr[n] = 0;
+}
+
+int strtrimws1(char *astr)
+{
+  if (astr == NULL) return 0;
+  char *ostr = (char *) malloc(sizeof(char)*(1+strlen(astr)));
+  if (ostr == NULL) return 0;
+  strtrimws(ostr,astr);
+  strcpy(astr,ostr);
+  free(ostr);
+  return 1;
+}
+
 void freentsa(char **antsa)
 {
   unsigned long n;

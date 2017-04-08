@@ -9,6 +9,8 @@ int startsame_i(char *a, char *b);
 int endwith_(char *exstring, char *refstring);
 int endwith_i(char *exstring, char *refstring);
 void strltrim(char *ostr, char *istr);
+void strtrimws(char *ostr, char *istr);
+int strtrimws1(char *astr);
 void freentsa(char **antsa);
 
 #endif
