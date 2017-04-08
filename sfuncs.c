@@ -95,7 +95,7 @@ int endwith_(char *exstring, char *refstring)
   unsigned long el, rl;
   el = strlen(exstring);
   rl = strlen(refstring);
-  if (el>rl) return 0;
+  if (el<rl) return 0;
   if (el == rl) return streq_(exstring, refstring);
   return streq_(exstring+(sizeof(char)*(el-rl)), refstring);
 }
@@ -105,7 +105,7 @@ int endwith_i(char *exstring, char *refstring)
   unsigned long el, rl;
   el = strlen(exstring);
   rl = strlen(refstring);
-  if (el>rl) return 0;
+  if (el<rl) return 0;
   if (el == rl) return streq_i(exstring, refstring);
   return streq_i(exstring+(sizeof(char)*(el-rl)), refstring);
 }
@@ -130,7 +130,7 @@ void strtrimws(char *ostr, char *istr)
   strcpy(ostr,istr+n);
   for (n=strlen(ostr)-1;n>=0;n--)
   {
-    if (istr[n]!=' ' && istr[n]!='\n' && istr[n]!='\r' && istr[n]!='\t')
+    if (ostr[n]!=' ' && ostr[n]!='\n' && ostr[n]!='\r' && ostr[n]!='\t')
     {
       break;
     }

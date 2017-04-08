@@ -440,7 +440,7 @@ int parsersstoll(FILE *rf)
       else
       {
         /* Add to whatever... */
-        if (inelename && ceni<MAX_ELEN)
+        if (ineletag && inelename && ceni<MAX_ELEN)
         { /* Shouldn't occur */
           curelementname[ceni] = cchar;
           ceni++;
@@ -454,12 +454,12 @@ int parsersstoll(FILE *rf)
             cedi = strlen(curelementdata);
           }
         }
-        else if (inattname && cani<MAX_ATTN)
+        else if (ineletag && inattname && cani<MAX_ATTN)
         {
           curattname[cani] = cchar;
           cani++;
         }
-        else if (inattdata && cadi<MAX_ATTD)
+        else if (ineletag && inattdata && cadi<MAX_ATTD)
         {
           curattdata[cadi] = cchar;
           cadi++;
@@ -484,7 +484,7 @@ int parsersstoll(FILE *rf)
     }
     else if (cchar == ' ' || cchar == '\t' || cchar == '\n')
     {
-      if (inelename && !inctag && ceni>0)
+      if (ineletag && inelename && !inctag && ceni>0)
       {
         inelename = 0;
         curelementname[ceni] = 0;
@@ -504,16 +504,16 @@ int parsersstoll(FILE *rf)
         else if (streq_i(curepn->name,"image")) inimage = 1;
         else if (streq_i(curepn->name,"textinput")) intxtinp = 1;
       }
-      else if (inattname)
+      else if (ineletag && inattname)
       {
         /* Do Nothing. */
       }
-      else if (inattdata)
+      else if (ineletag && inattdata)
       {
         if (indq)
         {
           /* Add to whatever... */
-          if (inelename && ceni<MAX_ELEN)
+          if (ineletag && inelename && ceni<MAX_ELEN)
           {
             curelementname[ceni] = cchar;
             ceni++;
@@ -527,12 +527,12 @@ int parsersstoll(FILE *rf)
               cedi = strlen(curelementdata);
             }
           }
-          else if (inattname && cani<MAX_ATTN)
+          else if (ineletag && inattname && cani<MAX_ATTN)
           {
             curattname[cani] = cchar;
             cani++;
           }
-          else if (inattdata && cadi<MAX_ATTD)
+          else if (ineletag && inattdata && cadi<MAX_ATTD)
           {
             curattdata[cadi] = cchar;
             cadi++;
@@ -560,13 +560,13 @@ int parsersstoll(FILE *rf)
             /* Free everything and end! */
             goto OOMEMERROR;
           }
-          	printf("Attribute '%s' = '%s'\n",curattname, curattdata);
+          	printf("Attribute [of '%s'] '%s' = '%s'\n",curepn->name,curattname, curattdata);
         }
       }
       else
       {
         /* Add to whatever... */
-        if (inelename && !inctag && ceni>0 && ceni<MAX_ELEN) /* Warning: non-standard! */
+        if (ineletag && inelename && !inctag && ceni>0 && ceni<MAX_ELEN) /* Warning: non-standard! */
         {
           curelementname[ceni] = cchar;
           ceni++;
@@ -580,12 +580,12 @@ int parsersstoll(FILE *rf)
             cedi = strlen(curelementdata);
           }
         }
-        else if (inattname && cani<MAX_ATTN)
+        else if (ineletag && inattname && cani<MAX_ATTN)
         {
           curattname[cani] = cchar;
           cani++;
         }
-        else if (inattdata && cadi<MAX_ATTD)
+        else if (ineletag && inattdata && cadi<MAX_ATTD)
         {
           curattdata[cadi] = cchar;
           cadi++;
@@ -607,7 +607,7 @@ int parsersstoll(FILE *rf)
     {
       indq = 1 - indq;
       /* Add to whatever... */
-      if (inelename && ceni<MAX_ELEN)
+      if (ineletag && inelename && ceni<MAX_ELEN)
       {
         curelementname[ceni] = cchar;
         ceni++;
@@ -621,12 +621,12 @@ int parsersstoll(FILE *rf)
           cedi = strlen(curelementdata);
         }
       }
-      else if (inattname && cani<MAX_ATTN)
+      else if (ineletag && inattname && cani<MAX_ATTN)
       {
         curattname[cani] = cchar;
         cani++;
       }
-      else if (inattdata && cadi<MAX_ATTD)
+      else if (ineletag && inattdata && cadi<MAX_ATTD)
       {
         curattdata[cadi] = cchar;
         cadi++;
@@ -657,7 +657,7 @@ int parsersstoll(FILE *rf)
       else
       {
         /* Add to whatever... */
-        if (inelename && ceni<MAX_ELEN)
+        if (ineletag && inelename && ceni<MAX_ELEN)
         {
           curelementname[ceni] = cchar;
           ceni++;
@@ -671,12 +671,12 @@ int parsersstoll(FILE *rf)
             cedi = strlen(curelementdata);
           }
         }
-        else if (inattname && cani<MAX_ATTN) /* Shouldn't occur */
+        else if (ineletag && inattname && cani<MAX_ATTN) /* Shouldn't occur */
         {
           curattname[cani] = cchar;
           cani++;
         }
-        else if (inattdata && cadi<MAX_ATTD)
+        else if (ineletag && inattdata && cadi<MAX_ATTD)
         {
           curattdata[cadi] = cchar;
           cadi++;
@@ -706,11 +706,12 @@ int parsersstoll(FILE *rf)
       {
         issingletag = 1;
       }
-      else if (ineletag && inattdata && !indq) issingletag = 1;
+      else if (ineletag != 0 && inattdata != 0 && indq == 0)
+        issingletag = 1;
       else
       {
         /* Add to whatever... */
-        if (inelename && ceni<MAX_ELEN)
+        if (ineletag && inelename && ceni<MAX_ELEN)
         {
           curelementname[ceni] = cchar;
           ceni++;
@@ -724,12 +725,12 @@ int parsersstoll(FILE *rf)
             cedi = strlen(curelementdata);
           }
         }
-        else if (inattname && cani<MAX_ATTN)
+        else if (ineletag && inattname && cani<MAX_ATTN)
         {
           curattname[cani] = cchar;
           cani++;
         }
-        else if (inattdata && cadi<MAX_ATTD)
+        else if (ineletag && inattdata && cadi<MAX_ATTD)
         {
           curattdata[cadi] = cchar;
           cadi++;
@@ -751,7 +752,7 @@ int parsersstoll(FILE *rf)
     else if (cchar == '>' && ineletag == 0)
     {
       /* Add to whatever... */
-      if (inelename && ceni<MAX_ELEN)
+      if (ineletag && inelename && ceni<MAX_ELEN)
       {
         curelementname[ceni] = cchar;
         ceni++;
@@ -765,12 +766,12 @@ int parsersstoll(FILE *rf)
           cedi = strlen(curelementdata);
         }
       }
-      else if (inattname && cani<MAX_ATTN)
+      else if (ineletag && inattname && cani<MAX_ATTN)
       {
         curattname[cani] = cchar;
         cani++;
       }
-      else if (inattdata && cadi<MAX_ATTD)
+      else if (ineletag && inattdata && cadi<MAX_ATTD)
       {
         curattdata[cadi] = cchar;
         cadi++;
@@ -812,6 +813,7 @@ int parsersstoll(FILE *rf)
         else if (streq_i(curepn->name,"channel")) inchan = 1;
         else if (streq_i(curepn->name,"image")) inimage = 1;
         else if (streq_i(curepn->name,"textinput")) intxtinp = 1;
+        ineletag = 0;
       }
       else if (inattdata && !indq)
       {
@@ -824,7 +826,8 @@ int parsersstoll(FILE *rf)
           /* Free everything and end! */
           goto OOMEMERROR;
         }
-        	printf("Attribute '%s' = '%s'\n", curattname, curattdata);
+          	printf("Attribute [of '%s'] '%s' = '%s'\n",curepn->name,curattname, curattdata);
+        	/*printf("Attribute '%s' = '%s'\n", curattname, curattdata);*/
       }
       else if (inattname && cani>0)
       {
@@ -834,7 +837,7 @@ int parsersstoll(FILE *rf)
         	printf("Attribute '%s' specified!\n", curattname);
       }
       
-      if (inattdata && indq && !inelename)
+      if (inattdata != 0 && indq != 0 && inelename == 0)
       {
         /* Add to whatever... (Non-Standard) */
         if (inattname && cani<MAX_ATTN)
@@ -859,8 +862,15 @@ int parsersstoll(FILE *rf)
             curelementdata[cedi] = 0;
           }
         }
+        	curattdata[cadi] = 0;
+        	printf("LT in attdata: %s\n", curattdata);
       }
-      else ineletag = 0;
+      else
+      {
+        ineletag = 0;
+        inattdata = 0;
+        inattname = 0;
+      }
       
       if (inctag)
       {
@@ -877,8 +887,8 @@ int parsersstoll(FILE *rf)
             /* Free everything and end! */
             goto OOMEMERROR;
           }
-          strcpy(curepn->data, curelementdata);
-        	printf("Element data: \"%s\"\n",curelementdata);
+          strtrimws(curepn->data, curelementdata); /* Copy and trim data */
+        	printf("Element data: \"%s\"\n",curepn->data);
         }
         else
         {
@@ -894,7 +904,16 @@ int parsersstoll(FILE *rf)
           free(curepn->data);
           curepn->data = cepntstr;
           cepntstr = NULL;
+          if (strtrimws1(curepn->data) == 0)
+          {
+            /* Free everything and end! */
+            goto OOMEMERROR;
+          }
         	printf("Amalgumated Element data: \"%s\"\n",curepn->data);
+        }
+        if (endwith_(curepn->data,"]]>"))
+        {
+          curepn->data[strlen(curepn->data)-3] = 0;
         }
       }
       if ((inctag || issingletag) && !indq)
@@ -903,6 +922,9 @@ int parsersstoll(FILE *rf)
         	if (issingletag) printf("STAG: '%s'\n",curepn->name);
         issingletag = 0;
         inctag = 0;
+        /*ineletag = 0;
+        inattdata = 0;
+        inattname = 0;*/
         /*...*/
         if (startsame_i(curepn->name, "[CDATA[") || startsame_i(curepn->name,"![CDATA["))
         {
@@ -3332,7 +3354,7 @@ int parsersstoll(FILE *rf)
     else
     {
       /* Add to whatever... */
-      if (inelename && ceni<MAX_ELEN)
+      if (ineletag && inelename && ceni<MAX_ELEN)
       {
         curelementname[ceni] = cchar;
         ceni++;
@@ -3348,12 +3370,12 @@ int parsersstoll(FILE *rf)
 /*          	printf("CDATA: CEDI=%lu\n",cedi);*/
         }
       }
-      else if (inattname && cani<MAX_ATTN)
+      else if (ineletag && inattname && cani<MAX_ATTN)
       {
         curattname[cani] = cchar;
         cani++;
       }
-      else if (inattdata && cadi<MAX_ATTD)
+      else if (ineletag && inattdata && cadi<MAX_ATTD)
       {
         curattdata[cadi] = cchar;
         cadi++;

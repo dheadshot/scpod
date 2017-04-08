@@ -16,7 +16,7 @@ int main(int argc, char *argv[])
     return 1;
   }
   
-  	printf("%d\n",streq_i("title","titlE"));
+  	printf("%d, %d\n",streq_i("title","titlE"), endwith_("abc]]>","]]>"));
   
   FILE *feedfile = fopen(argv[1],"r");
   if (feedfile == NULL)
