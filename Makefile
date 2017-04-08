@@ -1,7 +1,7 @@
 # Test makefile
 CC = gcc
 DEBUGFLAGS = -DDEBUG
-DCFLAGS = ${DEBUGFLAGS}
+#DCFLAGS = ${DEBUGFLAGS}
 
 scpod: main.o sfuncs.o parser.o
 	${CC} ${DCFLAGS} main.o sfuncs.o parser.o -o scpod
