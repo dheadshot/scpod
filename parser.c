@@ -416,7 +416,9 @@ int parsersstoll(FILE *rf)
   
   /* Hopefully, this won't fall down on XML comments... */
   
-  	unsigned long epndepth = 0;
+#ifdef DEBUG
+  	unsigned long epndepth = 0; /* Not sure this stays accurate all the way through... */
+#endif
   
   while ((cchar = (char) fgetc(rf)) != EOF)
   {
@@ -488,10 +490,14 @@ int parsersstoll(FILE *rf)
       {
         inelename = 0;
         curelementname[ceni] = 0;
+#ifdef DEBUG
         	printf("Found element \"%s\"",curelementname);
+#endif
         curepn = createelementpnode(curelementname,NULL);
+#ifdef DEBUG
         	epndepth++;
         	printf("[%lu]\n",epndepth);
+#endif
         if (curepn == NULL)
         {
           /* Free everything and end */
@@ -560,7 +566,9 @@ int parsersstoll(FILE *rf)
             /* Free everything and end! */
             goto OOMEMERROR;
           }
+#ifdef DEBUG
           	printf("Attribute [of '%s'] '%s' = '%s'\n",curepn->name,curattname, curattdata);
+#endif
         }
       }
       else
@@ -652,7 +660,9 @@ int parsersstoll(FILE *rf)
         inattdata = 1;
         curattname[cani] = 0;
         cani = 0;
+#ifdef DEBUG
         /*	printf("(Att='%s')\t",curattname);*/
+#endif
       }
       else
       {
@@ -783,7 +793,9 @@ int parsersstoll(FILE *rf)
         curelementdata[cedi] = 0;
         if (endwith_(curelementdata,"]]>"))
         {
+#ifdef DEBUG
             printf("Fixing ']]>'\t'%s'\t",curelementdata);
+#endif
           cedi -= (3*sizeof(char));
           curelementdata[cedi] = 0;
         }
@@ -798,14 +810,18 @@ int parsersstoll(FILE *rf)
         if (!inctag)
         {
           curepn = createelementpnode(curelementname,NULL);
+#ifdef DEBUG
           	epndepth++;
         	printf("[%lu]",epndepth);
+#endif
           if (curepn == NULL)
           {
             /* Free everything and end */
             goto OOMEMERROR;
           }
+#ifdef DEBUG
           	printf("Found element \"%s\"\n",curelementname);
+#endif
         }
         
         ceni = 0;
@@ -826,15 +842,19 @@ int parsersstoll(FILE *rf)
           /* Free everything and end! */
           goto OOMEMERROR;
         }
+#ifdef DEBUG
           	printf("Attribute [of '%s'] '%s' = '%s'\n",curepn->name,curattname, curattdata);
         	/*printf("Attribute '%s' = '%s'\n", curattname, curattdata);*/
+#endif
       }
       else if (inattname && cani>0)
       {
         inattname = 0;
         curattname[cani] = 0;
         cani = 0;
+#ifdef DEBUG
         	printf("Attribute '%s' specified!\n", curattname);
+#endif
       }
       
       if (inattdata != 0 && indq != 0 && inelename == 0)
@@ -857,13 +877,17 @@ int parsersstoll(FILE *rf)
           curelementdata[cedi] = 0;
           if (endwith_(curelementdata,"]]>"))
           {
-            printf("Fixing ']]>'");
+#ifdef DEBUG
+            	printf("Fixing ']]>'");
+#endif
             cedi -= (3*sizeof(char));
             curelementdata[cedi] = 0;
           }
         }
+#ifdef DEBUG
         	curattdata[cadi] = 0;
         	printf("LT in attdata: %s\n", curattdata);
+#endif
       }
       else
       {
@@ -888,11 +912,15 @@ int parsersstoll(FILE *rf)
             goto OOMEMERROR;
           }
           strtrimws(curepn->data, curelementdata); /* Copy and trim data */
+#ifdef DEBUG
         	printf("Element data: \"%s\"\n",curepn->data);
+#endif
         }
         else
         {
+#ifdef DEBUG
           	printf("AMA\n");
+#endif
           char *cepntstr = (char *) malloc(sizeof(char)*(1+strlen(curelementdata)+strlen(curepn->data)));
           if (cepntstr == NULL)
           {
@@ -909,7 +937,9 @@ int parsersstoll(FILE *rf)
             /* Free everything and end! */
             goto OOMEMERROR;
           }
+#ifdef DEBUG
         	printf("Amalgumated Element data: \"%s\"\n",curepn->data);
+#endif
         }
         if (endwith_(curepn->data,"]]>"))
         {
@@ -918,8 +948,10 @@ int parsersstoll(FILE *rf)
       }
       if ((inctag || issingletag) && !indq)
       {
+#ifdef DEBUG
         	printf("End of element \"%s\".\n",curepn->name);
         	if (issingletag) printf("STAG: '%s'\n",curepn->name);
+#endif
         issingletag = 0;
         inctag = 0;
         /*ineletag = 0;
@@ -928,13 +960,17 @@ int parsersstoll(FILE *rf)
         /*...*/
         if (startsame_i(curepn->name, "[CDATA[") || startsame_i(curepn->name,"![CDATA["))
         {
+#ifdef DEBUG
           	printf("\tUnfiltered CDATA!\n");
+#endif
           /* Find above epn */
           for (epptr = eproot; epptr != NULL; epptr = epptr->next)
           {
             if (epptr->next == curepn) break;
           }
+#ifdef DEBUG
             	if (epptr != NULL) printf("CDATA: above epn is %s\n",epptr->name);
+#endif
           if (epptr != NULL)
           {
             if (epptr->data != NULL)
@@ -972,7 +1008,9 @@ int parsersstoll(FILE *rf)
         }
         else if (streq_i(curepn->name, "rss"))
         {
+#ifdef DEBUG
           	printf("\tRSS\n");
+#endif
           /* Ignore the overarching element (though maybe do something with version?) */
           if (rssversion == NULL)
           {
@@ -1001,7 +1039,9 @@ int parsersstoll(FILE *rf)
         else if (streq_i(curepn->name, "item"))
         {
           /*...*/
+#ifdef DEBUG
           	printf("\tITEM\n");
+#endif
           initem = 0;
           if (curitem == NULL)
           {
@@ -1041,7 +1081,9 @@ int parsersstoll(FILE *rf)
         }
         else if (streq_i(curepn->name, "channel"))
         {
+#ifdef DEBUG
           	printf("\tCHANNEL\n");
+#endif
           /*...*/
           inchan = 0;
           if (curchan == NULL)
@@ -1078,7 +1120,9 @@ int parsersstoll(FILE *rf)
         }
         else if (streq_i(curepn->name, "title") != 0)
         {
+#ifdef DEBUG
         	printf("\tTITLE\n");
+#endif
           if (title == NULL)
           {
             title = (char *) malloc(sizeof(char)*(1+strlen(curepn->data)));
@@ -1158,7 +1202,9 @@ int parsersstoll(FILE *rf)
               {
                 if (epptr->next == curepn) break;
               }
+#ifdef DEBUG
             	if (epptr != NULL) printf("image title: above epn is %s\n",epptr->name);
+#endif
               if (epptr != NULL && streq_i(epptr->name,"image"))
               {
                 /* Assign data as attribute */
@@ -1178,7 +1224,9 @@ int parsersstoll(FILE *rf)
               {
                 if (epptr->next == curepn) break;
               }
+#ifdef DEBUG
             	if (epptr != NULL) printf("textinput title: above epn is %s\n",epptr->name);
+#endif
               if (epptr != NULL && streq_i(epptr->name,"textinput"))
               {
                 /* Assign data as attribute */
@@ -1195,7 +1243,9 @@ int parsersstoll(FILE *rf)
         }
         else if (streq_i(curepn->name, "link"))
         {
+#ifdef DEBUG
         	printf("\tLINK\n");
+#endif
           if (link == NULL)
           {
             link = (char *) malloc(sizeof(char)*(1+strlen(curepn->data)));
@@ -1276,7 +1326,9 @@ int parsersstoll(FILE *rf)
               {
                 if (epptr->next == curepn) break;
               }
+#ifdef DEBUG
             	if (epptr != NULL) printf("image link: above epn is %s\n",epptr->name);
+#endif
               if (epptr != NULL && streq_i(epptr->name,"image"))
               {
                 /* Assign data as attribute */
@@ -1296,7 +1348,9 @@ int parsersstoll(FILE *rf)
               {
                 if (epptr->next == curepn) break;
               }
+#ifdef DEBUG
             	if (epptr != NULL) printf("textinput link: above epn is %s\n",epptr->name);
+#endif
               if (epptr != NULL && streq_i(epptr->name,"textinput"))
               {
                 /* Assign data as attribute */
@@ -1359,7 +1413,9 @@ int parsersstoll(FILE *rf)
             {
               if (title!=NULL && link!=NULL && desc!=NULL && curchan == NULL)
               {
+#ifdef DEBUG
                 	printf("Creating Channel...\n");
+#endif
                 curchan = createchanpropnode(title, link, desc);
                 if (curchan == NULL)
                 {
@@ -1375,7 +1431,9 @@ int parsersstoll(FILE *rf)
               }
               else if (curchan != NULL && curchan->description == NULL)
               {
+#ifdef DEBUG
                 	printf("Adding description '%s' to channel...\n",desc);
+#endif
                 curchan->description = (char *) malloc(sizeof(char)*(1+strlen(desc)));
                 if (curchan->description == NULL)
                 {
@@ -1383,10 +1441,14 @@ int parsersstoll(FILE *rf)
                   goto OOMEMERROR;
                 }
                 strcpy(curchan->description, desc);
+#ifdef DEBUG
                 	printf("Written channel description.\n");
+#endif
                 free(desc);
                 desc = NULL;
+#ifdef DEBUG
                 	printf("Desc is free.\n");
+#endif
               }
             }
             else if (inimage && !intxtinp)
@@ -1396,7 +1458,9 @@ int parsersstoll(FILE *rf)
               {
                 if (epptr->next == curepn) break;
               }
+#ifdef DEBUG
             	if (epptr != NULL) printf("image description: above epn is %s\n",epptr->name);
+#endif
               if (epptr != NULL && streq_i(epptr->name,"image"))
               {
                 /* Assign data as attribute */
@@ -1416,7 +1480,9 @@ int parsersstoll(FILE *rf)
               {
                 if (epptr->next == curepn) break;
               }
+#ifdef DEBUG
             	if (epptr != NULL) printf("textinput description: above epn is %s\n",epptr->name);
+#endif
               if (epptr != NULL && streq_i(epptr->name,"textinput"))
               {
                 /* Assign data as attribute */
@@ -2444,12 +2510,16 @@ int parsersstoll(FILE *rf)
         }
         else if (streq_i(curepn->name, "category"))
         {
+#ifdef DEBUG
           	printf("CAT %s, %s\n", curepn->name, curepn->data);
+#endif
           char *domainptr = NULL;
           domainptr = NULL;
           for (epptr = curepn->attlist; epptr != NULL; epptr = epptr->next)
           {
+#ifdef DEBUG
             	printf("Category Attribute '%s'\n", epptr->name);
+#endif
             if (streq_i(epptr->name, "domain"))
             {
               domainptr = epptr->data;
@@ -2458,7 +2528,9 @@ int parsersstoll(FILE *rf)
           }
           if (initem && !inimage && !intxtinp)
           {
+#ifdef DEBUG
             	printf("Item Category '%s' (%s)\n",curepn->data,domainptr);
+#endif
             if (curitem == NULL)
             {
               if (createcategory(item_cat,nextitemid,domainptr,curepn->data)==0)
@@ -2478,7 +2550,9 @@ int parsersstoll(FILE *rf)
           }
           else if (inchan && !initem && !inimage && !intxtinp)
           {
+#ifdef DEBUG
             	printf("Channel Category '%s' (%s)\n",curepn->data,domainptr);
+#endif
             if (curchan == NULL)
             {
               if (createcategory(channel_cat,nextchanid,domainptr,curepn->data)==0)
@@ -2900,16 +2974,22 @@ int parsersstoll(FILE *rf)
           /* This is a bug of The Bugle(TM) feed at least - fixed here */
           if (initem || inchan || inimage || intxtinp)
           {
+#ifdef DEBUG
           	printf("P Data\n"); /* Gets this far... */
+#endif
             /* Find above epn */
             for (epptr = eproot; epptr != NULL; epptr = epptr->next)
             {
               if (epptr->next == curepn) break;
             }
+#ifdef DEBUG
             	if (epptr != NULL) printf("P Data: Above epn is %s\n",epptr->name);
+#endif
             if (epptr != NULL && streq_i(epptr->name,"description"))
             {
+#ifdef DEBUG
               	printf("Assigning P Data '%s' to above\n",curepn->data);
+#endif
               if (epptr->data == NULL)
               {
                 epptr->data = (char *) malloc(sizeof(char)*(1+strlen(curepn->data)));
@@ -2919,7 +2999,9 @@ int parsersstoll(FILE *rf)
                   goto OOMEMERROR;
                 }
                 strcpy(epptr->data, curepn->data);
+#ifdef DEBUG
                 	printf("New data: '%s'\n",epptr->data);
+#endif
               }
               else
               {
@@ -2934,7 +3016,9 @@ int parsersstoll(FILE *rf)
                 free(epptr->data);
                 epptr->data = tstr;
                 tstr = NULL;
+#ifdef DEBUG
                 	printf("New data: '%s'\n",epptr->data);
+#endif
               }
             }
           }
@@ -2948,7 +3032,9 @@ int parsersstoll(FILE *rf)
             {
               if (epptr->next == curepn) break;
             }
+#ifdef DEBUG
             	if (epptr != NULL) printf("hour: above epn is %s\n",epptr->name);
+#endif
             if (epptr != NULL && streq_i(epptr->name,"skiphours"))
             {
               /* Assign data as attribute */
@@ -2969,7 +3055,9 @@ int parsersstoll(FILE *rf)
             {
               if (epptr->next == curepn) break;
             }
+#ifdef DEBUG
             	if (epptr != NULL) printf("day: above epn is %s\n",epptr->name);
+#endif
             if (epptr != NULL && streq_i(epptr->name,"skipdays"))
             {
               /* Assign data as attribute */
@@ -2990,7 +3078,9 @@ int parsersstoll(FILE *rf)
             {
               if (epptr->next == curepn) break;
             }
+#ifdef DEBUG
             	if (epptr != NULL) printf("image url: above epn is %s\n",epptr->name);
+#endif
             if (epptr != NULL && streq_i(epptr->name,"image"))
             {
               /* Assign data as attribute */
@@ -3011,7 +3101,9 @@ int parsersstoll(FILE *rf)
             {
               if (epptr->next == curepn) break;
             }
+#ifdef DEBUG
             	if (epptr != NULL) printf("image width: above epn is %s\n",epptr->name);
+#endif
             if (epptr != NULL && streq_i(epptr->name,"image"))
             {
               /* Assign data as attribute */
@@ -3032,7 +3124,9 @@ int parsersstoll(FILE *rf)
             {
               if (epptr->next == curepn) break;
             }
+#ifdef DEBUG
             	if (epptr != NULL) printf("image height: above epn is %s\n",epptr->name);
+#endif
             if (epptr != NULL && streq_i(epptr->name,"image"))
             {
               /* Assign data as attribute */
@@ -3053,7 +3147,9 @@ int parsersstoll(FILE *rf)
             {
               if (epptr->next == curepn) break;
             }
+#ifdef DEBUG
             	if (epptr != NULL) printf("textinput name: above epn is %s\n",epptr->name);
+#endif
             if (epptr != NULL && streq_i(epptr->name,"textinput"))
             {
               /* Assign data as attribute */
@@ -3181,7 +3277,9 @@ int parsersstoll(FILE *rf)
                     curitem->enclosure.length = atol(epptr->data+sizeof(char));
                   }
                   else curitem->enclosure.length = atol(epptr->data);
+#ifdef DEBUG
                   	printf("Enclosure Length: %s (%d)\n",epptr->data, curitem->enclosure.length);
+#endif
                 }
                 else if (streq_i(epptr->name,"type"))
                 {
@@ -3321,7 +3419,9 @@ int parsersstoll(FILE *rf)
         {
           eproot = eproot->next;
           freeepn(curepn);
+#ifdef DEBUG
           	epndepth--;
+#endif
           curepn = eproot;
         }
         else
@@ -3335,7 +3435,9 @@ int parsersstoll(FILE *rf)
           {
             tepn->next = curepn->next;
             freeepn(curepn);
+#ifdef DEBUG
             	epndepth--;
+#endif
             curepn = tepn;
           }
           else
@@ -3343,7 +3445,9 @@ int parsersstoll(FILE *rf)
             /* Should not happen! */
             eproot = eproot->next;
             freeepn(eproot);
+#ifdef DEBUG
             	epndepth--;
+#endif
             curepn = eproot;
           }
         }
@@ -3367,7 +3471,9 @@ int parsersstoll(FILE *rf)
           ceni = 0;
           curelementname[0] = 0;
           cedi = strlen(curelementdata);
+#ifdef DEBUG
 /*          	printf("CDATA: CEDI=%lu\n",cedi);*/
+#endif
         }
       }
       else if (ineletag && inattname && cani<MAX_ATTN)

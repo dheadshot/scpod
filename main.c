@@ -16,7 +16,9 @@ int main(int argc, char *argv[])
     return 1;
   }
   
+#ifdef DEBUG
   	printf("%d, %d\n",streq_i("title","titlE"), endwith_("abc]]>","]]>"));
+#endif
   
   FILE *feedfile = fopen(argv[1],"r");
   if (feedfile == NULL)
