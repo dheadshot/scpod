@@ -107,7 +107,7 @@ int checklastopened()
   char sqlstatement[] = "SELECT Setting, Data FROM Config WHERE Setting IS 'LAST OPENED';";
   if (passbackstr != NULL) free(passbackstr);
   passbackstr = NULL;
-  rc = sqlite_exec(db,sqlstatement,callback_clo,0,&anerrmsg);
+  rc = sqlite3_exec(db,sqlstatement,callback_clo,0,&anerrmsg);
   if (rc != SQLITE_OK)
   {
     dbwriteerror(rc);
@@ -123,7 +123,7 @@ int writetopassbackstr(char *astr)
 {
   if (astr == NULL) return 0;
   if (passbackstr != NULL) free(passbackstr);
-  passbackstr = (char *) malloc(sizeof(chr)*(1+strlen(astr)));
+  passbackstr = (char *) malloc(sizeof(char)*(1+strlen(astr)));
   if (passbackstr == NULL) return 0;
   strcpy(passbackstr,astr);
 }

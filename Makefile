@@ -4,7 +4,7 @@ DEBUGFLAGS = -DDEBUG
 #DCFLAGS = ${DEBUGFLAGS}
 
 scpod: main.o sfuncs.o parser.o dbexchange.o
-	${CC} ${DCFLAGS} main.o sfuncs.o parser.o dbexchange.o -o scpod
+	${CC} ${DCFLAGS} main.o sfuncs.o parser.o dbexchange.o -lsqlite3 -o scpod
 	chmod +x scpod
 
 main.o: main.c
