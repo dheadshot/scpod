@@ -47,7 +47,7 @@ int opendb(int dolo)
   char *anerrmsg;
   if (isnewdb)
   {
-    retcode = sqlite3_exec(db, "INSERT INTO Config (Setting, Data) VALUES ('LAST OPENED', datetime(now));", NULL, 0, &anerrmsg);
+    retcode = sqlite3_exec(db, "INSERT INTO Config (Setting, Data) VALUES ('LAST OPENED', datetime(CURRENT_TIMESTAMP));", NULL, 0, &anerrmsg);
     if (retcode != SQLITE_OK && retcode != SQLITE_DONE)
     {
       dbwriteerror(retcode);
@@ -60,7 +60,7 @@ int opendb(int dolo)
   }
   else
   {
-    retcode = sqlite3_exec(db, "UPDATE Config SET Data = datetime(now) WHERE Setting IS 'LAST OPENED';", NULL, 0, &anerrmsg);
+    retcode = sqlite3_exec(db, "UPDATE Config SET Data = datetime(CURRENT_TIMESTAMP) WHERE Setting IS 'LAST OPENED';", NULL, 0, &anerrmsg);
     if (retcode != SQLITE_OK && retcode != SQLITE_DONE)
     {
       dbwriteerror(retcode);
