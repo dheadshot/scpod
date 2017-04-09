@@ -93,6 +93,13 @@ Category   | TEXT      | NO         | NO  | ''            |             | Catego
 Domain     | TEXT      | YES        | NO  | NULL          |             | Category Domain
 
 
+## Table: Config
+Field Name | Data Type | Allow Null | Key | Default Value | Constraints | Notes
+---------- | --------- | ---------- | --- | ------------- | ----------- | -----
+Setting    | TEXT      | NO         | PRIMARY | NULL      | UNIQUE      | The name of the setting.
+Data       | TEXT      | YES        | NO  | NULL          |             | What it's set to.
+
+
 ## Table Creation Code
 
 ### Channel
@@ -198,5 +205,14 @@ Item_ID INTEGER NOT NULL DEFAULT 0,
 Category TEXT NOT NULL,
 Domain TEXT DEFAULT NULL,
 FOREIGN KEY (Item_ID) REFERENCES Item(Item_ID)
+);
+```
+
+### Config
+
+```sqlite
+CREATE TABLE Config (
+Setting TEXT NOT NULL PRIMARY KEY,
+Data TEXT DEFAULT NULL
 );
 ```
