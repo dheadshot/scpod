@@ -108,7 +108,7 @@ Data       | TEXT      | YES        | NO  | NULL          |             | What i
 BEGIN TRANSACTION;
 CREATE TABLE Channel (
 Channel_ID INTEGER NOT NULL PRIMARY KEY AUTOINCREMENT,
-Channel_URL TEXT NOT NULL,
+Channel_URL TEXT NOT NULL UNIQUE,
 Title TEXT NOT NULL,
 Link TEXT DEFAULT NULL,
 Description TEXT DEFAULT NULL,
