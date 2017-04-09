@@ -10,6 +10,7 @@
 
 
 int opendb(int dolo);
+int closedb();
 static int callback_clo(void *NotUsed, int argc, char **argv, char **azColName);
 int checklastopened();
 int writetopassbackstr(char *astr);
