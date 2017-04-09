@@ -3,8 +3,8 @@ CC = gcc
 DEBUGFLAGS = -DDEBUG
 #DCFLAGS = ${DEBUGFLAGS}
 
-scpod: main.o sfuncs.o parser.o
-	${CC} ${DCFLAGS} main.o sfuncs.o parser.o -o scpod
+scpod: main.o sfuncs.o parser.o dbexchange.o
+	${CC} ${DCFLAGS} main.o sfuncs.o parser.o dbexchange.o -o scpod
 	chmod +x scpod
 
 main.o: main.c
@@ -15,3 +15,6 @@ sfuncs.o: sfuncs.c
 
 parser.o: parser.c parser.h
 	${CC} ${DCFLAGS} -c parser.c
+
+dbexchange.o: dbexchange.c dbexchange.h
+	${CC} ${DCFLAGS} -c dbexchange.c

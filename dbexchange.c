@@ -10,18 +10,122 @@
 
 int dbisopen = 0;
 sqlite3 *db;
+char *passbackstr = NULL;
 
-int opendb()
+int opendb(int dolo)
 {
+  int isnewdb = 0;
   if (dbisopen) return -1;
   int retcode = sqlite3_open_v2(DBNAME, &db, SQLITE_OPEN_READWRITE, NULL);
   if (retcode != SQLITE_OK)
   {
     dbwriteerror(retcode);
+    sqlite3_close(db);
     return 0;
   }
   dbisopen = 1;
+  if (!dolo) return 1;
+  /* Check last opened and update */
+  retcode = checklastopened();
+  if (retcode == -1)
+  {
+    isnewdb = 1;
+    printf("New Database Started\n"); /* Silence if -q specified */
+  }
+  else if (retcode == 0)
+  {
+    sqlite3_close(db);
+    dbisopen = 0;
+    return 0;
+  }
+  else
+  {
+    printf("Last accessed on %s\n",passbackstr); /* Silence if -q specified */
+    free(passbackstr);
+    passbackstr = NULL;
+  }
+  char *anerrmsg;
+  if (isnewdb)
+  {
+    retcode = sqlite3_exec(db, "INSERT INTO Channel (Setting, Data) VALUES ('LAST OPENED', datetime(now));", NULL, 0, &anerrmsg);
+    if (retcode != SQLITE_OK && retcode != SQLITE_DONE)
+    {
+      dbwriteerror(retcode);
+      fprintf(stderr, "(Returned error: %s)\n",anerrmsg);
+      sqlite3_free(anerrmsg);
+      sqlite3_close(db);
+      dbisopen = 0;
+      return 0;
+    }
+  }
+  else
+  {
+    retcode = sqlite3_exec(db, "UPDATE Channel SET Data = datetime(now) WHERE Setting IS 'LAST OPENED';", NULL, 0, &anerrmsg);
+    if (retcode != SQLITE_OK && retcode != SQLITE_DONE)
+    {
+      dbwriteerror(retcode);
+      fprintf(stderr, "(Returned error: %s)\n",anerrmsg);
+      sqlite3_free(anerrmsg);
+      sqlite3_close(db);
+      dbisopen = 0;
+      return 0;
+    }
+  }
   return 1;
+}
+
+int closedb()
+{
+  if (!dbisopen) return -1;
+  int rc = sqlite3_close(db);
+  if (rc == SQLITE_OK || rc == SQLITE_DONE) return 1;
+  dbwriteerror(rc);
+  return 0;
+}
+
+static int callback_clo(void *NotUsed, int argc, char **argv, char **azColName)
+{ /* Check Last Opened Callback */
+  int i;
+  for (i=0;i<argc;i++)
+  {
+    if (streq_i(azColName[i],"Setting"))
+    {
+      if (!streq_i(argv[i],"Last Opened")) return 0;
+    }
+    else if (streq_i(azColName[i],"Data"))
+    {
+      writetopassbackstr(argv[i]);
+    }
+  }
+  return 0;
+}
+
+int checklastopened()
+{
+  char *anerrmsg = NULL;
+  int rc;
+  char sqlstatement[] = "SELECT Setting, Data FROM Config WHERE Setting IS 'LAST OPENED';";
+  if (passbackstr != NULL) free(passbackstr);
+  passbackstr = NULL;
+  rc = sqlite_exec(db,sqlstatement,callback_clo,0,&anerrmsg);
+  if (rc != SQLITE_OK)
+  {
+    dbwriteerror(rc);
+    fprintf(stderr, "(Returned Error: %s)\n", anerrmsg);
+    sqlite3_free(anerrmsg);
+    return 0;
+  }
+  if (passbackstr == NULL) return -1;
+  return 1;
+}
+
+int writetopassbackstr(char *astr)
+{
+  if (astr == NULL) return 0;
+  if (passbackstr != NULL) free(passbackstr);
+  passbackstr = (char *) malloc(sizeof(chr)*(1+strlen(astr)));
+  if (passbackstr == NULL) return 0;
+  strcpy(passbackstr,astr);
 }
 
 int dbwriteerror(int errorcode)
