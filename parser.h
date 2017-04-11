@@ -59,6 +59,8 @@ typedef struct chanpropnode_struct {
   m1tna skiphours;
   ntsa skipdays;
   
+  unsigned long dbcid; /* Channel_ID Database field */
+  
   struct chanpropnode_struct *next;
 } chanpropnode;
 
@@ -93,6 +95,8 @@ typedef struct itempropnode_struct {
   rsssource source;
   /* Used by the BBC */
   rssimage image;
+  
+  unsigned long dbiid; /* Item_ID Database field */
   
   struct itempropnode_struct *next;
 } itempropnode;

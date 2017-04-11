@@ -4,6 +4,7 @@
 #include <sqlite3.h>
 
 #include "sfuncs.h"
+#include "parser.h"
 
 #include "dbexchange.h"
 
@@ -11,6 +12,8 @@
 int dbisopen = 0;
 sqlite3 *db;
 char *passbackstr = NULL;
+unsigned long passbackul = 0;
+sqlite3_stmt *channelstmt = NULL, *itemstmt = NULL;
 
 int opendb(int dolo)
 {
@@ -81,6 +84,291 @@ int closedb()
   if (rc == SQLITE_OK || rc == SQLITE_DONE) return 1;
   dbwriteerror(rc);
   return 0;
+}
+
+int preparechannelstatement()
+{
+  char sqlstmt[] = "INSERT INTO Channel (Channel_ID, Channel_URL, Title, Link, Description, Language_Major, Language_Minor, Copyright, Managing_Editor, Webmaster, Publication_Date, Last_Build_Date, Generator, Documentation, RSS_Version, TTL, Image_URL, Image_Title, Image_Link, Image_Description, Image_Width, Image_Height, Last_Refresh_Date, Directory) VALUES (NULL, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, now, ?);";
+  int rc = sqlite3_prepare_v2(db, sqlstmt, strlen(sqlstmt)+1, &channelstmt, NULL);
+  if (rc != SQLITE_OK)
+  {
+    dbwriteerror(rc);
+    if (channelstmt != NULL) sqlite3_finalize(channelstmt);
+    channelstmt = NULL;
+    return 0;
+  }
+  return 1;
+}
+
+unsigned long addchannel(chanpropnode *achan, char *chanurl, char *rss_version, char *directory)
+{
+  if (channelstmt == NULL) return 0;
+  if (achan == NULL || directory == NULL || chanurl == NULL) return 0;
+  char datetext[256] = "";
+  int rc;
+  
+  /* Bind values */
+  rc = sqlite3_bind_text(channelstmt, 1, chanurl, strlen(chanurl)*sizeof(char), SQLITE_TRANSIENT);
+  if (rc != SQLITE_OK)
+  {
+    dbwriteerror(rc);
+    return 0;
+  }
+  rc = sqlite3_bind_text(channelstmt, 2, achan->title, strlen(achan->title)*sizeof(char), SQLITE_TRANSIENT);
+  if (rc != SQLITE_OK)
+  {
+    dbwriteerror(rc);
+    return 0;
+  }
+  rc = sqlite3_bind_text(channelstmt, 3, achan->link, strlen(achan->link)*sizeof(char), SQLITE_TRANSIENT);
+  if (rc != SQLITE_OK)
+  {
+    dbwriteerror(rc);
+    return 0;
+  }
+  rc = sqlite3_bind_text(channelstmt, 4, achan->description, strlen(achan->description)*sizeof(char), SQLITE_TRANSIENT);
+  if (rc != SQLITE_OK)
+  {
+    dbwriteerror(rc);
+    return 0;
+  }
+  rc = sqlite3_bind_text(channelstmt, 5, achan->language_main, strlen(achan->language_main)*sizeof(char), SQLITE_TRANSIENT);
+  if (rc != SQLITE_OK)
+  {
+    dbwriteerror(rc);
+    return 0;
+  }
+  rc = sqlite3_bind_text(channelstmt, 6, achan->language_sub, strlen(achan->language_sub)*sizeof(char), SQLITE_TRANSIENT);
+  if (rc != SQLITE_OK)
+  {
+    dbwriteerror(rc);
+    return 0;
+  }
+  rc = sqlite3_bind_text(channelstmt, 7, achan->copyright, strlen(achan->copyright)*sizeof(char), SQLITE_TRANSIENT);
+  if (rc != SQLITE_OK)
+  {
+    dbwriteerror(rc);
+    return 0;
+  }
+  rc = sqlite3_bind_text(channelstmt, 8, achan->managingeditor, strlen(achan->managingeditor)*sizeof(char), SQLITE_TRANSIENT);
+  if (rc != SQLITE_OK)
+  {
+    dbwriteerror(rc);
+    return 0;
+  }
+  rc = sqlite3_bind_text(channelstmt, 9, achan->webmaster, strlen(achan->webmaster)*sizeof(char), SQLITE_TRANSIENT);
+  if (rc != SQLITE_OK)
+  {
+    dbwriteerror(rc);
+    return 0;
+  }
+  /*
+  sprintf(datetext,"%-.4ld-%-.2d-%-.2d %-.2d:%-.2d:%-.2d",achan->pubdate.year, achan->pubdate.month, achan->pubdate.daynum, achan->pubdate.hour, achan->pubdate.minute, achan->pubdate.second);
+  if (achan->pubdate.gmtoffseth<0 || achan->pubdate.gmtoffsetm<0) strcat(datetext, "-");
+  else strcat(datetext, "+");
+  doffh = achan->pubdate.gmtoffseth;
+  if (doffh<0) doffh = 0 - doffh;
+  doffm = achan->pubdate.gmtoffsetm;
+  if (doffm<0) doffm = 0 - doffm;
+  sprintf(dateoffsettext, "%-.2d:%-.2d", doffh, doffm);
+  strcat(datetext,dateoffsettext);
+  */
+  rssdatetoisodate(datetext,&(achan->pubdate));
+  rc = sqlite3_bind_text(channelstmt, 10, datetext, strlen(datetext)*sizeof(char), SQLITE_TRANSIENT);
+  if (rc != SQLITE_OK)
+  {
+    dbwriteerror(rc);
+    return 0;
+  }
+  rssdatetoisodate(datetext,&(achan->lastbuilddate));
+  rc = sqlite3_bind_text(channelstmt, 11, datetext, strlen(datetext)*sizeof(char), SQLITE_TRANSIENT);
+  if (rc != SQLITE_OK)
+  {
+    dbwriteerror(rc);
+    return 0;
+  }
+  rc = sqlite3_bind_text(channelstmt, 12, achan->generator, strlen(achan->generator)*sizeof(char), SQLITE_TRANSIENT);
+  if (rc != SQLITE_OK)
+  {
+    dbwriteerror(rc);
+    return 0;
+  }
+  rc = sqlite3_bind_text(channelstmt, 13, achan->docs, strlen(achan->docs)*sizeof(char), SQLITE_TRANSIENT);
+  if (rc != SQLITE_OK)
+  {
+    dbwriteerror(rc);
+    return 0;
+  }
+  rc = sqlite3_bind_text(channelstmt, 14, rss_version, strlen(rss_version)*sizeof(char), SQLITE_TRANSIENT);
+  if (rc != SQLITE_OK)
+  {
+    dbwriteerror(rc);
+    return 0;
+  }
+  rc = sqlite3_bind_int(channelstmt, 15, achan->ttl);
+  if (rc != SQLITE_OK)
+  {
+    dbwriteerror(rc);
+    return 0;
+  }
+  rc = sqlite3_bind_text(channelstmt, 16, achan->image.url, strlen(achan->image.url)*sizeof(char), SQLITE_TRANSIENT);
+  if (rc != SQLITE_OK)
+  {
+    dbwriteerror(rc);
+    return 0;
+  }
+  rc = sqlite3_bind_text(channelstmt, 17, achan->image.title, strlen(achan->image.title)*sizeof(char), SQLITE_TRANSIENT);
+  if (rc != SQLITE_OK)
+  {
+    dbwriteerror(rc);
+    return 0;
+  }
+  rc = sqlite3_bind_text(channelstmt, 18, achan->image.link, strlen(achan->image.link)*sizeof(char), SQLITE_TRANSIENT);
+  if (rc != SQLITE_OK)
+  {
+    dbwriteerror(rc);
+    return 0;
+  }
+  rc = sqlite3_bind_text(channelstmt, 19, achan->image.description, strlen(achan->image.description)*sizeof(char), SQLITE_TRANSIENT);
+  if (rc != SQLITE_OK)
+  {
+    dbwriteerror(rc);
+    return 0;
+  }
+  rc = sqlite3_bind_int(channelstmt, 20, achan->image.width);
+  if (rc != SQLITE_OK)
+  {
+    dbwriteerror(rc);
+    return 0;
+  }
+  rc = sqlite3_bind_int(channelstmt, 21, achan->image.height);
+  if (rc != SQLITE_OK)
+  {
+    dbwriteerror(rc);
+    return 0;
+  }
+  rc = sqlite3_bind_text(channelstmt, 22, directory, strlen(directory)*sizeof(char), SQLITE_TRANSIENT);
+  if (rc != SQLITE_OK)
+  {
+    dbwriteerror(rc);
+    return 0;
+  }
+  
+  /* Execute Statement */
+  rc = sqlite3_step(channelstmt);
+  if (rc != SQLITE_OK && rc != SQLITE_DONE)
+  {
+    dbwriteerror(rc);
+    return 0;
+  }
+  
+  /* Reset ready for next call */
+  rc = sqlite3_reset(channelstmt);
+  if (rc != SQLITE_OK && rc != SQLITE_DONE)
+  {
+    dbwriteerror(rc);
+    return 0;
+  }
+  
+  /* Get Channel_ID */
+  char gcidsql[] = "SELECT Channel_ID FROM Channel WHERE ROWID=last_rowid();";
+  char *anerrmsg;
+  passbackul = 0;
+  rc = sqlite3_exec(db,gcidsql,callback_gcid,0,&anerrmsg);
+  if (rc != SQLITE_OK)
+  {
+    dbwriteerror(rc);
+    fprintf(stderr, "(Returned Error: %s)\n", anerrmsg);
+    sqlite3_free(anerrmsg);
+    return 0;
+  }
+  
+  if (passbackul == 0) return 0;
+  achan->dbcid = passbackul;
+  
+  /* Insert Skip-Hours */
+  int i;
+  char shsql[256] = "";
+  if (achan->skiphours != NULL)
+  {
+    for (i=0;achan->skiphours[i] != -1;i++)
+    {
+      sprintf(shsql,"INSERT INTO \"Channel_Skip_Hour\" (CSHID, Channel_ID, Hour) VALUES (NULL, %lu, %d);", achan->dbcid, achan->skiphours[i]);
+      rc = sqlite3_exec(db,shsql,NULL,0,&anerrmsg);
+      if (rc != SQLITE_OK && rc != SQLITE_DONE)
+      {
+        dbwriteerror(rc);
+        fprintf(stderr, "(Returned Error: %s)\n", anerrmsg);
+        sqlite3_free(anerrmsg);
+        return 0;
+        
+      }
+    }
+  }
+  
+  /* Insert Skip-Days */
+  int n = 0;
+  if (achan->skipdays != NULL)
+  {
+    for (i=0;achan->skipdays[i] != NULL;i++)
+    {
+      if (startsame_i(achan->skipdays[i],"Sun")) n = 0;
+      else if (startsame_i(achan->skipdays[i],"Mon")) n = 1;
+      else if (startsame_i(achan->skipdays[i],"Tue")) n = 2;
+      else if (startsame_i(achan->skipdays[i],"Wed")) n = 3;
+      else if (startsame_i(achan->skipdays[i],"Thu")) n = 4;
+      else if (startsame_i(achan->skipdays[i],"Fri")) n = 5;
+      else if (startsame_i(achan->skipdays[i],"Sat")) n = 6;
+      else n = 0;
+      sprintf(shsql,"INSERT INTO \"Channel_Skip_Day\" (CSHID, Channel_ID, Day_Name, Day_Number) VALUES (NULL, %lu, %s, %d);", achan->dbcid, achan->skipdays[i], n);
+      rc = sqlite3_exec(db,shsql,NULL,0,&anerrmsg);
+      if (rc != SQLITE_OK && rc != SQLITE_DONE)
+      {
+        dbwriteerror(rc);
+        fprintf(stderr, "(Returned Error: %s)\n", anerrmsg);
+        sqlite3_free(anerrmsg);
+        return 0;
+        
+      }
+    }
+  }
+  
+  return passbackul;
+}
+
+static int callback_gcid(void *NotUsed, int argc, char **argv, char **azColName)
+{ /* Get Channel_ID Callback */
+  int i;
+  for (i=0;i<argc;i++)
+  {
+    if (streq_i(azColName[i],"Channel_ID"))
+    {
+      /*if (!streq_i(argv[i],"Last Opened")) return 0;*/
+      passbackul = atol(argv[i]);
+      return 0;
+    }
+  }
+  return 0;
+  
+}
+
+void rssdatetoisodate(char *isodate, rssdate *adate)
+{
+  char datetext[256] = "";
+  char dateoffsettext[16] = "";
+  int doffh, doffm, rc;
+  
+  sprintf(datetext,"%-.4ld-%-.2d-%-.2d %-.2d:%-.2d:%-.2d",adate->year, adate->month, adate->daynum, adate->hour, adate->minute, adate->second);
+  if (adate->gmtoffseth<0 || adate->gmtoffsetm<0) strcat(datetext, "-");
+  else strcat(datetext, "+");
+  doffh = adate->gmtoffseth;
+  if (doffh<0) doffh = 0 - doffh;
+  doffm = adate->gmtoffsetm;
+  if (doffm<0) doffm = 0 - doffm;
+  sprintf(dateoffsettext, "%-.2d:%-.2d", doffh, doffm);
+  strcat(datetext,dateoffsettext);
+  strcpy(isodate,datetext);
+  return;
 }
 
 static int callback_clo(void *NotUsed, int argc, char **argv, char **azColName)

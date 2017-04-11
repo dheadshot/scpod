@@ -11,6 +11,11 @@
 
 int opendb(int dolo);
 int closedb();
+int preparechannelstatement();
+unsigned long addchannel(chanpropnode *achan, char *chanurl, 
+                         char *rss_version, char *directory);
+static int callback_gcid(void *NotUsed, int argc, char **argv, char **azColName);
+void rssdatetoisodate(char *isodate, rssdate *adate);
 static int callback_clo(void *NotUsed, int argc, char **argv, char **azColName);
 int checklastopened();
 int writetopassbackstr(char *astr);
