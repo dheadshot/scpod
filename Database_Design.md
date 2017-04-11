@@ -27,6 +27,7 @@ Image_Description | TEXT | YES      | NO  | NULL          |             | Channe
 Image_Width | INTEGER  | YES        | NO  | NULL          |             | Channel Image Width from RSS
 Image_Height | INTEGER | YES        | NO  | NULL          |             | Channel Image Height from RSS
 Last_Refresh_Date | TEXT | NO       | NO  | NULL          |             | Last time the feed was refreshed from the URL
+Directory  | TEXT      | NO         | NO  | ''            |             | Name of the directory in which the downloaded items will be stored.
 
 
 ## Table: Channel_Category
@@ -129,7 +130,8 @@ Image_Link TEXT DEFAULT NULL,
 Image_Description TEXT DEFAULT NULL,
 Image_Width INTEGER DEFAULT NULL,
 Image_Height INTEGER DEFAULT NULL,
-Last_Refresh_Date TEXT NOT NULL
+Last_Refresh_Date TEXT NOT NULL,
+Directory TEXT NOT NULL DEFAULT ''
 );
 CREATE INDEX ChanURL ON Channel (Channel_URL);
 COMMIT;
@@ -165,7 +167,7 @@ FOREIGN KEY (Channel_ID) REFERENCES Channel(Channel_ID)
 CREATE TABLE Channel_Skip_Hour (
 CSHID INTEGER NOT NULL PRIMARY KEY AUTOINCREMENT,
 Channel_ID INTEGER NOT NULL DEFAULT 0,
-Hur INTEGER NOT NULL DEFAULT 0,
+Hour INTEGER NOT NULL DEFAULT 0,
 FOREIGN KEY (Channel_ID) REFERENCES Channel(Channel_ID)
 );
 ```
