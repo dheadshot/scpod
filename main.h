@@ -5,5 +5,6 @@ int docmd(char **cmdntsa, int offset);
 int main(int argc, char *argv[]);
 int testparser(char *rssfile);
 int testdb();
+int configuresetting(char *setting, char *value);
 
 #endif

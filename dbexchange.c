@@ -13,7 +13,7 @@ int dbisopen = 0;
 sqlite3 *db;
 char *passbackstr = NULL;
 unsigned long passbackul = 0;
-sqlite3_stmt *channelstmt = NULL, *itemstmt = NULL;
+sqlite3_stmt *channelstmt = NULL, *itemstmt = NULL, *configstmt = NULL;
 
 int opendb(int dolo)
 {
@@ -51,7 +51,7 @@ int opendb(int dolo)
   if (isnewdb)
   {
     retcode = sqlite3_exec(db, "INSERT INTO Config (Setting, Data) VALUES ('LAST OPENED', datetime(CURRENT_TIMESTAMP));", NULL, 0, &anerrmsg);
-    if (retcode != SQLITE_OK && retcode != SQLITE_DONE)
+    if (retcode != SQLITE_OK && retcode != SQLITE_DONE && retcode != SQLITE_ROW)
     {
       dbwriteerror(retcode);
       fprintf(stderr, "(Returned error: %s)\n",anerrmsg);
@@ -64,7 +64,7 @@ int opendb(int dolo)
   else
   {
     retcode = sqlite3_exec(db, "UPDATE Config SET Data = datetime(CURRENT_TIMESTAMP) WHERE Setting IS 'LAST OPENED';", NULL, 0, &anerrmsg);
-    if (retcode != SQLITE_OK && retcode != SQLITE_DONE)
+    if (retcode != SQLITE_OK && retcode != SQLITE_DONE && retcode != SQLITE_ROW)
     {
       dbwriteerror(retcode);
       fprintf(stderr, "(Returned error: %s)\n",anerrmsg);
@@ -84,6 +84,128 @@ int closedb()
   if (rc == SQLITE_OK || rc == SQLITE_DONE) return 1;
   dbwriteerror(rc);
   return 0;
+}
+
+int writecsview(char *setting)
+{
+  int rc;
+  char *sqpos, setsql[512] = "", *anerrmsg;
+  char *setttmp = NULL;
+  
+  if (setting == NULL)
+  {
+    strcpy(setsql, "SELECT * FROM Config;");
+    printf("Setting = Value\n------------------\n");
+  }
+  else
+  {
+    setttmp = (char *) malloc(sizeof(char)*(1+strlen(setting)));
+    if (setttmp == NULL) return 0;
+    strtoupper(setttmp, setting);
+    while ((sqpos = strstr(setttmp, "'")) != NULL) sqpos[0] = '_';
+    sprintf(setsql, "SELECT * FROM Config WHERE Setting='%s';", setttmp);
+    free(setttmp);
+  }
+  passbackul = 0;
+  rc = sqlite3_exec(db, setsql, callback_csview, 0, &anerrmsg);
+  if (rc != SQLITE_OK && rc != SQLITE_DONE && rc != SQLITE_ROW)
+  {
+    dbwriteerror(rc);
+    fprintf(stderr, "(Returned Error: %s)\n", anerrmsg);
+    sqlite3_free(anerrmsg);
+    return 0;
+  }
+  if (passbackul == 0)
+  {
+    if (setting != NULL) fprintf(stderr, "Warning: %s has not been set!\n", setting);
+    else fprintf(stderr, "Warning: No settings have been set!\n");
+  }
+  return 1;
+}
+
+int preparecsstatement(char *setting)
+{
+  int rc, sisset;
+  char *anerrmsg = NULL;
+  char setsql[512] = "";
+  char *sqpos = NULL;
+  
+  while ((sqpos = strstr(setting, "'")) != NULL) sqpos[0] = '_';
+  sprintf(setsql, "SELECT Setting FROM Config WHERE Setting='%s';", setting);
+  rc = sqlite3_exec(db, setsql, callback_csset, 0, &anerrmsg);
+  if (rc != SQLITE_OK && rc != SQLITE_DONE && rc != SQLITE_ROW)
+  {
+    dbwriteerror(rc);
+    fprintf(stderr, "(Returned Error: %s)\n", anerrmsg);
+    sqlite3_free(anerrmsg);
+    return 0;
+  }
+  
+  if (passbackstr == NULL) sisset = 0;
+  else if (streq_i(passbackstr, setting)) sisset = 1;
+  else sisset = 0;
+  
+  char sqlstmt[512] = "";
+  if (sisset)
+  {
+    strcpy(sqlstmt, "UPDATE Config SET Data = ?2 WHERE Setting = ?1;");
+  }
+  else
+  {
+    strcpy(sqlstmt, "INSERT INTO Config (Setting, Data) VALUES (?1, ?2);");
+  }
+  rc = sqlite3_prepare_v2(db, sqlstmt, strlen(sqlstmt)+1, &configstmt, NULL);
+  if (rc != SQLITE_OK && rc != SQLITE_DONE)
+  {
+    dbwriteerror(rc);
+    if (configstmt != NULL) sqlite3_finalize(configstmt);
+    configstmt = NULL;
+    return 0;
+  }
+  return 1;
+}
+
+int setconfigsetting(char *setting, char *value)
+{
+  if (configstmt == NULL) return 0;
+  
+  int rc;
+  
+  /* Bind Values */
+  rc = sqlite3_bind_text(configstmt, 1, setting, strlen(setting)*sizeof(char), SQLITE_TRANSIENT);
+  if (rc != SQLITE_OK)
+  {
+    dbwriteerror(rc);
+    sqlite3_finalize(configstmt);
+    return 0;
+  }
+  rc = sqlite3_bind_text(configstmt, 2, value, strlen(setting)*sizeof(char), SQLITE_TRANSIENT);
+  if (rc != SQLITE_OK)
+  {
+    dbwriteerror(rc);
+    sqlite3_finalize(configstmt);
+    return 0;
+  }
+  
+  /* Execute Statement */
+  rc = sqlite3_step(configstmt);
+  if (rc != SQLITE_OK && rc != SQLITE_DONE && rc != SQLITE_ROW)
+  {
+    dbwriteerror(rc);
+    sqlite3_finalize(configstmt);
+    return 0;
+  }
+  
+  /* Finalise Statement */
+  rc = sqlite3_finalize(configstmt);
+  if (rc != SQLITE_OK && rc != SQLITE_DONE && rc != SQLITE_ROW)
+  {
+    dbwriteerror(rc);
+    sqlite3_finalize(configstmt);
+    return 0;
+  }
+  
+  return 1;
 }
 
 int preparechannelstatement()
@@ -256,7 +378,7 @@ unsigned long addchannel(chanpropnode *achan, char *chanurl, char *rss_version, 
   
   /* Execute Statement */
   rc = sqlite3_step(channelstmt);
-  if (rc != SQLITE_OK && rc != SQLITE_DONE)
+  if (rc != SQLITE_OK && rc != SQLITE_DONE && rc != SQLITE_ROW)
   {
     dbwriteerror(rc);
     return 0;
@@ -295,7 +417,7 @@ unsigned long addchannel(chanpropnode *achan, char *chanurl, char *rss_version, 
     {
       sprintf(shsql,"INSERT INTO \"Channel_Skip_Hour\" (CSHID, Channel_ID, Hour) VALUES (NULL, %lu, %d);", achan->dbcid, achan->skiphours[i]);
       rc = sqlite3_exec(db,shsql,NULL,0,&anerrmsg);
-      if (rc != SQLITE_OK && rc != SQLITE_DONE)
+      if (rc != SQLITE_OK && rc != SQLITE_DONE && rc != SQLITE_ROW)
       {
         dbwriteerror(rc);
         fprintf(stderr, "(Returned Error: %s)\n", anerrmsg);
@@ -308,6 +430,7 @@ unsigned long addchannel(chanpropnode *achan, char *chanurl, char *rss_version, 
   
   /* Insert Skip-Days */
   int n = 0;
+  char *sqpos = NULL;
   if (achan->skipdays != NULL)
   {
     for (i=0;achan->skipdays[i] != NULL;i++)
@@ -320,9 +443,10 @@ unsigned long addchannel(chanpropnode *achan, char *chanurl, char *rss_version, 
       else if (startsame_i(achan->skipdays[i],"Fri")) n = 5;
       else if (startsame_i(achan->skipdays[i],"Sat")) n = 6;
       else n = 0;
-      sprintf(shsql,"INSERT INTO \"Channel_Skip_Day\" (CSHID, Channel_ID, Day_Name, Day_Number) VALUES (NULL, %lu, %s, %d);", achan->dbcid, achan->skipdays[i], n);
+      while ((sqpos = strstr(achan->skipdays[i],"'")) != NULL) sqpos[0] = '_';
+      sprintf(shsql,"INSERT INTO \"Channel_Skip_Day\" (CSHID, Channel_ID, Day_Name, Day_Number) VALUES (NULL, %lu, '%s', %d);", achan->dbcid, achan->skipdays[i], n);
       rc = sqlite3_exec(db,shsql,NULL,0,&anerrmsg);
-      if (rc != SQLITE_OK && rc != SQLITE_DONE)
+      if (rc != SQLITE_OK && rc != SQLITE_DONE && rc != SQLITE_ROW)
       {
         dbwriteerror(rc);
         fprintf(stderr, "(Returned Error: %s)\n", anerrmsg);
@@ -334,6 +458,44 @@ unsigned long addchannel(chanpropnode *achan, char *chanurl, char *rss_version, 
   }
   
   return passbackul;
+}
+
+static int callback_csset(void *NotUsed, int argc, char **argv, char **azColName)
+{ /* Configure Setting Set Callback */
+  int i;
+  for (i=0;i<argc;i++)
+  {
+    if (streq_i(azColName[i],"Setting"))
+    {
+      /*if (!streq_i(argv[i],"Last Opened")) return 0;*/
+      writetopassbackstr(argv[i]);
+      return 0;
+    }
+  }
+  return 0;
+  
+}
+
+static int callback_csview(void *NotUsed, int argc, char **argv, char **azColName)
+{ /* Configure Setting View Callback */
+  int i, sn = 0, dn = 0;
+  for (i=0;i<argc;i++)
+  {
+    if (streq_i(azColName[i],"Setting"))
+    {
+      sn = i;
+    }
+    else if (streq_i(azColName[i],"Data"))
+    {
+      dn = i;
+    }
+  }
+  
+  printf("%s = %s\n", argv[sn], argv[dn]);
+  passbackul = 1;
+  
+  return 0;
+  
 }
 
 static int callback_gcid(void *NotUsed, int argc, char **argv, char **azColName)
@@ -396,7 +558,7 @@ int checklastopened()
   if (passbackstr != NULL) free(passbackstr);
   passbackstr = NULL;
   rc = sqlite3_exec(db,sqlstatement,callback_clo,0,&anerrmsg);
-  if (rc != SQLITE_OK)
+  if (rc != SQLITE_OK && rc != SQLITE_DONE && rc != SQLITE_ROW)
   {
     dbwriteerror(rc);
     fprintf(stderr, "(Returned Error: %s)\n", anerrmsg);
