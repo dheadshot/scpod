@@ -366,6 +366,7 @@ int testdb()
 int configuresetting(char *setting, char *value)
 {
   int settingnum = 0;
+  char asetting[256] = "";
   if (setting == NULL || value == NULL) return 1;
   if (streq_i(setting, "LAST OPENED")) settingnum = 1;
   else if (streq_i(setting, "PODCAST_DIR")) settingnum = 2;
@@ -383,14 +384,37 @@ int configuresetting(char *setting, char *value)
     return 2;
   }
   
+  switch (settingnum)
+  {
+    case 1:
+      strcpy(asetting, "LAST OPENED");
+    break;
+    
+    case 2:
+      strcpy(asetting, "PODCAST_DIR");
+    break;
+    
+    case 3:
+      strcpy(asetting, "DOWNLOADER");
+    break;
+    
+    case 4:
+      strcpy(asetting, "MEDIA_PLAYER");
+    break;
+    
+    case 5:
+      strcpy(asetting, "DIR_SEPARATOR");
+    break;
+  }
+  
   /* Set setting to value here */
-  if (preparecsstatement(setting) == 0)
+  if (preparecsstatement(asetting) == 0)
   {
     fprintf(stderr, "Error: Failed prepare SQL for setting adjustment.\n");
     closedb();
     return 3;
   }
-  if (setconfigsetting(setting, value) == 0)
+  if (setconfigsetting(asetting, value) == 0)
   {
     fprintf(stderr, "Error: Failed execute SQL to adjust setting.\n");
     closedb();

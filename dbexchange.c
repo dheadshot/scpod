@@ -179,7 +179,7 @@ int setconfigsetting(char *setting, char *value)
     sqlite3_finalize(configstmt);
     return 0;
   }
-  rc = sqlite3_bind_text(configstmt, 2, value, strlen(setting)*sizeof(char), SQLITE_TRANSIENT);
+  rc = sqlite3_bind_text(configstmt, 2, value, strlen(value)*sizeof(char), SQLITE_TRANSIENT);
   if (rc != SQLITE_OK)
   {
     dbwriteerror(rc);
