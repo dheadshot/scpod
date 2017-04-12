@@ -427,5 +427,6 @@ int configuresetting(char *setting, char *value)
     closedb();
     return 2;
   }
+  printf("Successfully set %s to '%s'.\n", asetting, value);
   return 0;
 }
