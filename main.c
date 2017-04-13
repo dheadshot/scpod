@@ -4,6 +4,7 @@
 
 #include "sfuncs.h"
 #include "parser.h"
+#include "extprgfuncs.h"
 
 #include "main.h"
 
@@ -57,6 +58,15 @@ int docmd(char **cmdntsa, int offset)
     {
       /* Open then close the database */
       return testdb();
+    }
+    else if (streq_i(cmdntsa[i+1], "downloader"))
+    {
+      if (cmdntsa[i+2] == NULL)
+      {
+        fprintf(stderr, "Error: URL not specified!  Test downloader with what?\n");
+        return 1;
+      }
+      return testdownload(cmdntsa[i+2]);
     }
     else
     {
@@ -160,12 +170,17 @@ int docmd(char **cmdntsa, int offset)
     {
       if (cmdntsa[i+2] == NULL)
       {
-        printf("Test:\n  Tests a function of the program.\nSubcommands of Test:\n*\tparser\n*\tdatabase\n");
+        printf("Test:\n  Tests a function of the program.\nSubcommands of Test:\n*\tparser\n*\tdatabase\n*\tdownloader\n");
         return 0;
       }
       else if (streq_i(cmdntsa[i+2], "parser"))
       {
         printf("Test Parser:\n  Tests the parser of RSS files.  Use the command as 'test parser <feed file>',\nwhere <feed file> is the file containing the RSS feed to parse.  The file must\nbe locally accessible, not a URL.\n");
+        return 0;
+      }
+      else if (streq_i(cmdntsa[i+2], "downloader"))
+      {
+        printf("Test Downloader:\n  Tests the downloader of files.  Use the command as 'test downloader <URL>',\n  where <URL> is the URL of the file download.\n");
         return 0;
       }
       else if (streq_i(cmdntsa[i+2], "database"))
@@ -361,6 +376,17 @@ int testdb()
   }
   fprintf(stderr, "Error: Database Failed to open and check!\n");
   return 2;
+}
+
+int testdownload(char *url)
+{
+  if (dodownload(url, ".", "1.txt") == 0)
+  {
+    fprintf(stderr, "Error: Test download failed.\n");
+    return 3;
+  }
+  printf("Test Download successful - file is \"1.txt\".\n");
+  return 0;
 }
 
 int configuresetting(char *setting, char *value)

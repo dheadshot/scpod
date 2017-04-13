@@ -86,6 +86,42 @@ int closedb()
   return 0;
 }
 
+char *getsettingdata(char *setting)
+{
+  int rc = 1;
+  if (setting == NULL) return NULL;
+  if (dbisopen == 0) rc = opendb(0);
+  if (rc == 0) return NULL;
+  char ucsett[256] = "", *sqpos;
+  strtoupper(ucsett,setting);
+  while ((sqpos = strstr(ucsett,"'")) != NULL) sqpos[0] = '_';
+  char settsql[512] = "", *anerrmsg;
+  sprintf(settsql, "SELECT Data FROM Config WHERE Setting = '%s';",ucsett);
+  if (passbackstr != NULL) free(passbackstr);
+  passbackstr = NULL;
+  
+  rc = sqlite3_exec(db, settsql, callback_gsd, 0, &anerrmsg);
+  if (rc != SQLITE_OK && rc != SQLITE_DONE && rc != SQLITE_ROW)
+  {
+    dbwriteerror(rc);
+    fprintf(stderr, "(Returned Error: %s)\n", anerrmsg);
+    sqlite3_free(anerrmsg);
+    return NULL;
+  }
+  char *outstr = NULL;
+  if (passbackstr == NULL)
+  {
+    outstr = (char *) malloc(sizeof(char));
+    if (outstr == NULL) return NULL;
+    outstr[0] = 0;
+    return outstr;
+  }
+  outstr = (char *) malloc(sizeof(char)*(1+strlen(passbackstr)));
+  if (outstr == NULL) return NULL;
+  strcpy(outstr, passbackstr);
+  return outstr;
+}
+
 int writecsview(char *setting)
 {
   int rc;
@@ -466,6 +502,22 @@ static int callback_csset(void *NotUsed, int argc, char **argv, char **azColName
   for (i=0;i<argc;i++)
   {
     if (streq_i(azColName[i],"Setting"))
+    {
+      /*if (!streq_i(argv[i],"Last Opened")) return 0;*/
+      writetopassbackstr(argv[i]);
+      return 0;
+    }
+  }
+  return 0;
+  
+}
+
+static int callback_gsd(void *NotUsed, int argc, char **argv, char **azColName)
+{ /* Get Setting Data Callback */
+  int i;
+  for (i=0;i<argc;i++)
+  {
+    if (streq_i(azColName[i],"Data"))
     {
       /*if (!streq_i(argv[i],"Last Opened")) return 0;*/
       writetopassbackstr(argv[i]);

@@ -2,6 +2,7 @@
 #define __INC_DBEXHCANGE_H__ 1
 
 #include <sqlite3.h>
+#include "parser.h"
 
 #define DBNAME "scpoddb.bin"
 #ifndef SQLITE_OK_LOAD_PERMANENTLY
@@ -13,11 +14,13 @@ int opendb(int dolo);
 int closedb();
 int preparecsstatement(char *setting);
 int setconfigsetting(char *setting, char *value);
+char *getsettingdata(char *setting);
 int writecsview(char *setting);
 int preparechannelstatement();
 unsigned long addchannel(chanpropnode *achan, char *chanurl, 
                          char *rss_version, char *directory);
 static int callback_csview(void *NotUsed, int argc, char **argv, char **azColName);
+static int callback_gsd(void *NotUsed, int argc, char **argv, char **azColName);
 static int callback_csset(void *NotUsed, int argc, char **argv, char **azColName);
 static int callback_gcid(void *NotUsed, int argc, char **argv, char **azColName);
 void rssdatetoisodate(char *isodate, rssdate *adate);
