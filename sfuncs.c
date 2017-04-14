@@ -30,17 +30,22 @@ int streq_i(char *a, char *b)
 {
   char *ai, *bi;
   if (a==NULL || b==NULL) return 0;
+  if (strlen(a) != strlen(b)) return 0;
   if (streq_(a,b)) return 1;
   ai = (char *) malloc(sizeof(char)*(1+strlen(a)));
   if (ai==NULL)
   {
+#ifdef DEBUG
     	printf("MEMERR\n");
+#endif
     return 0;
   }
   bi = (char *) malloc(sizeof(char)*(1+strlen(b)));
   if (bi==NULL)
   {
+#ifdef DEBUG
     	printf("MEMERR\n");
+#endif
     free(ai);
     return 0;
   }
@@ -158,4 +163,17 @@ void freentsa(char **antsa)
     free(antsa[n]);
   }
   free(antsa);
+}
+
+long searchbackch(char *astr, char findchar)
+{
+  if (astr == NULL) return -1;
+  long las = strlen(astr);
+  if (las<0) return -1;
+  long n;
+  for (n=las n>=0; n--)
+  {
+    if (astr[n] == findchar) return n;
+  }
+  return -1;
 }

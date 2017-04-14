@@ -12,5 +12,6 @@ void strltrim(char *ostr, char *istr);
 void strtrimws(char *ostr, char *istr);
 int strtrimws1(char *astr);
 void freentsa(char **antsa);
+long searchbackch(char *astr, char findchar);
 
 #endif
