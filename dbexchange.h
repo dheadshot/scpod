@@ -19,6 +19,11 @@ int writecsview(char *setting);
 int preparechannelstatement();
 unsigned long addchannel(chanpropnode *achan, char *chanurl, 
                          char *rss_version, char *directory);
+int finalisechannelstatement();
+int preparechancatstatement();
+int addchancat(unsigned long channelid, catnode *acat);
+int finalisechancatstatement();
+int prepareitemstatement();
 static int callback_csview(void *NotUsed, int argc, char **argv, char **azColName);
 static int callback_gsd(void *NotUsed, int argc, char **argv, char **azColName);
 static int callback_csset(void *NotUsed, int argc, char **argv, char **azColName);

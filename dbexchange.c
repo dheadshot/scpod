@@ -13,7 +13,8 @@ int dbisopen = 0;
 sqlite3 *db;
 char *passbackstr = NULL;
 unsigned long passbackul = 0;
-sqlite3_stmt *channelstmt = NULL, *itemstmt = NULL, *configstmt = NULL;
+sqlite3_stmt *channelstmt = NULL, *itemstmt = NULL, *configstmt = NULL, 
+             *chancatstmt = NULL;
 
 int opendb(int dolo)
 {
@@ -494,6 +495,92 @@ unsigned long addchannel(chanpropnode *achan, char *chanurl, char *rss_version, 
   }
   
   return passbackul;
+}
+
+int finalisechannelstatement()
+{
+  if (channelstmt != NULL) sqlite3_finalize(channelstmt);
+  channelstmt = NULL;
+}
+
+int preparechancatstatement()
+{
+  char sqlstmt[] = "INSERT INTO Channel_Category (CCID, Channel_ID, Category, Domain) VALUES (NULL, ?, ?, ?);";
+  int rc = sqlite3_prepare_v2(db, sqlstmt, strlen(sqlstmt)+1, &chancatstmt, NULL);
+  if (rc != SQLITE_OK)
+  {
+    dbwriteerror(rc);
+    if (chancatstmt != NULL) sqlite3_finalize(chancatstmt);
+    chancatstmt = NULL;
+    return 0;
+  }
+  return 1;
+}
+
+int addchancat(unsigned long channelid, catnode *acat)
+{
+  if (acat == NULL) return 0;
+  if (acat->type != channel_cat) return 0;
+  
+  int rc;
+  
+  /* Bind Values */
+  rc = sqlite3_bind_int(chancatstmt, 1, channelid);
+  if (rc != SQLITE_OK)
+  {
+    dbwriteerror(rc);
+    return 0;
+  }
+  rc = sqlite3_bind_text(chancatstmt, 2, acat->category, strlen(acat->category)*sizeof(char), SQLITE_TRANSIENT);
+  if (rc != SQLITE_OK)
+  {
+    dbwriteerror(rc);
+    return 0;
+  }
+  rc = sqlite3_bind_text(chancatstmt, 3, acat->domain, strlen(acat->domain)*sizeof(char), SQLITE_TRANSIENT);
+  if (rc != SQLITE_OK)
+  {
+    dbwriteerror(rc);
+    return 0;
+  }
+  
+  /* Execute Statement */
+  rc = sqlite3_step(chancatstmt);
+  if (rc != SQLITE_OK && rc != SQLITE_DONE && rc != SQLITE_ROW)
+  {
+    dbwriteerror(rc);
+    return 0;
+  }
+  
+  /* Reset ready for next call */
+  rc = sqlite3_reset(chancatstmt);
+  if (rc != SQLITE_OK && rc != SQLITE_DONE)
+  {
+    dbwriteerror(rc);
+    return 0;
+  }
+  
+  
+}
+
+int finalisechancatstatement()
+{
+  if (chancatstmt != NULL) sqlite3_finalize(chancatstmt);
+  chancatstmt = NULL;
+}
+
+int prepareitemstatement()
+{
+  char sqlstmt[] = "INSERT INTO Item (ItemID, Channel_ID, Title, Link, Description, Author, Enclosure_URL, Enclosure_Length, Enclosure_Type, GUID, GUID_Is_Permalink, Publication_Date, Source_URL, Source_Name, Downloaded, Downloaded_Date, Original_Filename, Filename, Play_Count) VALUES (NULL, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?);";
+  int rc = sqlite3_prepare_v2(db, sqlstmt, strlen(sqlstmt)+1, &itemstmt, NULL);
+  if (rc != SQLITE_OK)
+  {
+    dbwriteerror(rc);
+    if (itemstmt != NULL) sqlite3_finalize(itemstmt);
+    itemstmt = NULL;
+    return 0;
+  }
+  return 1;
 }
 
 static int callback_csset(void *NotUsed, int argc, char **argv, char **azColName)
