@@ -146,5 +146,11 @@ void freeepn(elementpnode *epn);
 int parsersstoll(FILE *rf);
 /* Returns: 1=worked, 0=File reading error, -1=Memory error, -2=Not RSS */
 void listdata();
+int getencfilename(char *filename, rssenclosure *enc);
+int getencfileext(char *fileext, rssenclosure *enc);
+/* Returns: 0=Error, -1=no enctype, 1=fileext has been set,
+            2=fileext has been guessed */
+
+
 
 #endif

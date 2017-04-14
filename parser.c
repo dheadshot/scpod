@@ -3,6 +3,7 @@
 #include <string.h>
 
 #include "sfuncs.h"
+#include "dbexchange.h"
 
 #include "parser.h"
 
@@ -3693,3 +3694,1109 @@ void listdata()
   }
   return;
 }
+
+int getencfilename(char *filename, rssenclosure *enc)
+{
+  if (enc == NULL || filename == NULL) return 0;
+  long soffset = searchbackch(enc->url,'/');
+  char afn[256] = ""
+  if (soffset>0 && enc->url[soffset] == '/')
+  {
+    strcpy(afn, enc->url+(sizeof(char)*soffset)+sizeof(char));
+    char *unwanted = strstr(afn, "?");
+    if (unwanted != NULL) unwanted[0] = 0;
+    unwanted = strstr(afn, "&");
+    if (unwanted != NULL) unwanted[0] = 0;
+    strcpy(filename, afn);
+    return 1;
+  }
+  else strcpy(filename, enc->url);
+  return 2;
+}
+
+int getencfileext(char *fileext, rssenclosure *enc)
+{
+/* Returns: 0=Error, -1=no enctype, 1=fileext has been set,
+            2=fileext has been guessed */
+  if (enc == NULL || fileext == NULL) return 0;
+  char efn[256] = "";
+  int n = getencfilename(efn, enc);
+  if (n == 0) return 0;
+  char *dotpt = strstr(efn,".");
+  char anext[256] = "";
+  if (dotpt != NULL && dotpt[0] == '.')
+  {
+    strcpy(anext, dotpt);
+    if (streq_i(anext,"asp") || streq_i(anext,"php") || streq_i(anext,"cgi") || streq_i(anext,"pl") || streq_i(anext, "py") || startsame_i(anext, "htm") || startsame_i(anext,"sht") || startsame_(anext,"xht") || startsame_(anext,"mht"))
+    {
+      /* Resort to type */
+    }
+    else
+    {
+      strcpy(fileext, anext);
+      return 1;
+    }
+  }
+  /* Judge based on type */
+  if (enc->type == NULL) return -1;
+  /* Audio */
+  if (streq_i(enc->type,"audio/mp3") || streq_i(enc->type,"audio/mpeg") || streq_i(enc->type,"audio/mpeg3") || streq_i(enc->type,"audio/x-mpeg-3"))
+  {
+    strcpy(fileext,"mp3");
+    return 1;
+  }
+  if (streq_i(enc->type,"audio/aiff") || streq_i(enc->type,"audio/x-aiff") || streq_i(enc->type,"audio/aif"))
+  {
+    strcpy(fileext,"aif");
+    return 1;
+  }
+  if (streq_i(enc->type,"audio/adcpm"))
+  {
+    strcpy(fileext,"adp");
+    return 1;
+  }
+  if (streq_i(enc->type,"audio/basic") || streq_i(enc->type, "audio/x-au"))
+  {
+    strcpy(fileext,"au");
+    return 1;
+  }
+  if (streq_i(enc->type,"audio/midi") || streq_i(enc->type,"audio/x-mid") || streq_i(enc->type,"audio/x-midi") || streq_i(enc->type,"music/crescendo") || streq_i(enc->type, "application/x-midi") || streq_i(enc->type,"x-music/x-midi"))
+  {
+    strcpy(fileext,"mid");
+    return 1;
+  }
+  if (streq_i(enc->type,"audio/mp4"))
+  {
+    strcpy(fileext,"mp4a");
+    return 1;
+  }
+  if (streq_i(enc->type,"audio/ogg"))
+  {
+    strcpy(fileext,"oga");
+    return 1;
+  }
+  if (streq_i(enc->type,"audio/vnd.dece.audio"))
+  {
+    strcpy(fileext,"uva");
+    return 1;
+  }
+  if (streq_i(enc->type,"audio/vnd.digital-winds"))
+  {
+    strcpy(fileext,"eol");
+    return 1;
+  }
+  if (streq_i(enc->type,"audio/vnd.dra"))
+  {
+    strcpy(fileext,"dra");
+    return 1;
+  }
+  if (streq_i(enc->type,"audio/vnd.dts"))
+  {
+    strcpy(fileext,"dts");
+    return 1;
+  }
+  if (streq_i(enc->type,"audio/vnd.dts.hd"))
+  {
+    strcpy(fileext,"dtshd");
+    return 1;
+  }
+  if (streq_i(enc->type,"audio/vnd.lucent.voice"))
+  {
+    strcpy(fileext,"lvp");
+    return 1;
+  }
+  if (streq_i(enc->type,"audio/vnd.ms-playready.media.pya"))
+  {
+    strcpy(fileext,"pya");
+    return 1;
+  }
+  if (streq_i(enc->type,"audio/vnd.nuera.ecelp4800"))
+  {
+    strcpy(fileext,"ecelp4800");
+    return 1;
+  }
+  if (streq_i(enc->type,"audio/vnd.nuera.ecelp7470"))
+  {
+    strcpy(fileext,"ecelp7470");
+    return 1;
+  }
+  if (streq_i(enc->type,"audio/vnd.nuera.ecelp9600"))
+  {
+    strcpy(fileext,"ecelp9600");
+    return 1;
+  }
+  if (streq_i(enc->type,"audio/vnd.rip"))
+  {
+    strcpy(fileext,"rip");
+    return 1;
+  }
+  if (streq_i(enc->type,"audio/webm"))
+  {
+    strcpy(fileext,"weba");
+    return 1;
+  }
+  if (streq_i(enc->type,"audio/x-aac"))
+  {
+    strcpy(fileext,"aac");
+    return 1;
+  }
+  if (streq_i(enc->type,"audio/x-mpegurl") || streq_i(enc->type,"audio/x-mpequrl"))
+  {
+    strcpy(fileext,"m3u");
+    return 1;
+  }
+  if (streq_i(enc->type,"audio/x-ms-wax"))
+  {
+    strcpy(fileext,"wax");
+    return 1;
+  }
+  if (streq_i(enc->type,"audio/x-ms-wma"))
+  {
+    strcpy(fileext,"wma");
+    return 1;
+  }
+  if (streq_i(enc->type,"audio/x-pn-realaudio"))
+  {
+    strcpy(fileext,"ram");
+    return 1;
+  }
+  if (streq_i(enc->type,"audio/x-pn-realaudio-plugin"))
+  {
+    strcpy(fileext,"rmp");
+    return 1;
+  }
+  if (streq_i(enc->type,"audio/x-wav") || streq_i(enc->type,"audio/wav"))
+  {
+    strcpy(fileext,"wav");
+    return 1;
+  }
+  if (streq_i(enc->type,"audio/make"))
+  {
+    strcpy(fileext,"funk");
+    return 1;
+  }
+  if (streq_i(enc->type,"audio/x-gsm"))
+  {
+    strcpy(fileext,"gsm");
+    return 1;
+  }
+  if (streq_i(enc->type,"audio/it"))
+  {
+    strcpy(fileext,"it");
+    return 1;
+  }
+  if (streq_i(enc->type,"audio/x-jam") || streq_i(enc->type,"application/vnd.jam"))
+  {
+    strcpy(fileext,"jam");
+    return 1;
+  }
+  if (streq_i(enc->type,"music/x-karaoke"))
+  {
+    strcpy(fileext,"kar");
+    return 1;
+  }
+  if (streq_i(enc->type,"audio/nspaudio") || streq_i(enc->type,"audio/x-nspaudio"))
+  {
+    strcpy(fileext,"la");
+    return 1;
+  }
+  if (streq_i(enc->type,"audio/x-liveaudio"))
+  {
+    strcpy(fileext,"lam");
+    return 1;
+  }
+  if (streq_i(enc->type,"audio/x-vnd.audioexplosion.mjuicemediafile"))
+  {
+    strcpy(fileext,"mjf");
+    return 1;
+  }
+  if (streq_i(enc->type,"audio/mod") || streq_i(enc->type,"audio/x-mod"))
+  {
+    strcpy(fileext,"mod");
+    return 1;
+  }
+  if (streq_i(enc->type,"audio/x-mpeq2a"))
+  {
+    strcpy(fileext,"mp2");
+    return 1;
+  }
+  if (streq_i(enc->type,"audio/make.my.funk"))
+  {
+    strcpy(fileext,"pfunk");
+    return 1;
+  }
+  if (streq_i(enc->type,"audio/vnd.qcelp"))
+  {
+    strcpy(fileext,"qcp");
+    return 1;
+  }
+  if (streq_i(enc->type,"application/vnd.rn-realmedia"))
+  {
+    strcpy(fileext,"rm");
+    return 1;
+  }
+  if (streq_i(enc->type,"audio/x-jam"))
+  {
+    strcpy(fileext,"jam");
+    return 1;
+  }
+  if (streq_i(enc->type,"application/ringing-tones") || streq_i(enc->type,"application/vnd.nokia.ringing-tone"))
+  {
+    strcpy(fileext,"rng");
+    return 1;
+  }
+  if (streq_i(enc->type,"application/vnd.rn-realplayer"))
+  {
+    strcpy(fileext,"rnx");
+    return 1;
+  }
+  if (streq_i(enc->type,"audio/s3m"))
+  {
+    strcpy(fileext,"s3m");
+    return 1;
+  }
+  if (streq_i(enc->type,"audio/x-psid"))
+  {
+    strcpy(fileext,"sid");
+    return 1;
+  }
+  if (streq_i(enc->type,"audio/x-adcpm"))
+  {
+    strcpy(fileext,"snd");
+    return 1;
+  }
+  if (streq_i(enc->type,"audio/tsp-audio"))
+  {
+    strcpy(fileext,"tsi");
+    return 1;
+  }
+  if (streq_i(enc->type,"audio/tsplayer"))
+  {
+    strcpy(fileext,"tsp");
+    return 1;
+  }
+  if (streq_i(enc->type,"audio/voc") || streq_i(enc->type,"audio/x-voc"))
+  {
+    strcpy(fileext,"voc");
+    return 1;
+  }
+  if (streq_i(enc->type,"audio/voxware"))
+  {
+    strcpy(fileext,"vox");
+    return 1;
+  }
+  if (streq_i(enc->type,"audio/x-twinvq-plugin"))
+  {
+    strcpy(fileext,"vqe");
+    return 1;
+  }
+  if (streq_i(enc->type,"audio/x-twinvq"))
+  {
+    strcpy(fileext,"vqf");
+    return 1;
+  }
+  if (streq_i(enc->type,"application/x-vnd.audioexplosion.mzz"))
+  {
+    strcpy(fileext,"mzz");
+    return 1;
+  }
+  if (streq_i(enc->type,"application/sounder"))
+  {
+    strcpy(fileext,"sdr");
+    return 1;
+  }
+  if (streq_i(enc->type,"application/vocaltec-media-desc"))
+  {
+    strcpy(fileext,"vmd");
+    return 1;
+  }
+  if (streq_i(enc->type,"application/vocaltec-media-file"))
+  {
+    strcpy(fileext,"vmf");
+    return 1;
+  }
+  if (streq_i(enc->type,"audio/xm"))
+  {
+    strcpy(fileext,"xm");
+    return 1;
+  }
+  if (streq_i(enc->type,"application/vnd.audiograph"))
+  {
+    strcpy(fileext,"aep");
+    return 1;
+  }
+  if (streq_i(enc->type,"application/vnd.dolby.mlp"))
+  {
+    strcpy(fileext,"mlp");
+    return 1;
+  }
+  if (streq_i(enc->type,"application/vnd.mfmp"))
+  {
+    strcpy(fileext,"mfm");
+    return 1;
+  }
+  if (streq_i(enc->type,"application/vnd.ms-wpl"))
+  {
+    strcpy(fileext,"wpl");
+    return 1;
+  }
+  if (streq_i(enc->type,"application/vnd.mseq"))
+  {
+    strcpy(fileext,"mseq");
+    return 1;
+  }
+  if (streq_i(enc->type,"application/vnd.musician"))
+  {
+    strcpy(fileext,"mus");
+    return 1;
+  }
+  if (streq_i(enc->type,"application/vnd.yamaha.smaf-audio"))
+  {
+    strcpy(fileext,"saf");
+    return 1;
+  }
+  if (streq_i(enc->type,"application/x-dtbook+xml"))
+  {
+    strcpy(fileext,"dtb");
+    return 1;
+  }
+  if (streq_i(enc->type,"application/x-dtbresource+xml"))
+  {
+    strcpy(fileext,"res");
+    return 1;
+  }
+  /* Video */
+  if (streq_i(enc->type,"application/vnd.muvee.style"))
+  {
+    strcpy(fileext,"msty");
+    return 1;
+  }
+  if (streq_i(enc->type,"video/3gpp"))
+  {
+    strcpy(fileext,"3gp");
+    return 1;
+  }
+  if (streq_i(enc->type,"video/3gpp2"))
+  {
+    strcpy(fileext,"3g2");
+    return 1;
+  }
+  if (streq_i(enc->type,"video/h261"))
+  {
+    strcpy(fileext,"h261");
+    return 1;
+  }
+  if (streq_i(enc->type,"video/h263"))
+  {
+    strcpy(fileext,"h263");
+    return 1;
+  }
+  if (streq_i(enc->type,"video/h264"))
+  {
+    strcpy(fileext,"h264");
+    return 1;
+  }
+  if (streq_i(enc->type,"video/jpeg"))
+  {
+    strcpy(fileext,"jpgv");
+    return 1;
+  }
+  if (streq_i(enc->type,"video/jpm"))
+  {
+    strcpy(fileext,"jpm");
+    return 1;
+  }
+  if (streq_i(enc->type,"video/mj2"))
+  {
+    strcpy(fileext,"mj2");
+    return 1;
+  }
+  if (streq_i(enc->type,"video/mp4") || streq_i(enc->type,"application/mp4"))
+  {
+    strcpy(fileext,"mp4");
+    return 1;
+  }
+  if (streq_i(enc->type,"video/mpeg"))
+  {
+    strcpy(fileext,"mpeg");
+    return 1;
+  }
+  if (streq_i(enc->type,"video/ogg"))
+  {
+    strcpy(fileext,"ogv");
+    return 1;
+  }
+  if (streq_i(enc->type,"video/quicktime"))
+  {
+    strcpy(fileext,"qt");
+    return 1;
+  }
+  if (streq_i(enc->type,"video/vnd.dece.hd"))
+  {
+    strcpy(fileext,"uvh");
+    return 1;
+  }
+  if (streq_i(enc->type,"video/vnd.dece.mobile"))
+  {
+    strcpy(fileext,"uvm");
+    return 1;
+  }
+  if (streq_i(enc->type,"video/vnd.dece.pd"))
+  {
+    strcpy(fileext,"uvp");
+    return 1;
+  }
+  if (streq_i(enc->type,"video/vnd.dece.sd"))
+  {
+    strcpy(fileext,"uvs");
+    return 1;
+  }
+  if (streq_i(enc->type,"video/vnd.dece.video"))
+  {
+    strcpy(fileext,"uvv");
+    return 1;
+  }
+  if (streq_i(enc->type,"video/vnd.fvt"))
+  {
+    strcpy(fileext,"fvt");
+    return 1;
+  }
+  if (streq_i(enc->type,"video/vnd.mpegurl"))
+  {
+    strcpy(fileext,"mxu");
+    return 1;
+  }
+  if (streq_i(enc->type,"video/vnd.ms-playready.media.pyv"))
+  {
+    strcpy(fileext,"pyv");
+    return 1;
+  }
+  if (streq_i(enc->type,"video/vnd.uvvu.mp4"))
+  {
+    strcpy(fileext,"uvu");
+    return 1;
+  }
+  if (streq_i(enc->type,"video/vnd.vivo") || streq_i(enc->type,"video/vivo"))
+  {
+    strcpy(fileext,"viv");
+    return 1;
+  }
+  if (streq_i(enc->type,"video/webm"))
+  {
+    strcpy(fileext,"webm");
+    return 1;
+  }
+  if (streq_i(enc->type,"video/x-f4v"))
+  {
+    strcpy(fileext,"f4v");
+    return 1;
+  }
+  if (streq_i(enc->type,"video/x-fli") || streq_i(enc->type,"video/fli"))
+  {
+    strcpy(fileext,"fli");
+    return 1;
+  }
+  if (streq_i(enc->type,"video/x-flv"))
+  {
+    strcpy(fileext,"flv");
+    return 1;
+  }
+  if (streq_i(enc->type,"video/x-m4v"))
+  {
+    strcpy(fileext,"m4v");
+    return 1;
+  }
+  if (streq_i(enc->type,"video/x-ms-asf"))
+  {
+    strcpy(fileext,"asf");
+    return 1;
+  }
+  if (streq_i(enc->type,"video/x-ms-wm"))
+  {
+    strcpy(fileext,"wm");
+    return 1;
+  }
+  if (streq_i(enc->type,"video/x-ms-wmv"))
+  {
+    strcpy(fileext,"wmv");
+    return 1;
+  }
+  if (streq_i(enc->type,"video/x-ms-wmx"))
+  {
+    strcpy(fileext,"wmx");
+    return 1;
+  }
+  if (streq_i(enc->type,"video/x-ms-wvx"))
+  {
+    strcpy(fileext,"wvx");
+    return 1;
+  }
+  if (streq_i(enc->type,"video/x-msvideo") || streq_i(enc->type,"video/avi") || streq_i(enc->type,"video/msvideo") || streq_i(enc->type,"application/x-troff-msvideo"))
+  {
+    strcpy(fileext,"avi");
+    return 1;
+  }
+  if (streq_i(enc->type,"video/x-sgi-movie"))
+  {
+    strcpy(fileext,"movie");
+    return 1;
+  }
+  if (streq_i(enc->type,"video/animaflex"))
+  {
+    strcpy(fileext,"afl");
+    return 1;
+  }
+  if (streq_i(enc->type,"application/x-navi-animation"))
+  {
+    strcpy(fileext,"ani");
+    return 1;
+  }
+  if (streq_i(enc->type,"video/x-f4v"))
+  {
+    strcpy(fileext,"f4v");
+    return 1;
+  }
+  if (streq_i(enc->type,"application/x-mplayer2") || streq_i(enc->type,"video/x-ms-asf-plugin"))
+  {
+    strcpy(fileext,"asx");
+    return 1;
+  }
+  if (streq_i(enc->type,"video/avs-video"))
+  {
+    strcpy(fileext,"avs");
+    return 1;
+  }
+  if (streq_i(enc->type,"application/x-director"))
+  {
+    strcpy(fileext,"dcr");
+    return 1;
+  }
+  if (streq_i(enc->type,"video/x-dv"))
+  {
+    strcpy(fileext,"dif");
+    return 1;
+  }
+  if (streq_i(enc->type,"video/dl") || streq_i(enc->type,"video/x-dl"))
+  {
+    strcpy(fileext,"dl");
+    return 1;
+  }
+  if (streq_i(enc->type,"application/x-dvi"))
+  {
+    strcpy(fileext,"dvi");
+    return 1;
+  }
+  if (streq_i(enc->type,"video/x-atomic3d-feature"))
+  {
+    strcpy(fileext,"fmf");
+    return 1;
+  }
+  if (streq_i(enc->type,"video/x-gl") || streq_i(enc->type,"video/gl"))
+  {
+    strcpy(fileext,"gl");
+    return 1;
+  }
+  if (streq_i(enc->type,"video/x-isvideo"))
+  {
+    strcpy(fileext,"isu");
+    return 1;
+  }
+  if (streq_i(enc->type,"video/x-motion-jpeg"))
+  {
+    strcpy(fileext,"mjpg");
+    return 1;
+  }
+  if (streq_i(enc->type,"video/vnd.rn-realvideo"))
+  {
+    strcpy(fileext,"rv");
+    return 1;
+  }
+  if (streq_i(enc->type,"video/x-scm"))
+  {
+    strcpy(fileext,"scm");
+    return 1;
+  }
+  if (streq_i(enc->type,"application/streamingmedia"))
+  {
+    strcpy(fileext,"ssm");
+    return 1;
+  }
+  if (streq_i(enc->type,"application/x-shockwave-flash"))
+  {
+    strcpy(fileext,"swf");
+    return 1;
+  }
+  if (streq_i(enc->type,"video/vdo"))
+  {
+    strcpy(fileext,"vdo");
+    return 1;
+  }
+  if (streq_i(enc->type,"video/vosaic"))
+  {
+    strcpy(fileext,"vos");
+    return 1;
+  }
+  if (streq_i(enc->type,"video/x-amt-demorun"))
+  {
+    strcpy(fileext,"xdr");
+    return 1;
+  }
+  if (streq_i(enc->type,"xgl/movie"))
+  {
+    strcpy(fileext,"xmz");
+    return 1;
+  }
+  if (streq_i(enc->type,"video/x-amt-showrun"))
+  {
+    strcpy(fileext,"xsr");
+    return 1;
+  }
+  if (streq_i(enc->type,"application/mp21"))
+  {
+    strcpy(fileext,"m21");
+    return 1;
+  }
+  if (streq_i(enc->type,"application/ogg"))
+  {
+    strcpy(fileext,"ogx");
+    return 1;
+  }
+  if (streq_i(enc->type,"application/vnd.apple.mpegurl"))
+  {
+    strcpy(fileext,"m3u8");
+    return 1;
+  }
+  if (streq_i(enc->type,"application/vnd.dvb.ait"))
+  {
+    strcpy(fileext,"ait");
+    return 1;
+  }
+  if (streq_i(enc->type,"application/vnd.dvb.service"))
+  {
+    strcpy(fileext,"svc");
+    return 1;
+  }
+  if (streq_i(enc->type,"application/vnd.epson.esf"))
+  {
+    strcpy(fileext,"esf");
+    return 1;
+  }
+  if (streq_i(enc->type,"application/vnd.epson.msf"))
+  {
+    strcpy(fileext,"msf");
+    return 1;
+  }
+  if (streq_i(enc->type,"application/vnd.epson.quickanime"))
+  {
+    strcpy(fileext,"qam");
+    return 1;
+  }
+  if (streq_i(enc->type,"application/vnd.epson.salt"))
+  {
+    strcpy(fileext,"slt");
+    return 1;
+  }
+  if (streq_i(enc->type,"application/vnd.epson.ssf"))
+  {
+    strcpy(fileext,"ssf");
+    return 1;
+  }
+  if (streq_i(enc->type,"application/vnd.fluxtime.clip"))
+  {
+    strcpy(fileext,"ftc");
+    return 1;
+  }
+  if (streq_i(enc->type,"application/vnd.frogans.fnc"))
+  {
+    strcpy(fileext,"fnc");
+    return 1;
+  }
+  if (streq_i(enc->type,"application/vnd.frogans.ltf"))
+  {
+    strcpy(fileext,"ltf");
+    return 1;
+  }
+  if (streq_i(enc->type,"application/vnd.tmobile-livetv"))
+  {
+    strcpy(fileext,"tmo");
+    return 1;
+  }
+  if (streq_i(enc->type,"application/x-cdlink"))
+  {
+    strcpy(fileext,"vcd");
+    return 1;
+  }
+  /* Images */
+  
+  if (streq_i(enc->type,"image/bmp") || streq_i(enc->type,"image/x-windows-bmp"))
+  {
+    strcpy(fileext,"bmp");
+    return 1;
+  }
+  if (streq_i(enc->type,"image/cgm"))
+  {
+    strcpy(fileext,"cgm");
+    return 1;
+  }
+  if (streq_i(enc->type,"image/g3fax"))
+  {
+    strcpy(fileext,"g3");
+    return 1;
+  }
+  if (streq_i(enc->type,"image/gif"))
+  {
+    strcpy(fileext,"gif");
+    return 1;
+  }
+  if (streq_i(enc->type,"image/ief"))
+  {
+    strcpy(fileext,"ief");
+    return 1;
+  }
+  if (streq_i(enc->type,"image/x-jps"))
+  {
+    strcpy(fileext,"jps");
+    return 1;
+  }
+  if (streq_i(enc->type,"image/jutvision"))
+  {
+    strcpy(fileext,"jut");
+    return 1;
+  }
+  if (streq_i(enc->type,"image/jpeg") || streq_i(enc->type,"image/jpg") || streq_i(enc->type,"image/x-citrix-jpeg"))
+  {
+    strcpy(fileext,"jpg");
+    return 1;
+  }
+  if (streq_i(enc->type,"image/ktx"))
+  {
+    strcpy(fileext,"ktx");
+    return 1;
+  }
+  if (streq_i(enc->type,"image/vasa") || streq_i(enc->type,"text/mcf"))
+  {
+    strcpy(fileext,"mcf");
+    return 1;
+  }
+  if (streq_i(enc->type,"image/naplps"))
+  {
+    strcpy(fileext,"nap");
+    return 1;
+  }
+  if (streq_i(enc->type,"image/x-niff"))
+  {
+    strcpy(fileext,"nif");
+    return 1;
+  }
+  if (streq_i(enc->type,"image/pjpeg"))
+  {
+    strcpy(fileext,"pjpeg");
+    return 1;
+  }
+  if (streq_i(enc->type,"image/png") || streq_i(enc->type,"image/x-png")  || streq_i(enc->type,"image/x-citrix-png"))
+  {
+    strcpy(fileext,"png");
+    return 1;
+  }
+  if (streq_i(enc->type,"image/prs.btif"))
+  {
+    strcpy(fileext,"btif");
+    return 1;
+  }
+  if (streq_i(enc->type,"image/svg+xml") || streq_i(enc->type,"image/svg"))
+  {
+    strcpy(fileext,"svg");
+    return 1;
+  }
+  if (streq_i(enc->type,"image/tiff") || streq_i(enc->type,"image/x-tiff"))
+  {
+    strcpy(fileext,"tiff");
+    return 1;
+  }
+  if (streq_i(enc->type,"image/vnd.adobe.photoshop"))
+  {
+    strcpy(fileext,"psd");
+    return 1;
+  }
+  if (streq_i(enc->type,"image/vnd.dece.graphic"))
+  {
+    strcpy(fileext,"uvi");
+    return 1;
+  }
+  if (streq_i(enc->type,"image/vnd.djvu"))
+  {
+    strcpy(fileext,"djvu");
+    return 1;
+  }
+  if (streq_i(enc->type,"image/vnd.dvb.subtitle"))
+  {
+    strcpy(fileext,"sub");
+    return 1;
+  }
+  if (streq_i(enc->type,"image/fif") || streq_i(enc->type,"application/fractals"))
+  {
+    strcpy(fileext,"fif");
+    return 1;
+  }
+  if (streq_i(enc->type,"image/vnd.dwg") || streq_i(enc->type,"image/x-dwg"))
+  {
+    strcpy(fileext,"dwg");
+    return 1;
+  }
+  if (streq_i(enc->type,"x-world/x-svr"))
+  {
+    strcpy(fileext,"svr");
+    return 1;
+  }
+  if (streq_i(enc->type,"image/vnd.dxf") || streq_i(enc->type,"applicatin/dxf"))
+  {
+    strcpy(fileext,"dxf");
+    return 1;
+  }
+  if (streq_i(enc->type,"image/vnd.fastbidsheet"))
+  {
+    strcpy(fileext,"fbs");
+    return 1;
+  }
+  if (streq_i(enc->type,"image/vnd.fpx"))
+  {
+    strcpy(fileext,"fpx");
+    return 1;
+  }
+  if (streq_i(enc->type,"image/vnd.fst"))
+  {
+    strcpy(fileext,"fst");
+    return 1;
+  }
+  if (streq_i(enc->type,"image/vnd.fujixerox.edmics-mmr"))
+  {
+    strcpy(fileext,"mmr");
+    return 1;
+  }
+  if (streq_i(enc->type,"image/vnd.fujixerox.edmics-rlc"))
+  {
+    strcpy(fileext,"rlc");
+    return 1;
+  }
+  if (streq_i(enc->type,"image/vnd.ms-modi"))
+  {
+    strcpy(fileext,"mdi");
+    return 1;
+  }
+  if (streq_i(enc->type,"image/vnd.net-fpx"))
+  {
+    strcpy(fileext,"npx");
+    return 1;
+  }
+  if (streq_i(enc->type,"image/vnd.wap.wbmp"))
+  {
+    strcpy(fileext,"wbmp");
+    return 1;
+  }
+  if (streq_i(enc->type,"image/vnd.xiff"))
+  {
+    strcpy(fileext,"xif");
+    return 1;
+  }
+  if (streq_i(enc->type,"image/webp"))
+  {
+    strcpy(fileext,"webp");
+    return 1;
+  }
+  if (streq_i(enc->type,"image/x-cmu-raster") || streq_i(enc->type,"image/cmu-raster") || streq_i(enc->type,"application/x-cmu-raster"))
+  {
+    strcpy(fileext,"ras");
+    return 1;
+  }
+  if (streq_i(enc->type,"image/x-freehand"))
+  {
+    strcpy(fileext,"fh");
+    return 1;
+  }
+  if (streq_i(enc->type,"image/x-icon"))
+  {
+    strcpy(fileext,"ico");
+    return 1;
+  }
+  if (streq_i(enc->type,"image/x-pcx"))
+  {
+    strcpy(fileext,"pcx");
+    return 1;
+  }
+  if (streq_i(enc->type,"image/x-pict") || streq_i(enc->type,"image/pict"))
+  {
+    strcpy(fileext,"pic");
+    return 1;
+  }
+  if (streq_i(enc->type,"image/x-portable-anymap"))
+  {
+    strcpy(fileext,"pnm");
+    return 1;
+  }
+  if (streq_i(enc->type,"image/x-portable-bitmap"))
+  {
+    strcpy(fileext,"pbm");
+    return 1;
+  }
+  if (streq_i(enc->type,"image/x-portable-graymap"))
+  {
+    strcpy(fileext,"pgm");
+    return 1;
+  }
+  if (streq_i(enc->type,"image/x-portable-pixmap"))
+  {
+    strcpy(fileext,"ppm");
+    return 1;
+  }
+  if (streq_i(enc->type,"image/x-rgb"))
+  {
+    strcpy(fileext,"rgb");
+    return 1;
+  }
+  if (streq_i(enc->type,"image/vnd.rn-realflash"))
+  {
+    strcpy(fileext,"rf");
+    return 1;
+  }
+  if (streq_i(enc->type,"image/vnd.rn-realpix"))
+  {
+    strcpy(fileext,"rp");
+    return 1;
+  }
+  if (streq_i(enc->type,"image/x-xbitmap") || streq_i(enc->type,"image/x-xbm") || streq_i(enc->type,"image/xbm"))
+  {
+    strcpy(fileext,"xbm");
+    return 1;
+  }
+  if (streq_i(enc->type,"xlg/drawing"))
+  {
+    strcpy(fileext,"xgz");
+    return 1;
+  }
+  if (streq_i(enc->type,"image/x-xpixmap") || streq_i(enc->type,"image/xpm"))
+  {
+    strcpy(fileext,"xpm");
+    return 1;
+  }
+  if (streq_i(enc->type,"image/x-windowdump") || streq_i(enc->type,"image/x-xwd"))
+  {
+    strcpy(fileext,"xwd");
+    return 1;
+  }
+  if (streq_i(enc->type,"image/x-jg"))
+  {
+    strcpy(fileext,"art");
+    return 1;
+  }
+  if (streq_i(enc->type,"application/vnd.3gpp.pic-bw-large"))
+  {
+    strcpy(fileext,"plb");
+    return 1;
+  }
+  if (streq_i(enc->type,"application/vnd.3gpp.pic-bw-small"))
+  {
+    strcpy(fileext,"psb");
+    return 1;
+  }
+  if (streq_i(enc->type,"application/vnd.3gpp.pic-bw-var"))
+  {
+    strcpy(fileext,"pvb");
+    return 1;
+  }
+  if (streq_i(enc->type,"application/vnd.chemdraw+xml"))
+  {
+    strcpy(fileext,"cdxml");
+    return 1;
+  }
+  if (streq_i(enc->type,"application/vnd.dpgraph"))
+  {
+    strcpy(fileext,"dpg");
+    return 1;
+  }
+  if (streq_i(enc->type,"application/vnd.ezpix-album"))
+  {
+    strcpy(fileext,"ez2");
+    return 1;
+  }
+  if (streq_i(enc->type,"application/vnd.ezpix-package"))
+  {
+    strcpy(fileext,"ez3");
+    return 1;
+  }
+  if (streq_i(enc->type,"application/vnd.flographit"))
+  {
+    strcpy(fileext,"gph");
+    return 1;
+  }
+  if (streq_i(enc->type,"application/vnd.kodak-descriptor"))
+  {
+    strcpy(fileext,"sse");
+    return 1;
+  }
+  if (streq_i(enc->type,"application/vnd.micrographx.flo") || streq_i(enc->type,"image/florian"))
+  {
+    strcpy(fileext,"flo");
+    return 1;
+  }
+  if (streq_i(enc->type,"application/vnd.micrographx.igx"))
+  {
+    strcpy(fileext,"igx");
+    return 1;
+  }
+  if (streq_i(enc->type,"application/vnd.oasis.opendocument.image"))
+  {
+    strcpy(fileext,"odi");
+    return 1;
+  }
+  if (streq_i(enc->type,"application/vnd.oasis.opendocument.image-template"))
+  {
+    strcpy(fileext,"oti");
+    return 1;
+  }
+  if (streq_i(enc->type,"application/x-font-bdf"))
+  {
+    strcpy(fileext,"bdf");
+    return 1;
+  }
+  /* Other */
+  if (streq_i(enc->type,"application/octet-stream"))
+  {
+    strcpy(fileext,"bin");
+    return 1;
+  }
+  if (streq_i(enc->type,"text/html"))
+  {
+    strcpy(fileext,"htm");
+    return 1;
+  }
+  if (streq_i(enc->type,"text/x-script.perl"))
+  {
+    strcpy(fileext,"pl");
+    return 1;
+  }
+  if (streq_i(enc->type,"text/x-script.python"))
+  {
+    strcpy(fileext,"py");
+    return 1;
+  }
+  if (streq_i(enc->type,"text/asp"))
+  {
+    strcpy(fileext,"asp");
+    return 1;
+  }
+  if (streq_i(enc->type,"text/plain") || startsame_i(enc->type,"text/")
+  {
+    strcpy(fileext,"txt");
+    return 1;
+  }
+  
+  dotpt = strstr(enc->type,"/");
+  if (dotpt == NULL)
+  {
+    strcpy(fileext,enc->type);
+    return 2;
+  }
+  strcpy(fileext,dotpt+sizeof(char));
+  return 2;
+}
+
