@@ -7,5 +7,6 @@ int testparser(char *rssfile);
 int testdb();
 int testdownload(char *url);
 int configuresetting(char *setting, char *value);
+int testdlparser(char *url);
 
 #endif

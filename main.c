@@ -5,6 +5,7 @@
 #include "sfuncs.h"
 #include "parser.h"
 #include "extprgfuncs.h"
+#include "dbexchange.h"
 
 #include "main.h"
 
@@ -53,6 +54,15 @@ int docmd(char **cmdntsa, int offset)
         return 1;
       }
       return testparser(cmdntsa[i+2]);
+    }
+    else if (streq_i(cmdntsa[i+1], "download_parser"))
+    {
+      if (cmdntsa[i+2] == NULL)
+      {
+        fprintf(stderr, "Error: URL not specified!  Test download_parser with what?\n");
+        return 1;
+      }
+      return testdlparser(cmdntsa[i+2]);
     }
     else if (streq_i(cmdntsa[i+1], "database"))
     {
@@ -170,12 +180,17 @@ int docmd(char **cmdntsa, int offset)
     {
       if (cmdntsa[i+2] == NULL)
       {
-        printf("Test:\n  Tests a function of the program.\nSubcommands of Test:\n*\tparser\n*\tdatabase\n*\tdownloader\n");
+        printf("Test:\n  Tests a function of the program.\nSubcommands of Test:\n*\tparser\n*\tdatabase\n*\tdownloader\n*\tdownload_parser\n");
         return 0;
       }
       else if (streq_i(cmdntsa[i+2], "parser"))
       {
         printf("Test Parser:\n  Tests the parser of RSS files.  Use the command as 'test parser <feed file>',\nwhere <feed file> is the file containing the RSS feed to parse.  The file must\nbe locally accessible, not a URL.\n");
+        return 0;
+      }
+      else if (streq_i(cmdntsa[i+2], "download_parser"))
+      {
+        printf("Test Parser:\n  Tests the downloader and parser of RSS files.  Use the command as\n  'test parser <URL>', where <URL> is the url of the file containing the RSS\n  feed to parse.\n");
         return 0;
       }
       else if (streq_i(cmdntsa[i+2], "downloader"))
@@ -455,4 +470,79 @@ int configuresetting(char *setting, char *value)
   }
   printf("Successfully set %s to '%s'.\n", asetting, value);
   return 0;
+}
+
+int testdlparser(char *url)
+{
+  if (dodownload(url, ".", "1.xml") == 0)
+  {
+    fprintf(stderr, "Error: Test download failed.\n");
+    return 3;
+  }
+  char rssfile[2048] = "";
+  char *pdir;
+  pdir = getsettingdata("PODCAST_DIR");
+  if (pdir == NULL)
+  {
+    fprintf(stderr, "Error: Could not find Podcast Directory.\n");
+    return 2;
+  }
+  else if (pdir[0] == 0)
+  {
+    fprintf(stderr, "Error: Podcast Directory not set!\n");
+    free(pdir);
+    return 2;
+  }
+  char *dirsep;
+  dirsep = getsettingdata("DIR_SEPARATOR");
+  if (dirsep == NULL)
+  {
+    fprintf(stderr, "Error: Could not find Directory Separator.\n");
+    free(pdir);
+    return 2;
+  }
+  else if (dirsep[0] == 0)
+  {
+    fprintf(stderr, "Error: Directory Separator not set!\n");
+    free(pdir);
+    free(dirsep);
+    return 2;
+  }
+  strcpy(rssfile,pdir);
+  strcat(rssfile,dirsep);
+  strcat(rssfile,"1.xml");
+  free(pdir);
+  free(dirsep);
+  FILE *feedfile = fopen(rssfile,"r");
+  if (feedfile == NULL)
+  {
+    printf("Error opening file %s\n", rssfile);
+    return 2;
+  }
+  int parserret = parsersstoll(feedfile);
+  if (parserret == 0)
+  {
+    printf("Error reading file!\n");
+    return 3;
+  }
+  else if (parserret == -1)
+  {
+    printf("Memory Error!\n");
+    return 4;
+  }
+  else if (parserret == -2)
+  {
+    printf("Error!  File is not RSS!\n");
+    return 5;
+  }
+  else
+  {
+    printf("File:\n");
+    listdata();
+    destroyitems();
+    destroychannels();
+    destroycategories();
+    return 0;
+  }
+  
 }
