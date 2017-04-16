@@ -1169,6 +1169,12 @@ int addchancat(unsigned long channelid, catnode *acat)
     dbwriteerror(rc);
     return 0;
   }
+  rc = sqlite3_bind_text(chancatstmt, 2, acat->category, strlen(acat->category)*sizeof(char), SQLITE_TRANSIENT);
+  if (rc != SQLITE_OK)
+  {
+    dbwriteerror(rc);
+    return 0;
+  }
   rc = sqlite3_bind_text(chancatstmt, 3, acat->domain, strlen(acat->domain)*sizeof(char), SQLITE_TRANSIENT);
   if (rc != SQLITE_OK)
   {
