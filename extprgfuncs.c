@@ -1,15 +1,19 @@
 #include <stdio.h>
 #include <stdlib.h>
 #include <string.h>
+#include <errno.h>
 
 #ifdef OS_LINUX
 /* Linux Methods */
 #include <unistd.h>
+#include <sys/stat.h>
+#include <sys/types.h>
 #elif defined(OS_WINDOWS)
 /* Windows Methods */
 #include <Shlwapi.h>
 #include <windows.h>
 #include <tchar.h>
+#include <direct.h>
 #else
 /* Other Methods */
 #endif
@@ -235,7 +239,7 @@ int doesfileexist(char *afile)
 #ifdef OS_LINUX
   /* Linux Method */
   if (access(afile, F_OK) != 0) return 0;
-  if (access(afile, R_OK | W_OK) != 0) return 0;
+  /*if (access(afile, R_OK | W_OK) != 0) return 0;*/
   return 1;
 #elif defined(OS_WINDOWS)
   /* Windows Method */
@@ -249,6 +253,77 @@ int doesfileexist(char *afile)
     fclose(af);
     return 1;
   }
+  return 0;
+#endif
+}
+
+int newfilename(char *outfilename, char *inpath, char *infilename, char *inext)
+{
+  char numstr[20] = "";
+  if (outfilename == NULL || inpath == NULL || infilename == NULL || inext == NULL)
+  {
+    return 0;
+  }
+  char *dirsep = getsettingdata("DIR_SEPARATOR");
+  if (dirsep == NULL) return 0;
+  char tfn = (char *) malloc(sizeof(char)*(25+strlen(inpath)+strlen(inext)+(2*strlen(infilename))));
+  if (tfn == NULL)
+  {
+    /* OoM! */
+    free(dirsep);
+    return 0;
+  }
+  
+  strcpy(tfn,inpath);
+  strcat(tfn,dirsep);
+  strcat(tfn,infilename);
+  strcat(tfn,inext);
+  
+  if (doesfileexist(tfn) == 0)
+  {
+    strcpy(outfilename,infilename);
+    free(tfn);
+    free(dirsep);
+    return 1;
+  }
+  
+  long n = 0;
+  do
+  {
+    sprintf(numstr,"%ld",n);
+    strcpy(tfn,inpath);
+    strcat(tfn,dirsep);
+    strcat(tfn,infilename);
+    strcat(tfn,numstr);
+    strcat(tfn,inext);
+    n++;
+  }
+  while (doesfileexist(tfn) != 0);
+  strcpy(outfilename,infilename);
+  strcat(outfilename,numstr);
+  free(tfn);
+  free(dirsep);
+  return 1;
+}
+
+int domkdir(char *directory)
+{
+  /* Returns: 1=Worked, 0=didn't work, -1=Already exists */
+#ifdef OS_LINUX
+  if (mkdir(directory,0777) == -1)
+  {
+    if (errno == EEXIST) return -1;
+    return 0;
+  }
+  return 1;
+#elif defined(OS_WINDOWS)
+  if (_tmkdir(directory) == -1)
+  {
+    if (errno == EEXIST) return -1;
+    return 0;
+  }
+  return 1;
+#else
   return 0;
 #endif
 }
