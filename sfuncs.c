@@ -171,7 +171,7 @@ long searchbackch(char *astr, char findchar)
   long las = strlen(astr);
   if (las<0) return -1;
   long n;
-  for (n=las n>=0; n--)
+  for (n=las; n>=0; n--)
   {
     if (astr[n] == findchar) return n;
   }

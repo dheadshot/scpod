@@ -3699,7 +3699,7 @@ int getencfilename(char *filename, rssenclosure *enc)
 {
   if (enc == NULL || filename == NULL) return 0;
   long soffset = searchbackch(enc->url,'/');
-  char afn[256] = ""
+  char afn[256] = "";
   if (soffset>0 && enc->url[soffset] == '/')
   {
     strcpy(afn, enc->url+(sizeof(char)*soffset)+sizeof(char));
@@ -4784,7 +4784,7 @@ int getencfileext(char *fileext, rssenclosure *enc)
     strcpy(fileext,"asp");
     return 1;
   }
-  if (streq_i(enc->type,"text/plain") || startsame_i(enc->type,"text/")
+  if (streq_i(enc->type,"text/plain") || startsame_i(enc->type,"text/"))
   {
     strcpy(fileext,"txt");
     return 1;
