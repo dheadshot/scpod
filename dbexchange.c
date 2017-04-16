@@ -1225,11 +1225,11 @@ static int callback_cuc(void *achan, int argc, char **argv, char **azColName)
 { /* Configure Setting Set Callback */
   int i;
   char rettxt[] = "0000000000000000000000", pubdate[256] = "", lbdate[256] = "";
-  if (achan->pubdate.fulldate != NULL)
+  if (((chanpropnode *) achan)->pubdate.fulldate != NULL)
     rssdatetoisodate(pubdate,&(((chanpropnode *) achan)->pubdate));
   else
     strcpy(pubdate,"NULL");
-  if (achan->lastbuilddate.fulldate != NULL)
+  if (((chanpropnode *) achan)->lastbuilddate.fulldate != NULL)
     rssdatetoisodate(lbdate,&(((chanpropnode *) achan)->lastbuilddate));
   else
     strcpy(lbdate,"NULL");
