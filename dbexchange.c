@@ -266,6 +266,30 @@ unsigned long addchannel(chanpropnode *achan, char *chanurl, char *rss_version, 
   char datetext[256] = "";
   int rc;
   
+  /* Check channel URL doesn't already exist */
+  char churlsql[2048] = "", *anerrmsg;
+  if (strstr(chanurl,"'") != NULL )
+  {
+    fprintf(stderr, "Invalid Channel URL!\n");
+    return 0;
+  }
+  sprintf(churlsql, "SELECT Channel_URL FROM Channel WHERE Channel_URL = '%s';",chanurl);
+  if (passbackstr != NULL) free(passbackstr);
+  passbackstr = NULL;
+  rc = sqlite3_exec(db, churlsql, callback_ccu, 0, &anerrmsg);
+  if (rc != SQLITE_OK && rc != SQLITE_DONE && rc != SQLITE_ROW)
+  {
+    dbwriteerror(rc);
+    fprintf(stderr, "(Returned Error: %s)\n", anerrmsg);
+    sqlite3_free(anerrmsg);
+    return 0;
+  }
+  if (passbackstr != NULL)
+  {
+    fprintf(stderr,"A channel with the URL '%s' is already in the database!\n", chanurl);
+    return 0;
+  }
+  
   /* Bind values */
   rc = sqlite3_bind_text(channelstmt, 1, chanurl, strlen(chanurl)*sizeof(char), SQLITE_TRANSIENT);
   if (rc != SQLITE_OK)
@@ -633,6 +657,22 @@ static int callback_csview(void *NotUsed, int argc, char **argv, char **azColNam
   printf("%s = %s\n", argv[sn], argv[dn]);
   passbackul = 1;
   
+  return 0;
+  
+}
+
+static int callback_ccu(void *NotUsed, int argc, char **argv, char **azColName)
+{ /* Check Channel_URL Callback */
+  int i;
+  for (i=0;i<argc;i++)
+  {
+    if (streq_i(azColName[i],"Channel_URL"))
+    {
+      /*if (!streq_i(argv[i],"Last Opened")) return 0;*/
+      writetopassbackstr(argv[i]);
+      return 0;
+    }
+  }
   return 0;
   
 }

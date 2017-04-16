@@ -28,6 +28,7 @@ static int callback_csview(void *NotUsed, int argc, char **argv, char **azColNam
 static int callback_gsd(void *NotUsed, int argc, char **argv, char **azColName);
 static int callback_csset(void *NotUsed, int argc, char **argv, char **azColName);
 static int callback_gcid(void *NotUsed, int argc, char **argv, char **azColName);
+static int callback_ccu(void *NotUsed, int argc, char **argv, char **azColName);
 void rssdatetoisodate(char *isodate, rssdate *adate);
 static int callback_clo(void *NotUsed, int argc, char **argv, char **azColName);
 int checklastopened();
