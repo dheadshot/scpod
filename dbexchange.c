@@ -14,7 +14,7 @@ sqlite3 *db;
 char *passbackstr = NULL;
 unsigned long passbackul = 0;
 sqlite3_stmt *channelstmt = NULL, *itemstmt = NULL, *configstmt = NULL, 
-             *chancatstmt = NULL;
+             *chancatstmt = NULL, *selitemstmt = NULL;
 
 int opendb(int dolo)
 {
@@ -1169,12 +1169,6 @@ int addchancat(unsigned long channelid, catnode *acat)
     dbwriteerror(rc);
     return 0;
   }
-  rc = sqlite3_bind_text(chancatstmt, 2, acat->category, strlen(acat->category)*sizeof(char), SQLITE_TRANSIENT);
-  if (rc != SQLITE_OK)
-  {
-    dbwriteerror(rc);
-    return 0;
-  }
   rc = sqlite3_bind_text(chancatstmt, 3, acat->domain, strlen(acat->domain)*sizeof(char), SQLITE_TRANSIENT);
   if (rc != SQLITE_OK)
   {
@@ -1198,10 +1192,10 @@ int addchancat(unsigned long channelid, catnode *acat)
     return 0;
   }
   
-  
+  return 1;
 }
 
-int finalisechancatstatement()
+void finalisechancatstatement()
 {
   if (chancatstmt != NULL) sqlite3_finalize(chancatstmt);
   chancatstmt = NULL;
@@ -1221,8 +1215,138 @@ int prepareitemstatement()
   return 1;
 }
 
+int prepareselitemstatement()
+{
+  char sqlstmt[] = "SELECT * FROM Item WHERE Channel_ID = ? AND Title = ? AND Link = ? AND Description = ? AND Author = ? AND Enclosure_URL = ? AND Enclosure_Length = ? AND Enclosure_Type = ? AND GUID = ? AND GUID_Is_Permalink = ? AND Publication_Date = ? AND Source_URL = ? AND Source_Name = ?;";
+  int rc = sqlite3_prepare_v2(db, sqlstmt, strlen(sqlstmt)+1, &selitemstmt, NULL);
+  if (rc != SQLITE_OK)
+  {
+    dbwriteerror(rc);
+    if (selitemstmt != NULL) sqlite3_finalize(selitemstmt);
+    selitemstmt = NULL;
+    return 0;
+  }
+  return 1;
+}
+
+int isitemnew(itempropnode *anitem, unsigned long dbchannelid)
+{
+  /* Returns: 1 if new, 0 if in DB already and -1 on errors */
+  if (selitemstmt == NULL) return -1;
+  
+  int rc, ans = 0;
+  
+  /* Bind item fields */
+  rc = sqlite3_bind_int(selitemstmt, 1, dbchannelid);
+  if (rc != SQLITE_OK)
+  {
+    dbwriteerror(rc);
+    return -1;
+  }
+  rc = sqlite3_bind_text(selitemstmt, 2, anitem->title, strlen(anitem->title)*sizeof(char), SQLITE_TRANSIENT);
+  if (rc != SQLITE_OK)
+  {
+    dbwriteerror(rc);
+    return -1;
+  }
+  rc = sqlite3_bind_text(selitemstmt, 3, anitem->link, strlen(anitem->link)*sizeof(char), SQLITE_TRANSIENT);
+  if (rc != SQLITE_OK)
+  {
+    dbwriteerror(rc);
+    return -1;
+  }
+  rc = sqlite3_bind_text(selitemstmt, 4, anitem->description, strlen(anitem->description)*sizeof(char), SQLITE_TRANSIENT);
+  if (rc != SQLITE_OK)
+  {
+    dbwriteerror(rc);
+    return -1;
+  }
+  rc = sqlite3_bind_text(selitemstmt, 5, anitem->author, strlen(anitem->author)*sizeof(char), SQLITE_TRANSIENT);
+  if (rc != SQLITE_OK)
+  {
+    dbwriteerror(rc);
+    return -1;
+  }
+  rc = sqlite3_bind_text(selitemstmt, 6, anitem->enclosure.url, strlen(anitem->enclosure.url)*sizeof(char), SQLITE_TRANSIENT);
+  if (rc != SQLITE_OK)
+  {
+    dbwriteerror(rc);
+    return -1;
+  }
+  rc = sqlite3_bind_int(selitemstmt, 7, anitem->enclosure.length);
+  if (rc != SQLITE_OK)
+  {
+    dbwriteerror(rc);
+    return -1;
+  }
+  rc = sqlite3_bind_text(selitemstmt, 8, anitem->enclosure.type, strlen(anitem->enclosure.type)*sizeof(char), SQLITE_TRANSIENT);
+  if (rc != SQLITE_OK)
+  {
+    dbwriteerror(rc);
+    return -1;
+  }
+  rc = sqlite3_bind_text(selitemstmt, 9, anitem->guid.guid, strlen(anitem->guid.guid)*sizeof(char), SQLITE_TRANSIENT);
+  if (rc != SQLITE_OK)
+  {
+    dbwriteerror(rc);
+    return -1;
+  }
+  rc = sqlite3_bind_int(selitemstmt, 10, anitem->guid.ispermalink);
+  if (rc != SQLITE_OK)
+  {
+    dbwriteerror(rc);
+    return -1;
+  }
+  char adate[256] = "";
+  rssdatetoisodate(adate,&(anitem->pubdate));
+  rc = sqlite3_bind_text(selitemstmt, 11, adate, strlen(adate)*sizeof(char), SQLITE_TRANSIENT);
+  if (rc != SQLITE_OK)
+  {
+    dbwriteerror(rc);
+    return -1;
+  }
+  rc = sqlite3_bind_text(selitemstmt, 12, anitem->source.url, strlen(anitem->source.url)*sizeof(char), SQLITE_TRANSIENT);
+  if (rc != SQLITE_OK)
+  {
+    dbwriteerror(rc);
+    return -1;
+  }
+  rc = sqlite3_bind_text(selitemstmt, 13, anitem->source.name, strlen(anitem->source.name)*sizeof(char), SQLITE_TRANSIENT);
+  if (rc != SQLITE_OK)
+  {
+    dbwriteerror(rc);
+    return -1;
+  }
+  
+  /* Execute Statement */
+  rc = sqlite3_step(selitemstmt);
+  if (rc != SQLITE_OK && rc != SQLITE_DONE && rc != SQLITE_ROW)
+  {
+    dbwriteerror(rc);
+    return -1;
+  }
+  if (rc == SQLITE_ROW) ans = 0;
+  else ans = 1;
+  
+  /* Reset Statement ready for next call */
+  rc = sqlite3_reset(selitemstmt);
+  if (rc != SQLITE_OK && rc != SQLITE_DONE)
+  {
+    dbwriteerror(rc);
+    return 0;
+  }
+  
+  return ans;
+}
+
+void finaliseselitemstatement()
+{
+  if (selitemstmt != NULL) sqlite3_finalize(selitemstmt);
+  selitemstmt = NULL;
+}
+
 static int callback_cuc(void *achan, int argc, char **argv, char **azColName)
-{ /* Configure Setting Set Callback */
+{ /* Check Update Channel Callback */
   int i;
   char rettxt[] = "0000000000000000000000", pubdate[256] = "", lbdate[256] = "";
   if (((chanpropnode *) achan)->pubdate.fulldate != NULL)
