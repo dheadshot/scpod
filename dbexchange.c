@@ -455,10 +455,10 @@ unsigned long addchannel(chanpropnode *achan, char *chanurl, char *rss_version, 
   
   /* Get Channel_ID */
   char gcidsql[] = "SELECT Channel_ID FROM Channel WHERE ROWID=last_rowid();";
-  char *anerrmsg;
+  /*char *anerrmsg;*/
   passbackul = 0;
   rc = sqlite3_exec(db,gcidsql,callback_gcid,0,&anerrmsg);
-  if (rc != SQLITE_OK)
+  if (rc != SQLITE_OK && rc != SQLITE_DONE && rc != SQLITE_ROW)
   {
     dbwriteerror(rc);
     fprintf(stderr, "(Returned Error: %s)\n", anerrmsg);
@@ -525,6 +525,620 @@ int finalisechannelstatement()
 {
   if (channelstmt != NULL) sqlite3_finalize(channelstmt);
   channelstmt = NULL;
+}
+
+int checkupdatechannel(chanpropnode *achan, char *rss_version)
+{
+  char somesql[256] = "", *anerrmsg;
+  int rc;
+  
+  /* Find out what needs to be updated */
+  sprintf(somesql,"SELECT * FROM Channel WHERE Channel_ID = %lu;",achan->dbcid);
+  if (passbackstr != NULL) free(passbackstr);
+  passbackstr = NULL;
+  rc = sqlite3_exec(db,somesql,callback_cuc,(void *) achan,&anerrmsg);
+  if (rc != SQLITE_OK && rc != SQLITE_DONE && rc != SQLITE_ROW)
+  {
+    dbwriteerror(rc);
+    fprintf(stderr, "(Returned Error: %s)\n", anerrmsg);
+    sqlite3_free(anerrmsg);
+    return 0;
+  }
+  if (passbackstr == NULL || strlen(passbackstr)<19)
+  {
+    fprintf(stderr, "Warning: Could not determine where channel update is needed - not updating\n         channel!\n");
+    return 0;
+  }
+  
+  /* If nothing needs updating, return. */
+  if (startsame_(passbackstr, "0000000000000000000") != 0) return 1;
+  
+  /* Do updates */
+  char *udsql;
+  char *tmpstr;
+  if (passbackstr[0] == '1' && achan->title != NULL)
+  {
+    tmpstr = (char *) malloc(2*sizeof(char)*(1+strlen(achan->title)));
+    if (tmpstr == NULL)
+    {
+      fprintf(stderr, "Error: Out of Memory!\n");
+      return 0;
+    }
+    strdsqs(tmpstr,achan->title);
+    udsql = (char *) malloc(sizeof(char)*(257+strlen(tmpstr)));
+    if (udsql == NULL)
+    {
+      fprintf(stderr, "Error: Out of Memory!\n");
+      free(tmpstr);
+      return 0;
+    }
+    sprintf(udsql,"UPDATE Channel SET Title = '%s' WHERE Channel_ID = %lu;",tmpstr,achan->dbcid);
+    free(tmpstr);
+    rc = sqlite3_exec(db,udsql,NULL,0,&anerrmsg);
+    if (rc != SQLITE_OK && rc != SQLITE_DONE && rc != SQLITE_ROW)
+    {
+      dbwriteerror(rc);
+      fprintf(stderr, "(Returned Error: %s)\n", anerrmsg);
+      free(udsql);
+      sqlite3_free(anerrmsg);
+      return 0;
+    }
+    free(udsql);
+  }
+  if (passbackstr[1] == '1' && achan->link != NULL)
+  {
+    tmpstr = (char *) malloc(2*sizeof(char)*(1+strlen(achan->link)));
+    if (tmpstr == NULL)
+    {
+      fprintf(stderr, "Error: Out of Memory!\n");
+      return 0;
+    }
+    strdsqs(tmpstr,achan->link);
+    udsql = (char *) malloc(sizeof(char)*(257+strlen(tmpstr)));
+    if (udsql == NULL)
+    {
+      fprintf(stderr, "Error: Out of Memory!\n");
+      free(tmpstr);
+      return 0;
+    }
+    sprintf(udsql,"UPDATE Channel SET Link = '%s' WHERE Channel_ID = %lu;",tmpstr,achan->dbcid);
+    free(tmpstr);
+    rc = sqlite3_exec(db,udsql,NULL,0,&anerrmsg);
+    if (rc != SQLITE_OK && rc != SQLITE_DONE && rc != SQLITE_ROW)
+    {
+      dbwriteerror(rc);
+      fprintf(stderr, "(Returned Error: %s)\n", anerrmsg);
+      free(udsql);
+      sqlite3_free(anerrmsg);
+      return 0;
+    }
+    free(udsql);
+  }
+  if (passbackstr[2] == '1' && achan->description != NULL)
+  {
+    tmpstr = (char *) malloc(2*sizeof(char)*(1+strlen(achan->description)));
+    if (tmpstr == NULL)
+    {
+      fprintf(stderr, "Error: Out of Memory!\n");
+      return 0;
+    }
+    strdsqs(tmpstr,achan->description);
+    udsql = (char *) malloc(sizeof(char)*(257+strlen(tmpstr)));
+    if (udsql == NULL)
+    {
+      fprintf(stderr, "Error: Out of Memory!\n");
+      free(tmpstr);
+      return 0;
+    }
+    sprintf(udsql,"UPDATE Channel SET Description = '%s' WHERE Channel_ID = %lu;",tmpstr,achan->dbcid);
+    free(tmpstr);
+    rc = sqlite3_exec(db,udsql,NULL,0,&anerrmsg);
+    if (rc != SQLITE_OK && rc != SQLITE_DONE && rc != SQLITE_ROW)
+    {
+      dbwriteerror(rc);
+      fprintf(stderr, "(Returned Error: %s)\n", anerrmsg);
+      free(udsql);
+      sqlite3_free(anerrmsg);
+      return 0;
+    }
+    free(udsql);
+  }
+  if (passbackstr[3] == '1' && achan->language_main != NULL)
+  {
+    tmpstr = (char *) malloc(2*sizeof(char)*(1+strlen(achan->language_main)));
+    if (tmpstr == NULL)
+    {
+      fprintf(stderr, "Error: Out of Memory!\n");
+      return 0;
+    }
+    strdsqs(tmpstr,achan->language_main);
+    udsql = (char *) malloc(sizeof(char)*(257+strlen(tmpstr)));
+    if (udsql == NULL)
+    {
+      fprintf(stderr, "Error: Out of Memory!\n");
+      free(tmpstr);
+      return 0;
+    }
+    sprintf(udsql,"UPDATE Channel SET Language_Major = '%s' WHERE Channel_ID = %lu;",tmpstr,achan->dbcid);
+    free(tmpstr);
+    rc = sqlite3_exec(db,udsql,NULL,0,&anerrmsg);
+    if (rc != SQLITE_OK && rc != SQLITE_DONE && rc != SQLITE_ROW)
+    {
+      dbwriteerror(rc);
+      fprintf(stderr, "(Returned Error: %s)\n", anerrmsg);
+      free(udsql);
+      sqlite3_free(anerrmsg);
+      return 0;
+    }
+    free(udsql);
+  }
+  if (passbackstr[4] == '1' && achan->language_sub != NULL)
+  {
+    tmpstr = (char *) malloc(2*sizeof(char)*(1+strlen(achan->language_sub)));
+    if (tmpstr == NULL)
+    {
+      fprintf(stderr, "Error: Out of Memory!\n");
+      return 0;
+    }
+    strdsqs(tmpstr,achan->language_sub);
+    udsql = (char *) malloc(sizeof(char)*(257+strlen(tmpstr)));
+    if (udsql == NULL)
+    {
+      fprintf(stderr, "Error: Out of Memory!\n");
+      free(tmpstr);
+      return 0;
+    }
+    sprintf(udsql,"UPDATE Channel SET Language_Minor = '%s' WHERE Channel_ID = %lu;",tmpstr,achan->dbcid);
+    free(tmpstr);
+    rc = sqlite3_exec(db,udsql,NULL,0,&anerrmsg);
+    if (rc != SQLITE_OK && rc != SQLITE_DONE && rc != SQLITE_ROW)
+    {
+      dbwriteerror(rc);
+      fprintf(stderr, "(Returned Error: %s)\n", anerrmsg);
+      free(udsql);
+      sqlite3_free(anerrmsg);
+      return 0;
+    }
+    free(udsql);
+  }
+  if (passbackstr[5] == '1' && achan->copyright != NULL)
+  {
+    tmpstr = (char *) malloc(2*sizeof(char)*(1+strlen(achan->copyright)));
+    if (tmpstr == NULL)
+    {
+      fprintf(stderr, "Error: Out of Memory!\n");
+      return 0;
+    }
+    strdsqs(tmpstr,achan->copyright);
+    udsql = (char *) malloc(sizeof(char)*(257+strlen(tmpstr)));
+    if (udsql == NULL)
+    {
+      fprintf(stderr, "Error: Out of Memory!\n");
+      free(tmpstr);
+      return 0;
+    }
+    sprintf(udsql,"UPDATE Channel SET Copyright = '%s' WHERE Channel_ID = %lu;",tmpstr,achan->dbcid);
+    free(tmpstr);
+    rc = sqlite3_exec(db,udsql,NULL,0,&anerrmsg);
+    if (rc != SQLITE_OK && rc != SQLITE_DONE && rc != SQLITE_ROW)
+    {
+      dbwriteerror(rc);
+      fprintf(stderr, "(Returned Error: %s)\n", anerrmsg);
+      free(udsql);
+      sqlite3_free(anerrmsg);
+      return 0;
+    }
+    free(udsql);
+  }
+  if (passbackstr[6] == '1' && achan->managingeditor != NULL)
+  {
+    tmpstr = (char *) malloc(2*sizeof(char)*(1+strlen(achan->managingeditor)));
+    if (tmpstr == NULL)
+    {
+      fprintf(stderr, "Error: Out of Memory!\n");
+      return 0;
+    }
+    strdsqs(tmpstr,achan->managingeditor);
+    udsql = (char *) malloc(sizeof(char)*(257+strlen(tmpstr)));
+    if (udsql == NULL)
+    {
+      fprintf(stderr, "Error: Out of Memory!\n");
+      free(tmpstr);
+      return 0;
+    }
+    sprintf(udsql,"UPDATE Channel SET Managing_Editor = '%s' WHERE Channel_ID = %lu;",tmpstr,achan->dbcid);
+    free(tmpstr);
+    rc = sqlite3_exec(db,udsql,NULL,0,&anerrmsg);
+    if (rc != SQLITE_OK && rc != SQLITE_DONE && rc != SQLITE_ROW)
+    {
+      dbwriteerror(rc);
+      fprintf(stderr, "(Returned Error: %s)\n", anerrmsg);
+      free(udsql);
+      sqlite3_free(anerrmsg);
+      return 0;
+    }
+    free(udsql);
+  }
+  if (passbackstr[7] == '1' && achan->webmaster != NULL)
+  {
+    tmpstr = (char *) malloc(2*sizeof(char)*(1+strlen(achan->webmaster)));
+    if (tmpstr == NULL)
+    {
+      fprintf(stderr, "Error: Out of Memory!\n");
+      return 0;
+    }
+    strdsqs(tmpstr,achan->webmaster);
+    udsql = (char *) malloc(sizeof(char)*(257+strlen(tmpstr)));
+    if (udsql == NULL)
+    {
+      fprintf(stderr, "Error: Out of Memory!\n");
+      free(tmpstr);
+      return 0;
+    }
+    sprintf(udsql,"UPDATE Channel SET Webmaster = '%s' WHERE Channel_ID = %lu;",tmpstr,achan->dbcid);
+    free(tmpstr);
+    rc = sqlite3_exec(db,udsql,NULL,0,&anerrmsg);
+    if (rc != SQLITE_OK && rc != SQLITE_DONE && rc != SQLITE_ROW)
+    {
+      dbwriteerror(rc);
+      fprintf(stderr, "(Returned Error: %s)\n", anerrmsg);
+      free(udsql);
+      sqlite3_free(anerrmsg);
+      return 0;
+    }
+    free(udsql);
+  }
+  if (passbackstr[8] == '1' && achan->pubdate.fulldate != NULL)
+  {
+    tmpstr = (char *) malloc(256*sizeof(char));
+    if (tmpstr == NULL)
+    {
+      fprintf(stderr, "Error: Out of Memory!\n");
+      return 0;
+    }
+    rssdatetoisodate(tmpstr,&(achan->pubdate));
+    udsql = (char *) malloc(sizeof(char)*(257+strlen(tmpstr)));
+    if (udsql == NULL)
+    {
+      fprintf(stderr, "Error: Out of Memory!\n");
+      free(tmpstr);
+      return 0;
+    }
+    sprintf(udsql,"UPDATE Channel SET Publication_Date = '%s' WHERE Channel_ID = %lu;",tmpstr,achan->dbcid);
+    free(tmpstr);
+    rc = sqlite3_exec(db,udsql,NULL,0,&anerrmsg);
+    if (rc != SQLITE_OK && rc != SQLITE_DONE && rc != SQLITE_ROW)
+    {
+      dbwriteerror(rc);
+      fprintf(stderr, "(Returned Error: %s)\n", anerrmsg);
+      free(udsql);
+      sqlite3_free(anerrmsg);
+      return 0;
+    }
+    free(udsql);
+  }
+  if (passbackstr[9] == '1' && achan->lastbuilddate.fulldate != NULL)
+  {
+    tmpstr = (char *) malloc(256*sizeof(char));
+    if (tmpstr == NULL)
+    {
+      fprintf(stderr, "Error: Out of Memory!\n");
+      return 0;
+    }
+    rssdatetoisodate(tmpstr,&(achan->lastbuilddate));
+    udsql = (char *) malloc(sizeof(char)*(257+strlen(tmpstr)));
+    if (udsql == NULL)
+    {
+      fprintf(stderr, "Error: Out of Memory!\n");
+      free(tmpstr);
+      return 0;
+    }
+    sprintf(udsql,"UPDATE Channel SET Last_Build_Date = '%s' WHERE Channel_ID = %lu;",tmpstr,achan->dbcid);
+    free(tmpstr);
+    rc = sqlite3_exec(db,udsql,NULL,0,&anerrmsg);
+    if (rc != SQLITE_OK && rc != SQLITE_DONE && rc != SQLITE_ROW)
+    {
+      dbwriteerror(rc);
+      fprintf(stderr, "(Returned Error: %s)\n", anerrmsg);
+      free(udsql);
+      sqlite3_free(anerrmsg);
+      return 0;
+    }
+    free(udsql);
+  }
+  if (passbackstr[10] == '1' && achan->generator != NULL)
+  {
+    tmpstr = (char *) malloc(2*sizeof(char)*(1+strlen(achan->generator)));
+    if (tmpstr == NULL)
+    {
+      fprintf(stderr, "Error: Out of Memory!\n");
+      return 0;
+    }
+    strdsqs(tmpstr,achan->generator);
+    udsql = (char *) malloc(sizeof(char)*(257+strlen(tmpstr)));
+    if (udsql == NULL)
+    {
+      fprintf(stderr, "Error: Out of Memory!\n");
+      free(tmpstr);
+      return 0;
+    }
+    sprintf(udsql,"UPDATE Channel SET Generator = '%s' WHERE Channel_ID = %lu;",tmpstr,achan->dbcid);
+    free(tmpstr);
+    rc = sqlite3_exec(db,udsql,NULL,0,&anerrmsg);
+    if (rc != SQLITE_OK && rc != SQLITE_DONE && rc != SQLITE_ROW)
+    {
+      dbwriteerror(rc);
+      fprintf(stderr, "(Returned Error: %s)\n", anerrmsg);
+      free(udsql);
+      sqlite3_free(anerrmsg);
+      return 0;
+    }
+    free(udsql);
+  }
+  if (passbackstr[11] == '1' && achan->docs != NULL)
+  {
+    tmpstr = (char *) malloc(2*sizeof(char)*(1+strlen(achan->docs)));
+    if (tmpstr == NULL)
+    {
+      fprintf(stderr, "Error: Out of Memory!\n");
+      return 0;
+    }
+    strdsqs(tmpstr,achan->docs);
+    udsql = (char *) malloc(sizeof(char)*(257+strlen(tmpstr)));
+    if (udsql == NULL)
+    {
+      fprintf(stderr, "Error: Out of Memory!\n");
+      free(tmpstr);
+      return 0;
+    }
+    sprintf(udsql,"UPDATE Channel SET Documentation = '%s' WHERE Channel_ID = %lu;",tmpstr,achan->dbcid);
+    free(tmpstr);
+    rc = sqlite3_exec(db,udsql,NULL,0,&anerrmsg);
+    if (rc != SQLITE_OK && rc != SQLITE_DONE && rc != SQLITE_ROW)
+    {
+      dbwriteerror(rc);
+      fprintf(stderr, "(Returned Error: %s)\n", anerrmsg);
+      free(udsql);
+      sqlite3_free(anerrmsg);
+      return 0;
+    }
+    free(udsql);
+  }
+  if (passbackstr[12] == '1' && rss_version != NULL)
+  {
+    tmpstr = (char *) malloc(2*sizeof(char)*(1+strlen(rss_version)));
+    if (tmpstr == NULL)
+    {
+      fprintf(stderr, "Error: Out of Memory!\n");
+      return 0;
+    }
+    strdsqs(tmpstr,rss_version);
+    udsql = (char *) malloc(sizeof(char)*(257+strlen(tmpstr)));
+    if (udsql == NULL)
+    {
+      fprintf(stderr, "Error: Out of Memory!\n");
+      free(tmpstr);
+      return 0;
+    }
+    sprintf(udsql,"UPDATE Channel SET RSS_Version = '%s' WHERE Channel_ID = %lu;",tmpstr,achan->dbcid);
+    free(tmpstr);
+    rc = sqlite3_exec(db,udsql,NULL,0,&anerrmsg);
+    if (rc != SQLITE_OK && rc != SQLITE_DONE && rc != SQLITE_ROW)
+    {
+      dbwriteerror(rc);
+      fprintf(stderr, "(Returned Error: %s)\n", anerrmsg);
+      free(udsql);
+      sqlite3_free(anerrmsg);
+      return 0;
+    }
+    free(udsql);
+  }
+  if (passbackstr[13] == '1')
+  {
+    tmpstr = (char *) malloc(256*sizeof(char));
+    if (tmpstr == NULL)
+    {
+      fprintf(stderr, "Error: Out of Memory!\n");
+      return 0;
+    }
+    sprintf(tmpstr,"%ld",achan->ttl);
+    udsql = (char *) malloc(sizeof(char)*(257+strlen(tmpstr)));
+    if (udsql == NULL)
+    {
+      fprintf(stderr, "Error: Out of Memory!\n");
+      free(tmpstr);
+      return 0;
+    }
+    sprintf(udsql,"UPDATE Channel SET TTL = %s WHERE Channel_ID = %lu;",tmpstr,achan->dbcid);
+    free(tmpstr);
+    rc = sqlite3_exec(db,udsql,NULL,0,&anerrmsg);
+    if (rc != SQLITE_OK && rc != SQLITE_DONE && rc != SQLITE_ROW)
+    {
+      dbwriteerror(rc);
+      fprintf(stderr, "(Returned Error: %s)\n", anerrmsg);
+      free(udsql);
+      sqlite3_free(anerrmsg);
+      return 0;
+    }
+    free(udsql);
+  }
+  if (passbackstr[14] == '1' && achan->image.url != NULL)
+  {
+    tmpstr = (char *) malloc(2*sizeof(char)*(1+strlen(achan->image.url)));
+    if (tmpstr == NULL)
+    {
+      fprintf(stderr, "Error: Out of Memory!\n");
+      return 0;
+    }
+    strdsqs(tmpstr,achan->image.url);
+    udsql = (char *) malloc(sizeof(char)*(257+strlen(tmpstr)));
+    if (udsql == NULL)
+    {
+      fprintf(stderr, "Error: Out of Memory!\n");
+      free(tmpstr);
+      return 0;
+    }
+    sprintf(udsql,"UPDATE Channel SET Image_URL = '%s' WHERE Channel_ID = %lu;",tmpstr,achan->dbcid);
+    free(tmpstr);
+    rc = sqlite3_exec(db,udsql,NULL,0,&anerrmsg);
+    if (rc != SQLITE_OK && rc != SQLITE_DONE && rc != SQLITE_ROW)
+    {
+      dbwriteerror(rc);
+      fprintf(stderr, "(Returned Error: %s)\n", anerrmsg);
+      free(udsql);
+      sqlite3_free(anerrmsg);
+      return 0;
+    }
+    free(udsql);
+  }
+  if (passbackstr[15] == '1' && achan->image.title != NULL)
+  {
+    tmpstr = (char *) malloc(2*sizeof(char)*(1+strlen(achan->image.title)));
+    if (tmpstr == NULL)
+    {
+      fprintf(stderr, "Error: Out of Memory!\n");
+      return 0;
+    }
+    strdsqs(tmpstr,achan->image.title);
+    udsql = (char *) malloc(sizeof(char)*(257+strlen(tmpstr)));
+    if (udsql == NULL)
+    {
+      fprintf(stderr, "Error: Out of Memory!\n");
+      free(tmpstr);
+      return 0;
+    }
+    sprintf(udsql,"UPDATE Channel SET Image_Title = '%s' WHERE Channel_ID = %lu;",tmpstr,achan->dbcid);
+    free(tmpstr);
+    rc = sqlite3_exec(db,udsql,NULL,0,&anerrmsg);
+    if (rc != SQLITE_OK && rc != SQLITE_DONE && rc != SQLITE_ROW)
+    {
+      dbwriteerror(rc);
+      fprintf(stderr, "(Returned Error: %s)\n", anerrmsg);
+      free(udsql);
+      sqlite3_free(anerrmsg);
+      return 0;
+    }
+    free(udsql);
+  }
+  if (passbackstr[16] == '1' && achan->image.link != NULL)
+  {
+    tmpstr = (char *) malloc(2*sizeof(char)*(1+strlen(achan->image.link)));
+    if (tmpstr == NULL)
+    {
+      fprintf(stderr, "Error: Out of Memory!\n");
+      return 0;
+    }
+    strdsqs(tmpstr,achan->image.link);
+    udsql = (char *) malloc(sizeof(char)*(257+strlen(tmpstr)));
+    if (udsql == NULL)
+    {
+      fprintf(stderr, "Error: Out of Memory!\n");
+      free(tmpstr);
+      return 0;
+    }
+    sprintf(udsql,"UPDATE Channel SET Image_Link = '%s' WHERE Channel_ID = %lu;",tmpstr,achan->dbcid);
+    free(tmpstr);
+    rc = sqlite3_exec(db,udsql,NULL,0,&anerrmsg);
+    if (rc != SQLITE_OK && rc != SQLITE_DONE && rc != SQLITE_ROW)
+    {
+      dbwriteerror(rc);
+      fprintf(stderr, "(Returned Error: %s)\n", anerrmsg);
+      free(udsql);
+      sqlite3_free(anerrmsg);
+      return 0;
+    }
+    free(udsql);
+  }
+  if (passbackstr[17] == '1' && achan->image.description != NULL)
+  {
+    tmpstr = (char *) malloc(2*sizeof(char)*(1+strlen(achan->image.description)));
+    if (tmpstr == NULL)
+    {
+      fprintf(stderr, "Error: Out of Memory!\n");
+      return 0;
+    }
+    strdsqs(tmpstr,achan->image.description);
+    udsql = (char *) malloc(sizeof(char)*(257+strlen(tmpstr)));
+    if (udsql == NULL)
+    {
+      fprintf(stderr, "Error: Out of Memory!\n");
+      free(tmpstr);
+      return 0;
+    }
+    sprintf(udsql,"UPDATE Channel SET Image_Description = '%s' WHERE Channel_ID = %lu;",tmpstr,achan->dbcid);
+    free(tmpstr);
+    rc = sqlite3_exec(db,udsql,NULL,0,&anerrmsg);
+    if (rc != SQLITE_OK && rc != SQLITE_DONE && rc != SQLITE_ROW)
+    {
+      dbwriteerror(rc);
+      fprintf(stderr, "(Returned Error: %s)\n", anerrmsg);
+      free(udsql);
+      sqlite3_free(anerrmsg);
+      return 0;
+    }
+    free(udsql);
+  }
+  if (passbackstr[18] == '1')
+  {
+    tmpstr = (char *) malloc(256*sizeof(char));
+    if (tmpstr == NULL)
+    {
+      fprintf(stderr, "Error: Out of Memory!\n");
+      return 0;
+    }
+    sprintf(tmpstr,"%ld",achan->image.width);
+    udsql = (char *) malloc(sizeof(char)*(257+strlen(tmpstr)));
+    if (udsql == NULL)
+    {
+      fprintf(stderr, "Error: Out of Memory!\n");
+      free(tmpstr);
+      return 0;
+    }
+    sprintf(udsql,"UPDATE Channel SET Image_Width = %s WHERE Channel_ID = %lu;",tmpstr,achan->dbcid);
+    free(tmpstr);
+    rc = sqlite3_exec(db,udsql,NULL,0,&anerrmsg);
+    if (rc != SQLITE_OK && rc != SQLITE_DONE && rc != SQLITE_ROW)
+    {
+      dbwriteerror(rc);
+      fprintf(stderr, "(Returned Error: %s)\n", anerrmsg);
+      free(udsql);
+      sqlite3_free(anerrmsg);
+      return 0;
+    }
+    free(udsql);
+  }
+  if (passbackstr[19] == '1')
+  {
+    tmpstr = (char *) malloc(256*sizeof(char));
+    if (tmpstr == NULL)
+    {
+      fprintf(stderr, "Error: Out of Memory!\n");
+      return 0;
+    }
+    sprintf(tmpstr,"%ld",achan->image.height);
+    udsql = (char *) malloc(sizeof(char)*(257+strlen(tmpstr)));
+    if (udsql == NULL)
+    {
+      fprintf(stderr, "Error: Out of Memory!\n");
+      free(tmpstr);
+      return 0;
+    }
+    sprintf(udsql,"UPDATE Channel SET Image_Height = %s WHERE Channel_ID = %lu;",tmpstr,achan->dbcid);
+    free(tmpstr);
+    rc = sqlite3_exec(db,udsql,NULL,0,&anerrmsg);
+    if (rc != SQLITE_OK && rc != SQLITE_DONE && rc != SQLITE_ROW)
+    {
+      dbwriteerror(rc);
+      fprintf(stderr, "(Returned Error: %s)\n", anerrmsg);
+      free(udsql);
+      sqlite3_free(anerrmsg);
+      return 0;
+    }
+    free(udsql);
+  }
+  
+  /* All updated! */
+  return 1;
 }
 
 int preparechancatstatement()
@@ -605,6 +1219,123 @@ int prepareitemstatement()
     return 0;
   }
   return 1;
+}
+
+static int callback_cuc(void *achan, int argc, char **argv, char **azColName)
+{ /* Configure Setting Set Callback */
+  int i;
+  char rettxt[] = "0000000000000000000000", pubdate[256] = "", lbdate[256] = "";
+  if (achan->pubdate.fulldate != NULL)
+    rssdatetoisodate(pubdate,&(((chanpropnode *) achan)->pubdate));
+  else
+    strcpy(pubdate,"NULL");
+  if (achan->lastbuilddate.fulldate != NULL)
+    rssdatetoisodate(lbdate,&(((chanpropnode *) achan)->lastbuilddate));
+  else
+    strcpy(lbdate,"NULL");
+  
+  for (i=0;i<argc;i++)
+  {
+    if (streq_i(azColName[i],"Title"))
+    {
+      if (!streq_i(argv[i],((chanpropnode *) achan)->title))
+        rettxt[0] = '1';
+    }
+    else if (streq_i(azColName[i],"Link"))
+    {
+      if (!streq_i(argv[i],((chanpropnode *) achan)->link))
+        rettxt[1] = '1';
+    }
+    else if (streq_i(azColName[i],"Description"))
+    {
+      if (!streq_i(argv[i],((chanpropnode *) achan)->description))
+        rettxt[2] = '1';
+    }
+    else if (streq_i(azColName[i],"Language_Major"))
+    {
+      if (!streq_i(argv[i],((chanpropnode *) achan)->language_main))
+        rettxt[3] = '1';
+    }
+    else if (streq_i(azColName[i],"Language_Minor"))
+    {
+      if (!streq_i(argv[i],((chanpropnode *) achan)->language_sub))
+        rettxt[4] = '1';
+    }
+    else if (streq_i(azColName[i],"Copyright"))
+    {
+      if (!streq_i(argv[i],((chanpropnode *) achan)->copyright))
+        rettxt[5] = '1';
+    }
+    else if (streq_i(azColName[i],"Managing_Editor"))
+    {
+      if (!streq_i(argv[i],((chanpropnode *) achan)->managingeditor))
+        rettxt[6] = '1';
+    }
+    else if (streq_i(azColName[i],"Webmaster"))
+    {
+      if (!streq_i(argv[i],((chanpropnode *) achan)->webmaster))
+        rettxt[7] = '1';
+    }
+    else if (streq_i(azColName[i],"Publication_Date"))
+    {
+      if (!streq_i(argv[i],pubdate))
+        rettxt[8] = '1';
+    }
+    else if (streq_i(azColName[i],"Last_Build_Date"))
+    {
+      if (!streq_i(argv[i],lbdate))
+        rettxt[9] = '1';
+    }
+    else if (streq_i(azColName[i],"Generator"))
+    {
+      if (!streq_i(argv[i],((chanpropnode *) achan)->generator))
+        rettxt[10] = '1';
+    }
+    else if (streq_i(azColName[i],"Documentation"))
+    {
+      if (!streq_i(argv[i],((chanpropnode *) achan)->docs))
+        rettxt[11] = '1';
+    }
+    else if (streq_i(azColName[i],"TTL"))
+    {
+      if (atol(argv[i]) != ((chanpropnode *) achan)->ttl)
+        rettxt[13] = '1';
+    }
+    else if (streq_i(azColName[i],"Image_URL"))
+    {
+      if (!streq_i(argv[i],((chanpropnode *) achan)->image.url))
+        rettxt[14] = '1';
+    }
+    else if (streq_i(azColName[i],"Image_Title"))
+    {
+      if (!streq_i(argv[i],((chanpropnode *) achan)->image.title))
+        rettxt[15] = '1';
+    }
+    else if (streq_i(azColName[i],"Image_Link"))
+    {
+      if (!streq_i(argv[i],((chanpropnode *) achan)->image.link))
+        rettxt[16] = '1';
+    }
+    else if (streq_i(azColName[i],"Image_Description"))
+    {
+      if (!streq_i(argv[i],((chanpropnode *) achan)->image.description))
+        rettxt[17] = '1';
+    }
+    else if (streq_i(azColName[i],"Image_Width"))
+    {
+      if (atol(argv[i]) != ((chanpropnode *) achan)->image.width)
+        rettxt[18] = '1';
+    }
+    else if (streq_i(azColName[i],"Image_Height"))
+    {
+      if (atol(argv[i]) != ((chanpropnode *) achan)->image.height)
+        rettxt[19] = '1';
+    }
+    
+  }
+  writetopassbackstr(rettxt);
+  return 0;
+  
 }
 
 static int callback_csset(void *NotUsed, int argc, char **argv, char **azColName)

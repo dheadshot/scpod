@@ -177,3 +177,22 @@ long searchbackch(char *astr, char findchar)
   }
   return -1;
 }
+
+void strdsqs(char *outstr, char *instr)
+{
+  unsigned long i, j = 0;
+  for (i=0;instr[i]!=0;i++)
+  {
+    if (instr[i] == '\'')
+    {
+      outstr[j] = '\'';
+      j++;
+      outstr[j] = '\'';
+    }
+    else
+    {
+      outstr[j] = instr[i];
+    }
+    j++;
+  }
+}

@@ -4,6 +4,7 @@
 
 #include "sfuncs.h"
 #include "dbexchange.h"
+#include "extprgfuncs.h"
 
 #include "parser.h"
 
