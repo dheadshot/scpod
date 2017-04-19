@@ -266,7 +266,7 @@ int newfilename(char *outfilename, char *inpath, char *infilename, char *inext)
   }
   char *dirsep = getsettingdata("DIR_SEPARATOR");
   if (dirsep == NULL) return 0;
-  char tfn = (char *) malloc(sizeof(char)*(25+strlen(inpath)+strlen(inext)+(2*strlen(infilename))));
+  char *tfn = (char *) malloc(sizeof(char)*(25+strlen(inpath)+strlen(inext)+(2*strlen(infilename))));
   if (tfn == NULL)
   {
     /* OoM! */
