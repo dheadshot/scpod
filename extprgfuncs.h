@@ -6,5 +6,7 @@ int doplay(char *dldir, char *filename);
 int doesfileexist(char *afile);
 int newfilename(char *outfilename, char *inpath, char *infilename, char *inext);
 int domkdir(char *directory);
+void makevalidfilename(char *outfn, char *infn);
+
 
 #endif

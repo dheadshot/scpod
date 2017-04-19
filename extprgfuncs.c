@@ -327,3 +327,22 @@ int domkdir(char *directory)
   return 0;
 #endif
 }
+
+void makevalidfilename(char *outfn, char *infn)
+{
+  long i;
+  for (i=0;infn[i]!=0;i++)
+  {
+    if (infn[i]<'0' || (infn[i]>'9' && infn[i]<'A') || (infn[i]>'Z' && infn[i]<'a') || infn[i]>'z')
+    {
+      outfn[i] = '_';
+    }
+    else
+    {
+      outfn[i] = infn[i];
+    }
+  }
+  outfn[i] = 0;
+}
+
+/* Something to make the new podcast channel dir */
