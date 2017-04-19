@@ -24,7 +24,13 @@ int preparechancatstatement(); /* Run this before adding any channel categories 
 int addchancat(unsigned long channelid, catnode *acat);
 void finalisechancatstatement(); /* Run this after adding all channel categories */
 int checkupdatechannel(chanpropnode *achan, char *rss_version);
-int prepareitemstatement(); /* Run this before adding any items */
+int prepareitemstatementdownloaded(); /* Run this before adding any dl items */
+int prepareitemstatementnotdownloaded(); /* Run this before adding any non-dl items */
+int additemdled(itempropnode *anitem, unsigned long chanid, char *ofn, 
+                char *thefn); /* Add a Downloaded item */
+int additemndled(itempropnode *anitem, unsigned long chanid, char *ofn); /* Add a Non-Downloaded item */
+void finaliseitemdlstatement(); /* Run this after adding all the downloaded items */
+void finaliseitemndlstatement(); /* Run this after adding all the non-downloaded items */
 int prepareselitemstatement(); /* Run this before checking if the item exists */
 int isitemnew(itempropnode *anitem, unsigned long dbchannelid); /* Returns -1 on error, otherwise 1=true and 0=false */
 void finaliseselitemstatement(); /* Run this after checking all items for newness */
