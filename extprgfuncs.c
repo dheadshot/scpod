@@ -266,6 +266,12 @@ int newfilename(char *outfilename, char *inpath, char *infilename, char *inext)
   }
   char *dirsep = getsettingdata("DIR_SEPARATOR");
   if (dirsep == NULL) return 0;
+  if (dirsep[0] == 0)
+  {
+    fprintf(stderr, "Error: Directory separator not set!\n");
+    free(dirsep);
+    return 0;
+  }
   char *tfn = (char *) malloc(sizeof(char)*(25+strlen(inpath)+strlen(inext)+(2*strlen(infilename))));
   if (tfn == NULL)
   {
@@ -346,3 +352,88 @@ void makevalidfilename(char *outfn, char *infn)
 }
 
 /* Something to make the new podcast channel dir */
+int mkchandir(char *outdir, char *channame)
+{ /* Makes channel dir and outputs name to outdir */
+  char *poddir = getsettingdata("PODCAST_DIR");
+  if (poddir == NULL) return 0;
+  if (poddir[0] == 0)
+  {
+    fprintf(stderr, "Error: Podcast Directory not set!\n");
+    free(poddir);
+    return 0;
+  }
+  char *dirsep = getsettingdata("DIR_SEPARATOR");
+  if (dirsep == NULL)
+  {
+    free(poddir);
+    return 0;
+  }
+  if (dirsep[0] == 0)
+  {
+    fprintf(stderr, "Error: Directory Separator not set!\n");
+    free(poddir);
+    free(dirsep);
+    return 0;
+  }
+  char *tdirn1 = (char *) malloc(sizeof(char)*(1+strlen(channame)));
+  if (tdirn1 == NULL)
+  {
+    free(poddir);
+    free(dirsep);
+    return 0;
+  }
+  makevalidfilename(tdirn1,channame);
+  char *tdirn2 = (char *) malloc(sizeof(char)*(22+strlen(tdirn1)));
+  if (tdirn2 == NULL)
+  {
+    free(poddir);
+    free(dirsep);
+    free(tdirn1);
+    return 0;
+  }
+  if (newfilename(tdirn2,poddir,tdirn1,"") != 1)
+  {
+    free(tdirn2);
+    free(poddir);
+    free(dirsep);
+    free(tdirn1);
+    return 0;
+  }
+  free(tdirn1);
+  tdirn1 = (char *) malloc(sizeof(char)*(5+strlen(poddir)+strlen(dirsep)+strlen(tdirn2)));
+  if (tdirn1 == NULL)
+  {
+    free(poddir);
+    free(dirsep);
+    free(tdirn2);
+    return 0;
+  }
+  strcpy(tdirn1,poddir);
+  strcat(tdirn1,dirsep);
+  strcat(tdirn1,tdirn2);
+  int rv = domkdir(tdirn1);
+  if (rv == 0)
+  {
+    fprintf(stderr,"Error creating directory '%s'\n",tdirn1);
+    free(tdirn2);
+    free(poddir);
+    free(dirsep);
+    free(tdirn1);
+    return 0;
+  }
+  if (rv == -1)
+  {
+    fprintf(stderr,"Error creating directory '%s' - Directory already exists!\n",tdirn1);
+    free(tdirn2);
+    free(poddir);
+    free(dirsep);
+    free(tdirn1);
+    return 0;
+  }
+  strcpy(outdir,tdirn2);
+  free(tdirn1);
+  free(poddir);
+  free(dirsep);
+  free(tdirn2);
+  return 1;
+}
