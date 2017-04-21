@@ -8,5 +8,6 @@ int testdb();
 int testdownload(char *url);
 int configuresetting(char *setting, char *value);
 int testdlparser(char *url);
+int dosubscribe(char *url, int dlcode);
 
 #endif

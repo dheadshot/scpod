@@ -84,6 +84,49 @@ int docmd(char **cmdntsa, int offset)
       return 1;
     }
   }
+  else if (streq_i(cmdntsa[i], "subscribe"))
+  {
+    if (cmdntsa[i+1] == NULL)
+    {
+      fprintf(stderr, "Error: Feed URL specified!  Subscribe to what?\n");
+      return 1;
+    }
+    else if (cmdntsa[i+2] == NULL)
+    {
+      fprintf(stderr, "Error: 'Download' command missing!\n");
+      return 1;
+    }
+    else if (streq_i(cmdntsa[i+2], "download") == 0)
+    {
+      fprintf(stderr, "Error: Invalid sub command - you must specify the download type!\n");
+      return 1;
+    }
+    else if (cmdntsa[i+3] == NULL)
+    {
+      fprintf(stderr, "Error: 'Download' type missing!  Download which items?\n");
+      return 1;
+    }
+    else if (streq_i(cmdntsa[i+3],"none"))
+    {
+      /* Just subscribe */
+      return dosubscribe(cmdntsa[i+1], DLCODE_NONE);
+    }
+    else if (streq_i(cmdntsa[i+3],"latest"))
+    {
+      /* Subscribe and download the latest */
+      return dosubscribe(cmdntsa[i+1], DLCODE_LATEST);
+    }
+    else if (streq_i(cmdntsa[i+3],"all") || streq_i(cmdntsa[i+3],"new"))
+    {
+      /* Subscribe and download everything */
+      return dosubscribe(cmdntsa[i+1], DLCODE_ALL);
+    }
+    else
+    {
+      fprintf(stderr, "Error: Invalid 'Download' type - must be 'none', 'latest' or 'all'!\n");
+      return 1;
+    }
+  }
   else if (streq_i(cmdntsa[i], "configure") || streq_i(cmdntsa[i], "config"))
   {
     if (cmdntsa[i+1] == NULL)
@@ -173,7 +216,7 @@ int docmd(char **cmdntsa, int offset)
     if (cmdntsa[i+1] == NULL || (cmdntsa[i+2] == NULL && streq_i(cmdntsa[i+1], "help")))
     {
       printf("Use the command 'help <command>' where '<command>' is a command you want to\nunderstand.\n");
-      printf("Commands:\n*\ttest\n*\tconfigure\n*\thelp\n");
+      printf("Commands:\n*\ttest\n*\tconfigure\n*\tsubscribe\n*\thelp\n");
       return 0;
     }
     else if (streq_i(cmdntsa[i+1], "test"))
@@ -300,6 +343,44 @@ int docmd(char **cmdntsa, int offset)
       }
       
     }
+    else if (streq_i(cmdntsa[i+1], "subscribe"))
+    {
+      if (cmdntsa[i+2] == NULL)
+      {
+        printf("Subscribe:\n  Subscribes to a podcast feed.  Use the command as:\n    'subscribe <URL of feed> download <download type>'.\n  The following download types are available:\n*\tnone\n*\tlatest\n*\tall\n  For help on these, use the command:\n  'help subscribe download <download type>'.\n");
+        return 0;
+      }
+      else if (streq_i(cmdntsa[i+2],"download") == 0)
+      {
+        fprintf(stderr, "Error: Unknown Help Subscribe command '%s', must be 'download'.\n", cmdntsa[i+2]);
+        return 1;
+      }
+      else if (cmdntsa[i+3] == NULL)
+      {
+        printf("Subscribe:\n  Subscribes to a podcast feed.  Use the command as:\n    'subscribe <URL of feed> download <download type>'.\n  The following download types are available:\n*\tnone\n*\tlatest\n*\tall\n  For help on these, use the command:\n  'help subscribe download <download type>'.\n");
+        return 0;
+      }
+      else if (streq_i(cmdntsa[i+3],"none"))
+      {
+        printf("Subscribe and Download None:\n  This command subscribes to a podcast feed but does not download any of the\n  items.  Use this command as 'subscribe <feed URL> download none'.\n");
+        return 0;
+      }
+      else if (streq_i(cmdntsa[i+3],"latest"))
+      {
+        printf("Subscribe and Download Latest:\n  This command subscribes to a podcast feed and downloads the item with the\n  latest Publication Date (not necessarily the last that was added).  Use this\n  command as 'subscribe <feed URL> download latest'.\n");
+        return 0;
+      }
+      else if (streq_i(cmdntsa[i+3],"all") || streq_i(cmdntsa[i+3],"new"))
+      {
+        printf("Subscribe and Download All:\n  This command subscribes to a podcast feed and downloads all the items that\n  are on it.  Use this command as 'subscribe <feed URL> download all'.\n");
+        return 0;
+      }
+      else
+      {
+        fprintf(stderr, "Error: Unknown Download Type '%s' - see 'help subscribe' for the list.\n", cmdntsa[i+3]);
+        return 1;
+      }
+    }
     else if (streq_i(cmdntsa[i+1], "help") && cmdntsa[i+2] != NULL)
     {
       fprintf(stderr, "Error: Too many commands!  Hey, no recursing!\n");
@@ -324,7 +405,7 @@ int main(int argc, char *argv[])
   {
     printf("Usage:\n\t%s [-q] [{-y | -n}] [-f] <command> [<subcommand>] [<arguments>]\n", argv[0]);
     printf("Flags:\n\t-q\tQuiet Mode\n\t-y\tAnswer 'Yes' to everything\n\t-n\tAnswer 'No' to everything\n\t-f\tForce command\n");
-    printf("Commands:\n*\ttest\n*\tconfigure\n*\thelp\n");
+    printf("Commands:\n*\ttest\n*\tconfigure\n*\tsubscribe\n*\thelp\n");
     printf("Test Usage: %s test parser <feed file>\n   Where <feed file> is the file containing the RSS feed.\n", argv[0]);
     return 1;
   }
@@ -344,23 +425,24 @@ int testparser(char *rssfile)
   FILE *feedfile = fopen(rssfile,"r");
   if (feedfile == NULL)
   {
-    printf("Error opening file %s\n", rssfile);
+    fprintf(stderr,"Error opening file %s\n", rssfile);
     return 2;
   }
   int parserret = parsersstoll(feedfile);
+  fclose(feedfile);
   if (parserret == 0)
   {
-    printf("Error reading file!\n");
+    fprintf(stderr,"Error reading file!\n");
     return 3;
   }
   else if (parserret == -1)
   {
-    printf("Memory Error!\n");
+    fprintf(stderr,"Memory Error!\n");
     return 4;
   }
   else if (parserret == -2)
   {
-    printf("Error!  File is not RSS!\n");
+    fprintf(stderr,"Error!  File is not RSS!\n");
     return 5;
   }
   else
@@ -513,26 +595,28 @@ int testdlparser(char *url)
   strcat(rssfile,"1.xml");
   free(pdir);
   free(dirsep);
+  closedb();
   FILE *feedfile = fopen(rssfile,"r");
   if (feedfile == NULL)
   {
-    printf("Error opening file %s\n", rssfile);
+    fprintf(stderr,"Error opening file '%s'\n", rssfile);
     return 2;
   }
   int parserret = parsersstoll(feedfile);
+  fclose(feedfile);
   if (parserret == 0)
   {
-    printf("Error reading file!\n");
+    fprintf(stderr,"Error reading file!\n");
     return 3;
   }
   else if (parserret == -1)
   {
-    printf("Memory Error!\n");
+    fprintf(stderr,"Memory Error!\n");
     return 4;
   }
   else if (parserret == -2)
   {
-    printf("Error!  File is not RSS!\n");
+    fprintf(stderr,"Error!  File is not RSS!\n");
     return 5;
   }
   else
@@ -545,4 +629,124 @@ int testdlparser(char *url)
     return 0;
   }
   
+}
+
+int dosubscribe(char *url, int dlcode)
+{
+  if (dodownload(url, ".", "new_feed.xml") == 0)
+  {
+    fprintf(stderr, "Error: Feed download failed.\n");
+    closedb();
+    return 3;
+  }
+  char *pdir;
+  char *feedfn;
+  pdir = getsettingdata("PODCAST_DIR");
+  if (pdir == NULL)
+  {
+    fprintf(stderr, "Error: Could not find Podcast Directory.\n");
+    closedb();
+    return 2;
+  }
+  else if (pdir[0] == 0)
+  {
+    fprintf(stderr, "Error: Podcast Directory not set!\n");
+    free(pdir);
+    closedb();
+    return 2;
+  }
+  char *dirsep;
+  dirsep = getsettingdata("DIR_SEPARATOR");
+  if (dirsep == NULL)
+  {
+    fprintf(stderr, "Error: Could not find Directory Separator.\n");
+    free(pdir);
+    closedb();
+    return 2;
+  }
+  else if (dirsep[0] == 0)
+  {
+    fprintf(stderr, "Error: Directory Separator not set!\n");
+    free(pdir);
+    free(dirsep);
+    closedb();
+    return 2;
+  }
+  feedfn = (char *) malloc(sizeof(char)*(5+strlen(pdir)+strlen(dirsep)+strlen("new_feed.xml")));
+  if (feedfn == NULL)
+  {
+    fprintf(stderr, "Error: Out of Memory opening feed file!\n");
+    free(pdir);
+    free(dirsep);
+    closedb();
+    return 2;
+  }
+  strcpy(feedfn,pdir);
+  strcat(feedfn,dirsep);
+  strcat(feedfn,"newfeed.xml");
+  free(pdir);
+  free(dirsep);
+  FILE *feedfile = fopen(feedfn,"r");
+  if (feedfile == NULL)
+  {
+    fprintf(stderr,"Error opening file '%s'!\n", feedfn);
+    free(feedfn);
+    closedb();
+    return 2;
+  }
+  int pncret = parsenewchannel(feedfile, url, dlcode);
+  fclose(feedfile);
+  if (pncret == 0)
+  {
+    fprintf(stderr,"Error reading file '%s'!\n", feedfn);
+    free(feedfn);
+    closedb();
+    return 4;
+  }
+  else if (pncret == -1)
+  {
+    fprintf(stderr,"Error: Out of Memory parsing feed!\n");
+    free(feedfn);
+    closedb();
+    return 5;
+  }
+  else if (pncret == -2)
+  {
+    fprintf(stderr,"Error: Feed type not RSS 2.x!\n");
+    free(feedfn);
+    closedb();
+    return 6;
+  }
+  else if (pncret == -3)
+  {
+    fprintf(stderr,"Error accessing/communicating with Database!\n");
+    free(feedfn);
+    closedb();
+    return 7;
+  }
+  else if (pncret == -4)
+  {
+    fprintf(stderr,"Error accessing file system!\n");
+    free(feedfn);
+    closedb();
+    return 3;
+  }
+  else if (pncret == -5)
+  {
+    fprintf(stderr,"Error: Configuration Error!\n");
+    free(feedfn);
+    closedb();
+    return 2;
+  }
+  else if (pncret != 1)
+  {
+    fprintf(stderr,"Error: Unknown Error!\n");
+    free(feedfn);
+    closedb();
+    return 10;
+  }
+  if (isquiet == 0) printf("Operation completed successfully!\n");
+  free(feedfn);
+  closedb();
+  return 0;
 }
