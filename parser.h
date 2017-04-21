@@ -1,10 +1,17 @@
 #ifndef __INC_PARSER_H__
 #define __INC_PARSER_H__ 1
 
+#include <stdio.h>
+
 #define MAX_ELEN 255
 #define MAX_ELED 4095
 #define MAX_ATTN 1023
 #define MAX_ATTD 4095
+
+#define DLCODE_NONE 0
+#define DLCODE_LATEST 1
+#define DLCODE_NEW 2
+#define DLCODE_ALL 3
 
 /* Remember to ignore unknown elements! */
 
@@ -151,7 +158,9 @@ int getencfilename(char *filename, rssenclosure *enc);
 int getencfileext(char *fileext, rssenclosure *enc);
 /* Returns: 0=Error, -1=no enctype, 1=fileext has been set,
             2=fileext has been guessed */
-
+int parsenewchannel(FILE *chf, char *url, int dlcode);
+/* Returns: 1=worked, 0=File reading error, -1=Memory error, -2=Not RSS, 
+            -3=DB Error, -4=File System Error, -5=Config Error */
 
 
 #endif

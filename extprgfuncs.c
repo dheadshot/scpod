@@ -339,7 +339,11 @@ void makevalidfilename(char *outfn, char *infn)
   long i;
   for (i=0;infn[i]!=0;i++)
   {
-    if (infn[i]<'0' || (infn[i]>'9' && infn[i]<'A') || (infn[i]>'Z' && infn[i]<'a') || infn[i]>'z')
+    if (ifn[i]=='.')
+    {
+      outfn[i] = '.';
+    }
+    else if (infn[i]<'0' || (infn[i]>'9' && infn[i]<'A') || (infn[i]>'Z' && infn[i]<'a') || infn[i]>'z')
     {
       outfn[i] = '_';
     }

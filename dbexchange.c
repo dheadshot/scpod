@@ -15,7 +15,7 @@ char *passbackstr = NULL;
 unsigned long passbackul = 0;
 sqlite3_stmt *channelstmt = NULL, *itemdlstmt = NULL, *configstmt = NULL, 
              *chancatstmt = NULL, *selitemstmt = NULL, *itemcatstmt = NULL, 
-             *itemndlstmt;
+             *itemndlstmt = NULL, *uditemdlstmt = NULL;
 
 int opendb(int dolo)
 {
@@ -81,6 +81,8 @@ int opendb(int dolo)
 
 int closedb()
 {
+  if (passbackstr != NULL) free(passbackstr);
+  passbackstr = NULL;
   if (!dbisopen) return -1;
   int rc = sqlite3_close(db);
   if (rc == SQLITE_OK || rc == SQLITE_DONE) return 1;
@@ -1208,6 +1210,72 @@ void finalisechancatstatement()
   chancatstmt = NULL;
 }
 
+int prepareitemcatstatement()
+{
+  char sqlstmt[] = "INSERT INTO Item_Category (ICID, Item_ID, Category, Domain) VALUES (NULL, ?, ?, ?);";
+  int rc = sqlite3_prepare_v2(db, sqlstmt, strlen(sqlstmt)+1, &itemcatstmt, NULL);
+  if (rc != SQLITE_OK)
+  {
+    dbwriteerror(rc);
+    if (itemcatstmt != NULL) sqlite3_finalize(itemcatstmt);
+    itemcatstmt = NULL;
+    return 0;
+  }
+  return 1;
+}
+
+int additemcat(unsigned long itemid, catnode *acat)
+{
+  if (acat == NULL) return 0;
+  if (acat->type != item_cat) return 0;
+  
+  int rc;
+  
+  /* Bind Values */
+  rc = sqlite3_bind_int64(itemcatstmt, 1, itemid);
+  if (rc != SQLITE_OK)
+  {
+    dbwriteerror(rc);
+    return 0;
+  }
+  rc = sqlite3_bind_text(itemcatstmt, 2, acat->category, strlen(acat->category)*sizeof(char), SQLITE_TRANSIENT);
+  if (rc != SQLITE_OK)
+  {
+    dbwriteerror(rc);
+    return 0;
+  }
+  rc = sqlite3_bind_text(itemcatstmt, 3, acat->domain, strlen(acat->domain)*sizeof(char), SQLITE_TRANSIENT);
+  if (rc != SQLITE_OK)
+  {
+    dbwriteerror(rc);
+    return 0;
+  }
+  
+  /* Execute Statement */
+  rc = sqlite3_step(itemcatstmt);
+  if (rc != SQLITE_OK && rc != SQLITE_DONE && rc != SQLITE_ROW)
+  {
+    dbwriteerror(rc);
+    return 0;
+  }
+  
+  /* Reset ready for next call */
+  rc = sqlite3_reset(itemcatstmt);
+  if (rc != SQLITE_OK && rc != SQLITE_DONE)
+  {
+    dbwriteerror(rc);
+    return 0;
+  }
+  
+  return 1;
+}
+
+void finaliseitemcatstatement()
+{
+  if (itemcatstmt != NULL) sqlite3_finalize(itemcatstmt);
+  itemcatstmt = NULL;
+}
+
 int prepareitemstatementdownloaded()
 {
   char sqlstmt[] = "INSERT INTO Item (ItemID, Channel_ID, Title, Link, Description, Author, Enclosure_URL, Enclosure_Length, Enclosure_Type, GUID, GUID_Is_Permalink, Publication_Date, Source_URL, Source_Name, Downloaded, Downloaded_Date, Original_Filename, Filename, Play_Count) VALUES (NULL, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, 1, now, ?, ?, 0);";
@@ -1236,8 +1304,8 @@ int prepareitemstatementnotdownloaded()
   return 1;
 }
 
-int additemdled(itempropnode *anitem, unsigned long chanid, char *ofn, 
-                char *thefn)
+unsigned long additemdled(itempropnode *anitem, unsigned long chanid, char *ofn, 
+                          char *thefn)
 {
   int rc = 0;
   if (ofn == NULL || thefn == NULL || chanid == 0 || anitem == NULL) return 0;
@@ -1353,13 +1421,29 @@ int additemdled(itempropnode *anitem, unsigned long chanid, char *ofn,
     return 0;
   }
   
-  return 1;
+  /* Get itemid */
+  char giidsql[] = "SELECT Item_ID FROM Item WHERE ROWID=last_rowid();";
+  char *anerrmsg;
+  passbackul = 0;
+  rc = sqlite3_exec(db,giidsql,callback_giid,0,&anerrmsg);
+  if (rc != SQLITE_OK && rc != SQLITE_DONE && rc != SQLITE_ROW)
+  {
+    dbwriteerror(rc);
+    fprintf(stderr, "(Returned Error: %s)\n", anerrmsg);
+    sqlite3_free(anerrmsg);
+    return 0;
+  }
+  
+  if (passbackul == 0) return 0;
+  anitem->dbiid = passbackul;
+  
+  return passbackul;
 }
 
-int additemndled(itempropnode *anitem, unsigned long chanid, char *ofn)
+unsigned long additemndled(itempropnode *anitem, unsigned long chanid, char *ofn)
 {
   int rc = 0;
-  if (ofn == NULL || chanid == 0 || anitem == NULL) return 0;
+  if (chanid == 0 || anitem == NULL) return 0;
   if (itemndlstmt == NULL) return 0;
   
   /* Bind Values */
@@ -1466,7 +1550,23 @@ int additemndled(itempropnode *anitem, unsigned long chanid, char *ofn)
     return 0;
   }
   
-  return 1;
+  /* Get itemid */
+  char giidsql[] = "SELECT Item_ID FROM Item WHERE ROWID=last_rowid();";
+  char *anerrmsg;
+  passbackul = 0;
+  rc = sqlite3_exec(db,giidsql,callback_giid,0,&anerrmsg);
+  if (rc != SQLITE_OK && rc != SQLITE_DONE && rc != SQLITE_ROW)
+  {
+    dbwriteerror(rc);
+    fprintf(stderr, "(Returned Error: %s)\n", anerrmsg);
+    sqlite3_free(anerrmsg);
+    return 0;
+  }
+  
+  if (passbackul == 0) return 0;
+  anitem->dbiid = passbackul;
+  
+  return passbackul;
 }
 
 void finaliseitemdlstatement()
@@ -1479,6 +1579,64 @@ void finaliseitemndlstatement()
 {
   if (itemndlstmt != NULL) sqlite3_finalize(itemndlstmt);
   itemndlstmt = NULL;
+}
+
+int prepareuditemdlstatement()
+{
+  char sqlstmt[] = "UPDATE Item SET Downloaded = 1, Downloaded_Date = now, Filename = ? WHERE Item_ID = ?;";
+  int rc = sqlite3_prepare_v2(db, sqlstmt, strlen(sqlstmt)+1, &uditemdlstmt, NULL);
+  if (rc != SQLITE_OK)
+  {
+    dbwriteerror(rc);
+    if (uditemdlstmt != NULL) sqlite3_finalize(uditemdlstmt);
+    uditemdlstmt = NULL;
+    return 0;
+  }
+  return 1;
+}
+
+int updateitemdownloaded(char *filename, unsigned long itemid)
+{
+  if (uditemdlstmt == NULL) return 0;
+  int rc;
+  
+  /* Bind item fields */
+  rc = sqlite3_bind_text(uditemdlstmt, 1, filename, strlen(filename)*sizeof(char), SQLITE_TRANSIENT);
+  if (rc != SQLITE_OK)
+  {
+    dbwriteerror(rc);
+    return 0;
+  }
+  rc = sqlite3_bind_int64(uditemdlstmt, 1, itemid);
+  if (rc != SQLITE_OK)
+  {
+    dbwriteerror(rc);
+    return 0;
+  }
+  
+  /* Execute Statement */
+  rc = sqlite3_step(uditemdlstmt);
+  if (rc != SQLITE_OK && rc != SQLITE_DONE && rc != SQLITE_ROW)
+  {
+    dbwriteerror(rc);
+    return 0;
+  }
+  
+  /* Reset statement for next function call */
+  rc = sqlite3_reset(uditemdlstmt);
+  if (rc != SQLITE_OK && rc != SQLITE_DONE)
+  {
+    dbwriteerror(rc);
+    return 0;
+  }
+  
+  return 1;
+}
+
+void finaliseuditemdlstatement()
+{
+  if (uditemdlstmt != NULL) sqlite3_finalize(uditemdlstmt);
+  uditemdlstmt = NULL;
 }
 
 int prepareselitemstatement()
@@ -1611,9 +1769,175 @@ void finaliseselitemstatement()
   selitemstmt = NULL;
 }
 
+rssenclosure *getlatestitemenc(unsigned long chanid)
+{
+  /* Returns NULL on OoM or DB Error, or empty enc if none in DB */
+  char thesql[1024] = "";
+  sprintf(thesql, "SELECT Enclosure_URL, Enclosure_Length, Enclosure_Type FROM Item WHERE Channel_ID = %lu AND Enclosure_URL NOT NULL ORDER BY strftime('%%s',Item.Publication_Date) DESC LIMIT 1;",chanid);
+  rssenclosure *anenc = NULL;
+  anenc = (rssenclosure *) malloc(sizeof(rssenclosure));
+  if (anenc == NULL)
+  {
+    fprintf(stderr,"Error: Out of Memory finding latest enclosure!\n");
+    return NULL;
+  }
+  memset(anenc, 0, sizeof(rssenclosure));
+  int rc;
+  char *anerrmsg = NULL;
+  rc = sqlite3_exec(db,thesql,callback_glie,(void *) anenc,&anerrmsg);
+  if (rc == SQLITE_ABORT)
+  {
+    fprintf(stderr,"Error: Out of Memory finding latest enclosure!\n");
+    if (anerrmsg != NULL) sqlite3_free(anerrmsg);
+    if (anenc->url != NULL) free(anenc->url);
+    if (anenc->type != NULL) free(anenc->type);
+    free(anenc);
+    return NULL;
+  }
+  else if (rc != SQLITE_OK && rc != SQLITE_DONE && rc != SQLITE_ROW)
+  {
+    dbwriteerror(rc);
+    fprintf(stderr, "(Returned Error: %s)\n", anerrmsg);
+    sqlite3_free(anerrmsg);
+    if (anenc->url != NULL) free(anenc->url);
+    if (anenc->type != NULL) free(anenc->type);
+    free(anenc);
+    return NULL;
+  }
+  return anenc;
+}
+
+char *getlatestitemofn(unsigned long chanid)
+{ /* Returns NULL on OoM, blank str on no OFN */
+  char thesql[1024] = "";
+  sprintf(thesql, "SELECT Original_Filename FROM Item WHERE Channel_ID = %lu AND Enclosure_URL NOT NULL AND Original_Filename NOT NULL ORDER BY strftime('%%s',Item.Publication_Date) DESC LIMIT 1;",chanid);
+  int rc;
+  char *anerrmsg = NULL;
+  if (passbackstr != NULL) free(passbackstr);
+  passbackstr = NULL;
+  rc = sqlite3_exec(db,thesql,callback_glio,NULL,&anerrmsg);
+  if (rc != SQLITE_OK && rc != SQLITE_DONE && rc != SQLITE_ROW)
+  {
+    dbwriteerror(rc);
+    fprintf(stderr, "(Returned Error: %s)\n", anerrmsg);
+    sqlite3_free(anerrmsg);
+  }
+  if (passbackstr == NULL)
+  {
+    astr = (char *) malloc(sizeof(char));
+    if (astr == NULL) return NULL;
+    astr[0] = 0;
+    return astr;
+  }
+  char *astr = (char *) malloc(sizeof(char)*(1+strlen(passbackstr)));
+  if (astr == NULL) return NULL;
+  strcpy(astr,passbackstr);
+  return astr;
+}
+
+unsigned long getlatestitemid(unsigned long chanid)
+{
+  char thesql[1024] = "";
+  sprintf(thesql, "SELECT Item_ID FROM Item WHERE Channel_ID = %lu AND Enclosure_URL NOT NULL  ORDER BY strftime('%%s',Item.Publication_Date) DESC LIMIT 1;",chanid);
+  int rc;
+  char *anerrmsg = NULL;
+  passbackul = 0;
+  rc = sqlite3_exec(db,thesql,callback_giid,NULL,&anerrmsg); /* Reuse callback_giid() */
+  if (rc != SQLITE_OK && rc != SQLITE_DONE && rc != SQLITE_ROW)
+  {
+    dbwriteerror(rc);
+    fprintf(stderr, "(Returned Error: %s)\n", anerrmsg);
+    sqlite3_free(anerrmsg);
+    return 0;
+  }
+  return passbackul;
+}
+
+unsigned long getchanidfromurl(char *chanurl)
+{
+  if (chanurl == NULL) return 0;
+  char *safeurl = (char *) malloc(sizeof(char)*2*(1+strlen(chanurl)));
+  if (safeurl == NULL)
+  {
+    fprintf(stderr,"Error: Out of Memory finding channel data!\n");
+    return 0;
+  }
+  strdsqs(safeurl,chanurl);
+  char *somesql = (char *) malloc(sizeof(char)*(257+strlen(safeurl)));
+  if (somesql == NULL)
+  {
+    fprintf(stderr,"Error: Out of Memory finding channel data!\n");
+    free(safeurl);
+    return 0;
+  }
+  sprintf(somesql,"SELECT Channel_ID FROM Channel WHERE Channel_URL = '%s';",safeurl);
+  free(safeurl);
+  passbackul = 0;
+  char *anerrmsg = NULL;
+  rc = sqlite3_exec(db,somesql,callback_gcid,NULL,&anerrmsg); /* Reuse the callback_gcid function */
+  if (rc != SQLITE_OK && rc != SQLITE_DONE && rc != SQLITE_ROW)
+  {
+    dbwriteerror(rc);
+    fprintf(stderr, "(Returned Error: %s)\n", anerrmsg);
+    free(somesql);
+    sqlite3_free(anerrmsg);
+    return 0;
+  }
+  
+  free(somesql);
+  return passbackul;
+}
+
 
 
 /*--------------------------*/
+
+static int callback_glio(void *NotUsed, int argc, char **argv, char **azColName)
+{ /* Get Latest OFN Callback */
+  int i;
+  for (i=0;i<argc;i++)
+  {
+    if (streq_i(azColName[i],"Original_Filename"))
+    {
+      writetopassbackstr(argv[i]);
+      return 0;
+    }
+  }
+  return 0;
+}
+
+static int callback_glie(void *anenc, int argc, char **argv, char **azColName)
+{ /* Get Latest Enc Callback */
+  rssenclosure *theenc = (rssenclosure *) anenc;
+  int i;
+  
+  for (i=0;i<argc;i++)
+  {
+    if (streq_i(azColName[i],"Enclosure_URL"))
+    {
+      if (theenc->url == NULL)
+      {
+        theenc->url = (char *) malloc(sizeof(char)*(1+strlen(argv[i])));
+        if (theenc->url == NULL) return 1;
+        strcpy(theenc->url,argv[i]);
+      }
+    }
+    else if (streq_i(azColName[i], "Enclosure_Length"))
+    {
+      theenc->length = atol(argv[i]);
+    }
+    else if (streq_i(azColName[i], "Enclosure_Type"))
+    {
+      if (theenc->type == NULL)
+      {
+        theenc->type = (char *) malloc(sizeof(char)*(1+strlen(argv[i])));
+        if (theenc->type == NULL) return 1;
+        strcpy(theenc->type,argv[i]);
+      }
+    }
+  }
+  return 0;
+}
 
 static int callback_cuc(void *achan, int argc, char **argv, char **azColName)
 { /* Check Update Channel Callback */
@@ -1808,6 +2132,22 @@ static int callback_gcid(void *NotUsed, int argc, char **argv, char **azColName)
   for (i=0;i<argc;i++)
   {
     if (streq_i(azColName[i],"Channel_ID"))
+    {
+      /*if (!streq_i(argv[i],"Last Opened")) return 0;*/
+      passbackul = atol(argv[i]);
+      return 0;
+    }
+  }
+  return 0;
+  
+}
+
+static int callback_giid(void *NotUsed, int argc, char **argv, char **azColName)
+{ /* Get Item_ID Callback */
+  int i;
+  for (i=0;i<argc;i++)
+  {
+    if (streq_i(azColName[i],"Item_ID"))
     {
       /*if (!streq_i(argv[i],"Last Opened")) return 0;*/
       passbackul = atol(argv[i]);

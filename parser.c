@@ -4801,3 +4801,669 @@ int getencfileext(char *fileext, rssenclosure *enc)
   return 2;
 }
 
+int parsenewchannel(FILE *chf, char *url, int dlcode)
+{ /* for dlcode values, see parser.h */
+  /* Returns: 1=worked, 0=File reading error, -1=Memory error, -2=Not RSS,
+              -3=DB Error, -4=File System Error, -5=Config error */
+  int rv = 0;
+  unsigned long dbchanid, llchanid, dbitemid, llitemid;
+  if (chf == NULL || url == NULL) return 0;
+  if (opendb(1) == 0) return -3;
+  rv = parsersstoll(chf);
+  if (rv != 1) return rv;
+  rv = preparechannelstatement();
+  if (!rv) return -3;
+  rv = preparechancatstatement();
+  if (!rv)
+  {
+    finalisechannelstatement();
+    return -3;
+  }
+  rv = prepareitemstatementdownloaded();
+  if (!rv)
+  {
+    finalisechannelstatement();
+    finalisechancatstatement();
+    return -3;
+  }
+  rv = prepareitemstatementnotdownloaded();
+  if (!rv)
+  {
+    finalisechannelstatement();
+    finalisechancatstatement();
+    finaliseitemdlstatement();
+    return -3;
+  }
+  rv = prepareitemcatstatement();
+  if (!rv)
+  {
+    finalisechannelstatement();
+    finalisechancatstatement();
+    finaliseitemdlstatement();
+    finaliseitemndlstatement();
+    return -3;
+  }
+  
+  char *poddir = getsettingdata("PODCAST_DIR");
+  if (poddir == NULL)
+  {
+    fprintf(stderr,"Error: Out of Memory!\n");
+    finalisechannelstatement();
+    finalisechancatstatement();
+    finaliseitemdlstatement();
+    finaliseitemndlstatement();
+    finaliseitemcatstatement();
+    return -1;
+  }
+  else if (poddir[0] == 0)
+  {
+    fprintf(stderr,"Error: Podcast Directory not set!\n");
+    free(poddir);
+    finalisechannelstatement();
+    finalisechancatstatement();
+    finaliseitemdlstatement();
+    finaliseitemndlstatement();
+    finaliseitemcatstatement();
+    return -5;
+  }
+  char *dirsep = getsettingdata("DIR_SEPARATOR");
+  if (dirsep == NULL)
+  {
+    fprintf(stderr,"Error: Out of Memory!\n");
+    free(poddir);
+    finalisechannelstatement();
+    finalisechancatstatement();
+    finaliseitemdlstatement();
+    finaliseitemndlstatement();
+    finaliseitemcatstatement();
+    return -1;
+  }
+  else if (dirsep[0] == 0)
+  {
+    fprintf(stderr,"Error: Directory Separator not set!\n");
+    free(dirsep);
+    free(poddir);
+    finalisechannelstatement();
+    finalisechancatstatement();
+    finaliseitemdlstatement();
+    finaliseitemndlstatement();
+    finaliseitemcatstatement();
+    return -5;
+  }
+  
+  char *chandir = NULL, *chanpath = NULL;
+  char *itemofn = NULL, *itemofext = NULL, *itemtfn = NULL, *dotpos = NULL;
+  char *itemfn = NULL;
+  int dlexcept = 0;
+  dbitemid = 0;
+  itempropnode *newestitem = NULL;
+  rssenclosure *latestenc = NULL;
+  /* Channels */
+  for (cpptr = cproot; cpptr != NULL; cpptr = cpptr->next)
+  {
+    chandir = (char *) malloc(sizeof(char)*2*(51+strlen(cpptr->title)));
+    if (chandir == NULL)
+    {
+      fprintf(stderr,"Error: Out of Memory creating channel '%s'!\n", cpptr->title);
+      free(dirsep);
+      finalisechannelstatement();
+      finalisechancatstatement();
+      free(poddir);
+      finaliseitemdlstatement();
+      finaliseitemndlstatement();
+      finaliseitemcatstatement();
+      return -1;
+    }
+    if (mkchandir(chandir,cpptr->title) == 0)
+    {
+      fprintf(stderr,"Error creating directory for channel '%s'!\n", cpptr->title);
+      free(dirsep);
+      free(chandir);
+      free(poddir);
+      finalisechannelstatement();
+      finalisechancatstatement();
+      finaliseitemdlstatement();
+      finaliseitemndlstatement();
+      finaliseitemcatstatement();
+      return -4;
+    }
+    
+    dbchanid = addchannel(cpptr, url, rssversion, chandir);
+    if (dbchanid == 0)
+    {
+      fprintf(stderr,"Error adding channel '%s' to database!\n", cpptr->title);
+      free(dirsep);
+      free(chandir);
+      free(poddir);
+      finalisechannelstatement();
+      finalisechancatstatement();
+      finaliseitemdlstatement();
+      finaliseitemndlstatement();
+      finaliseitemcatstatement();
+      return -3;
+    }
+    llchanid = cpptr->chanid;
+    chanpath = (char *) malloc(sizeof(char)*(3+strlen(poddir)+strlen(dirsep)+strlen(chandir)));
+    if (chanpath == NULL)
+    {
+      fprintf(stderr,"Error: Out of Memory creating channel '%s'!\n", cpptr->title);
+      free(dirsep);
+      free(chandir);
+      finalisechannelstatement();
+      finalisechancatstatement();
+      free(poddir);
+      finaliseitemdlstatement();
+      finaliseitemndlstatement();
+      finaliseitemcatstatement();
+      return -1;
+    }
+    strcpy(chanpath,poddir);
+    strcat(chanpath,dirsep);
+    strcat(chanpath,chandir);
+    /*free(chandir);
+    chandir = NULL;*/
+    /* Channel Categories */
+    for (catptr = catroot; catptr != NULL; catptr = catptr->next)
+    {
+      if (catptr->type == channel_cat && catptr->id.chanid == llchanid)
+      {
+        rv = addchancat(dbchanid,catptr);
+        if (rv == 0)
+        {
+          fprintf(stderr,"Error adding channel category '%s' to database!\n", catptr->category);
+          free(poddir);
+          free(dirsep);
+          free(chanpath);
+          free(chandir);
+          finalisechannelstatement();
+          finalisechancatstatement();
+          finaliseitemdlstatement();
+          finaliseitemndlstatement();
+          finaliseitemcatstatement();
+          return -3;
+        }
+      }
+    }
+    /* Items */
+    for (ipptr = iproot; ipptr != NULL; ipptr = ipptr->next)
+    {
+      if (ipptr->chanid == llchanid)
+      {
+        if (ipptr->enclosure.url != NULL)
+        {
+          /* Get item filename */
+          itemofn = (char *) malloc(sizeof(char)*(1+strlen(ipptr->enclosure.url)));
+          if (itemofn == NULL)
+          {
+            fprintf(stderr,"Error: Out of Memory creating item '%s'!\n", ipptr->title);
+            free(poddir);
+            free(dirsep);
+            free(chanpath);
+            free(chandir);
+            finalisechannelstatement();
+            finalisechancatstatement();
+            finaliseitemdlstatement();
+            finaliseitemndlstatement();
+            finaliseitemcatstatement();
+            return -1;
+          }
+          if (getencfilename(itemofn,&(ipptr->enclosure)) == 2)
+          {
+            fprintf(stderr,"Warning: assuming filename is '%s'.\n",itemofn);
+          }
+          itemofext = (char *) malloc(sizeof(char)*(1+strlen(ipptr->enclosure.url)));
+          if (itemofext == NULL)
+          {
+            fprintf(stderr,"Error: Out of Memory creating item '%s'!\n", ipptr->title);
+            free(itemofn);
+            free(poddir);
+            free(dirsep);
+            free(chanpath);
+            free(chandir);
+            finalisechannelstatement();
+            finalisechancatstatement();
+            finaliseitemdlstatement();
+            finaliseitemndlstatement();
+            finaliseitemcatstatement();
+            return -1;
+          }
+          itemtfn = (char *) malloc(sizeof(char)*(1+strlen(itemofn)));
+          if (itemtfn == NULL)
+          {
+            fprintf(stderr,"Error: Out of Memory creating item '%s'!\n", ipptr->title);
+            free(itemofn);
+            free(itemofext);
+            free(poddir);
+            free(dirsep);
+            free(chanpath);
+            free(chandir);
+            finalisechannelstatement();
+            finalisechancatstatement();
+            finaliseitemdlstatement();
+            finaliseitemndlstatement();
+            finaliseitemcatstatement();
+            return -1;
+          }
+          rv = getencfileext(itemofext,&(ipptr->enclosure));
+          if (rv == 0)
+          {
+            fprintf(stderr,"Error: Out of Memory creating item '%s'!\n", ipptr->title);
+            free(itemofn);
+            free(itemtfn);
+            free(itemofext);
+            free(poddir);
+            free(dirsep);
+            free(chanpath);
+            free(chandir);
+            finalisechannelstatement();
+            finalisechancatstatement();
+            finaliseitemdlstatement();
+            finaliseitemndlstatement();
+            finaliseitemcatstatement();
+            return -1;
+          }
+          else if (rv == -1) itemofext[0] = 0;
+          else if (rv == 2) fprintf(stderr, "Warning: Assumed file extension to be '%s'.\n", itemofext);
+          makevalidfilename(itemtfn,itemofn);
+          dotpos = strstr(itemtfn,".");
+          if (dotpos != NULL) dotpos[0] = 0;
+          dotpos = NULL;
+          /* Download item if required */
+          if (dlcode == DLCODE_LATEST)
+          {
+            if (newestitem != NULL)
+            {
+              if (ipptr->pubdate.year > newestitem->pubdate.year || 
+                  (ipptr->pubdate.year == newestitem->pubdate.year && 
+                   (ipptr->pubdate.month > newestitem->pubdate.month || 
+                    (ipptr->pubdate.month == newestitem->pubdate.month && 
+                     (ipptr->pubdate.daynum > newestitem->pubdate.daynum || 
+                      (ipptr->pubdate.daynum == newestitem->pubdate.daynum && 
+                       (ipptr->pubdate.hour - ipptr->pubdate.gmtoffseth > newestitem->pubdate.hour - newestitem->pubdate.gmtoffseth || 
+                        (ipptr->pubdate.hour - ipptr->pubdate.gmtoffseth == newestitem->pubdate.hour - newestitem->pubdate.gmtoffseth && 
+                         (ipptr->pubdate.minute - ipptr->pubdate.gmtoffsetm > newestitem->pubdate.minute - newestitem->pubdate.gmtoffsetm || 
+                          (ipptr->pubdate.minute - ipptr->pubdate.gmtoffsetm == newestitem->pubdate.minute - newestitem->pubdate.gmtoffsetm && 
+                           (ipptr->pubdate.second > newestitem->pubdate.second)))))))))))
+              {
+                newestitem = ipptr;
+              }
+            }
+            else
+            {
+              newestitem = ipptr;
+            }
+          }
+          else if (dlcode == DLCODE_NEW || dlcode == DLCODE_ALL)
+          {
+            itemfn = (char *) malloc(sizeof(char)*(102+strlen(itemtfn)+strlen(itemofext)));
+            if (itemfn == NULL)
+            {
+              fprintf(stderr,"Error: Out of Memory creating item '%s'!\n", ipptr->title);
+              free(itemofn);
+              free(itemtfn);
+              free(itemofext);
+              free(poddir);
+              free(dirsep);
+              free(chanpath);
+              free(chandir);
+              finalisechannelstatement();
+              finalisechancatstatement();
+              finaliseitemdlstatement();
+              finaliseitemndlstatement();
+              finaliseitemcatstatement();
+              return -1;
+            }
+            rv = newfilename(itemfn, chanpath, itemtfn, itemofext);
+            if (rv == 0)
+            {
+              fprintf(stderr,"Error: Out of Memory creating item '%s'!\n", ipptr->title);
+              free(itemfn);
+              free(itemofn);
+              free(itemtfn);
+              free(itemofext);
+              free(poddir);
+              free(dirsep);
+              free(chanpath);
+              free(chandir);
+              finalisechannelstatement();
+              finalisechancatstatement();
+              finaliseitemdlstatement();
+              finaliseitemndlstatement();
+              finaliseitemcatstatement();
+              return -1;
+            }
+            strcat(itemfn,".");
+            strcat(itemfn,itemofext);
+            rv = dodownload(ipptr->enclosure.url, chandir, itemfn);
+            if (rv == 0)
+            {
+              fprintf(stderr,"Warning: Error downloading item '%s' from URL '%s'.  Skipping this download.\n", ipptr->title, ipptr->enclosure.url);
+              dlexcept = 1;
+            }
+            else dlexcept = 0;
+          }
+          free(itemofext);
+          itemofext = NULL;
+          free(itemtfn);
+          itemtfn = NULL;
+        }
+        /* Add Item to DB */
+        if ((dlcode == DLCODE_NEW || dlcode == DLCODE_ALL) && dlexcept == 0)
+        {
+          /* Use additemdled() */
+          dbitemid = additemdled(ipptr, dbchanid, itemofn, itemfn);
+          free(itemfn);
+          itemfn = NULL;
+        }
+        else
+        {
+          /* Use additemndled() */
+          dbitemid = additemndled(ipptr, dbchanid, itemofn);
+        }
+        if (itemfn != NULL) free(itemfn);
+        itemfn = NULL;
+        if (itemofn != NULL) free(itemofn);
+        itemofn = NULL;
+        if (dbitemid == 0)
+        {
+          fprintf(stderr, "Error adding item '%s' to database!\n", ipptr->title);
+          free(poddir);
+          free(dirsep);
+          free(chanpath);
+          free(chandir);
+          finalisechannelstatement();
+          finalisechancatstatement();
+          finaliseitemdlstatement();
+          finaliseitemndlstatement();
+          finaliseitemcatstatement();
+          return -3;
+        }
+        llitemid = ipptr->itemid;
+        /* Add item categories to DB */
+        /* Item Categories */
+        for (catptr = catroot; catptr != NULL; catptr = catptr->next)
+        {
+          if (catptr->type == item_cat && catptr->id.itemid == llitemid)
+          {
+            rv = additemcat(dbitemid,catptr);
+            if (rv == 0)
+            {
+              fprintf(stderr,"Error adding item category '%s' to database!\n", catptr->category);
+              free(poddir);
+              free(dirsep);
+              free(chanpath);
+              free(chandir);
+              finalisechannelstatement();
+              finalisechancatstatement();
+              finaliseitemdlstatement();
+              finaliseitemndlstatement();
+              finaliseitemcatstatement();
+              return -3;
+            }
+          }
+        }
+        
+        
+      }
+    }/* End Item Section */
+    
+    /* Download Latest Item if appropriate */
+    if (dlcode == DLCODE_LATEST)
+    {
+      latestenc = getlatestitemenc(dbchanid);
+      if (latestenc == NULL)
+      {
+        fprintf(stderr,"Error downloading latest item - Out of Memory!\n");
+        free(poddir);
+        free(dirsep);
+        free(chanpath);
+        free(chandir);
+        finalisechannelstatement();
+        finalisechancatstatement();
+        finaliseitemdlstatement();
+        finaliseitemndlstatement();
+        finaliseitemcatstatement();
+        return -1;
+      }
+      if (latestenc->url == NULL)
+      {
+        fprintf(stderr,"Warning: Channel '%s' has no downloadable items.\n",cpptr->title);
+      }
+      else
+      {
+        itemofn = getlatestitemofn(dbchanid);
+        if (itemofn == NULL)
+        {
+          fprintf(stderr,"Error downloading item '%s' - Out of Memory!\n", latestenc->url);
+          if (latestenc->url != NULL) free(latestenc->url);
+          if latestenc->type != NULL) free(latestenc->type);
+          free(latestenc);
+          free(poddir);
+          free(dirsep);
+          free(chanpath);
+          free(chandir);
+          finalisechannelstatement();
+          finalisechancatstatement();
+          finaliseitemdlstatement();
+          finaliseitemndlstatement();
+          finaliseitemcatstatement();
+          return -1;
+        }
+        dbitemid = getlatestitemid(dbchanid);
+        /* for (ipptr = iproot; ipptr != NULL; ipptr = ipptr->next)
+        {
+          if (ipptr->chanid == llchanid && ipptr->dbiid == dbitemid) break;
+        }
+        if (ipptr == NULL)
+        {
+        } */
+        itemofext = (char *) malloc(sizeof(char)*(51+strlen(itemofn)));
+        if (itemofext == NULL)
+        {
+          fprintf(stderr,"Error downloading item '%s' - Out of Memory!\n", latestenc->url);
+          if (latestenc->url != NULL) free(latestenc->url);
+          if latestenc->type != NULL) free(latestenc->type);
+          free(latestenc);
+          free(itemofn);
+          free(poddir);
+          free(dirsep);
+          free(chanpath);
+          free(chandir);
+          finalisechannelstatement();
+          finalisechancatstatement();
+          finaliseitemdlstatement();
+          finaliseitemndlstatement();
+          finaliseitemcatstatement();
+          return -1;
+        }
+        rv = getencfileext(itemofext, latestenc);
+        if (rv == -1) itemofext[0] = 0;
+        else if (rv == 2) fprintf(stderr, "Warning: Extension of item assumed to be '%s'.\n",itemofext);
+        else if (rv == 0)
+        {
+          fprintf(stderr,"Error downloading item '%s' - Out of Memory!\n", latestenc->url);
+          if (latestenc->url != NULL) free(latestenc->url);
+          if latestenc->type != NULL) free(latestenc->type);
+          free(latestenc);
+          free(itemofn);
+          free(itemofext);
+          free(poddir);
+          free(dirsep);
+          free(chanpath);
+          free(chandir);
+          finalisechannelstatement();
+          finalisechancatstatement();
+          finaliseitemdlstatement();
+          finaliseitemndlstatement();
+          finaliseitemcatstatement();
+          return -1;
+        }
+        itemtfn = (char *) malloc(sizeof(char)*(1+strlen(itemofn)));
+        if (itemtfn == NULL)
+        {
+          fprintf(stderr,"Error downloading item '%s' - Out of Memory!\n", latestenc->url);
+          if (latestenc->url != NULL) free(latestenc->url);
+          if latestenc->type != NULL) free(latestenc->type);
+          free(latestenc);
+          free(itemofn);
+          free(itemofext);
+          free(poddir);
+          free(dirsep);
+          free(chanpath);
+          free(chandir);
+          finalisechannelstatement();
+          finalisechancatstatement();
+          finaliseitemdlstatement();
+          finaliseitemndlstatement();
+          finaliseitemcatstatement();
+          return -1;
+        }
+        makevalidfilename(itemtfn,itemofn);
+        dotpos = strstr(itemtfn,".");
+        if (dotpos != NULL) dotpos[0] = 0;
+        dotpos = NULL;
+        itemfn = (char *) malloc(sizeof(char)*(102+strlen(itemtfn)+strlen(itemofext)));
+        if (itemfn == NULL)
+        {
+          fprintf(stderr,"Error downloading item '%s' - Out of Memory!\n", latestenc->url);
+          if (latestenc->url != NULL) free(latestenc->url);
+          if latestenc->type != NULL) free(latestenc->type);
+          free(latestenc);
+          free(itemtfn);
+          free(itemofn);
+          free(itemofext);
+          free(poddir);
+          free(dirsep);
+          free(chanpath);
+          free(chandir);
+          finalisechannelstatement();
+          finalisechancatstatement();
+          finaliseitemdlstatement();
+          finaliseitemndlstatement();
+          finaliseitemcatstatement();
+          return -1;
+        }
+        rv = newfilename(itemfn, chanpath, itemtfn, itemofext);
+        if (rv == 0)
+        {
+          fprintf(stderr,"Error downloading item '%s' - Out of Memory!\n", latestenc->url);
+          if (latestenc->url != NULL) free(latestenc->url);
+          if latestenc->type != NULL) free(latestenc->type);
+          free(latestenc);
+          free(itemfn);
+          free(itemtfn);
+          free(itemofn);
+          free(itemofext);
+          free(poddir);
+          free(dirsep);
+          free(chanpath);
+          free(chandir);
+          finalisechannelstatement();
+          finalisechancatstatement();
+          finaliseitemdlstatement();
+          finaliseitemndlstatement();
+          finaliseitemcatstatement();
+          return -1;
+        }
+        strcat(itemfn,".");
+        strcat(itemfn,itemofext);
+        rv = dodownload(latestenc->url, chandir, itemfn);
+        if (rv == 0)
+        {
+          fprintf(stderr,"Warning: Error downloading item from URL '%s'.  Skipping this download.\n", latestenc->url);
+          dlexcept = 1;
+        }
+        else dlexcept = 0;
+        
+        if (dlexcept == 0)
+        {
+          rv = prepareuditemdlstatement();
+          if (rv == 0)
+          {
+            fprintf(stderr,"Error adding downloaded item '%s' to database!\n", latestenc->url);
+            if (latestenc->url != NULL) free(latestenc->url);
+            if latestenc->type != NULL) free(latestenc->type);
+            free(latestenc);
+            free(itemfn);
+            free(itemtfn);
+            free(itemofn);
+            free(itemofext);
+            free(poddir);
+            free(dirsep);
+            free(chanpath);
+            free(chandir);
+            finalisechannelstatement();
+            finalisechancatstatement();
+            finaliseitemdlstatement();
+            finaliseitemndlstatement();
+            finaliseitemcatstatement();
+            return -3;
+          }
+          rv = updateitemdownloaded(itemfn, dbitemid);
+          if (rv == 0)
+          {
+            fprintf(stderr,"Error adding downloaded item '%s' to database!\n", latestenc->url);
+            if (latestenc->url != NULL) free(latestenc->url);
+            if latestenc->type != NULL) free(latestenc->type);
+            free(latestenc);
+            free(itemfn);
+            free(itemtfn);
+            free(itemofn);
+            free(itemofext);
+            free(poddir);
+            free(dirsep);
+            free(chanpath);
+            free(chandir);
+            finalisechannelstatement();
+            finalisechancatstatement();
+            finaliseitemdlstatement();
+            finaliseitemndlstatement();
+            finaliseitemcatstatement();
+            return -3;
+          }
+          finaliseuditemdlstatement();
+          
+          
+        }
+        
+        free(itemofn);
+        itemofn = NULL;
+        free(itemofext);
+        itemofext = NULL;
+        free(itemtfn);
+        itemtfn = NULL;
+        free(itemfn);
+        itemfn = NULL;
+        
+        
+      }
+      if (latestenc->url != NULL) free(latestenc->url);
+      if latestenc->type != NULL) free(latestenc->type);
+      free(latestenc);
+      latestenc = NULL;
+    }/* End Item Download Latest */
+    
+    free(chanpath);
+    chanpath = NULL;
+    free(chandir);
+    chandir = NULL;
+    
+  }
+  
+  
+  
+  free(poddir);
+  free(dirsep);
+  finalisechannelstatement();
+  finalisechancatstatement();
+  finaliseitemdlstatement();
+  finaliseitemndlstatement();
+  finaliseitemcatstatement();
+  
+  /* I don't think we need the LLs now... */
+  destroycategories();
+  destroychannels();
+  destroyitems();
+  
+  return 1;
+}
