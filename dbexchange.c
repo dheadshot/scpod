@@ -1398,7 +1398,7 @@ unsigned long additemdled(itempropnode *anitem, unsigned long chanid, char *ofn,
     dbwriteerror(rc);
     return 0;
   }
-  rc = sqlite3_bind_text(itemdlstmt, 15, anitem->thefn, strlen(anitem->thefn)*sizeof(char), SQLITE_TRANSIENT);
+  rc = sqlite3_bind_text(itemdlstmt, 15, thefn, strlen(thefn)*sizeof(char), SQLITE_TRANSIENT);
   if (rc != SQLITE_OK)
   {
     dbwriteerror(rc);
@@ -1822,6 +1822,7 @@ char *getlatestitemofn(unsigned long chanid)
     fprintf(stderr, "(Returned Error: %s)\n", anerrmsg);
     sqlite3_free(anerrmsg);
   }
+  char *astr = NULL;
   if (passbackstr == NULL)
   {
     astr = (char *) malloc(sizeof(char));
@@ -1829,7 +1830,7 @@ char *getlatestitemofn(unsigned long chanid)
     astr[0] = 0;
     return astr;
   }
-  char *astr = (char *) malloc(sizeof(char)*(1+strlen(passbackstr)));
+  astr = (char *) malloc(sizeof(char)*(1+strlen(passbackstr)));
   if (astr == NULL) return NULL;
   strcpy(astr,passbackstr);
   return astr;
@@ -1874,6 +1875,7 @@ unsigned long getchanidfromurl(char *chanurl)
   free(safeurl);
   passbackul = 0;
   char *anerrmsg = NULL;
+  int rc;
   rc = sqlite3_exec(db,somesql,callback_gcid,NULL,&anerrmsg); /* Reuse the callback_gcid function */
   if (rc != SQLITE_OK && rc != SQLITE_DONE && rc != SQLITE_ROW)
   {

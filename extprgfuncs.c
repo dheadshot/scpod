@@ -339,7 +339,7 @@ void makevalidfilename(char *outfn, char *infn)
   long i;
   for (i=0;infn[i]!=0;i++)
   {
-    if (ifn[i]=='.')
+    if (infn[i]=='.')
     {
       outfn[i] = '.';
     }

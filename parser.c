@@ -5236,7 +5236,7 @@ int parsenewchannel(FILE *chf, char *url, int dlcode)
         {
           fprintf(stderr,"Error downloading item '%s' - Out of Memory!\n", latestenc->url);
           if (latestenc->url != NULL) free(latestenc->url);
-          if latestenc->type != NULL) free(latestenc->type);
+          if (latestenc->type != NULL) free(latestenc->type);
           free(latestenc);
           free(poddir);
           free(dirsep);
@@ -5262,7 +5262,7 @@ int parsenewchannel(FILE *chf, char *url, int dlcode)
         {
           fprintf(stderr,"Error downloading item '%s' - Out of Memory!\n", latestenc->url);
           if (latestenc->url != NULL) free(latestenc->url);
-          if latestenc->type != NULL) free(latestenc->type);
+          if (latestenc->type != NULL) free(latestenc->type);
           free(latestenc);
           free(itemofn);
           free(poddir);
@@ -5283,7 +5283,7 @@ int parsenewchannel(FILE *chf, char *url, int dlcode)
         {
           fprintf(stderr,"Error downloading item '%s' - Out of Memory!\n", latestenc->url);
           if (latestenc->url != NULL) free(latestenc->url);
-          if latestenc->type != NULL) free(latestenc->type);
+          if (latestenc->type != NULL) free(latestenc->type);
           free(latestenc);
           free(itemofn);
           free(itemofext);
@@ -5303,7 +5303,7 @@ int parsenewchannel(FILE *chf, char *url, int dlcode)
         {
           fprintf(stderr,"Error downloading item '%s' - Out of Memory!\n", latestenc->url);
           if (latestenc->url != NULL) free(latestenc->url);
-          if latestenc->type != NULL) free(latestenc->type);
+          if (latestenc->type != NULL) free(latestenc->type);
           free(latestenc);
           free(itemofn);
           free(itemofext);
@@ -5327,7 +5327,7 @@ int parsenewchannel(FILE *chf, char *url, int dlcode)
         {
           fprintf(stderr,"Error downloading item '%s' - Out of Memory!\n", latestenc->url);
           if (latestenc->url != NULL) free(latestenc->url);
-          if latestenc->type != NULL) free(latestenc->type);
+          if (latestenc->type != NULL) free(latestenc->type);
           free(latestenc);
           free(itemtfn);
           free(itemofn);
@@ -5348,7 +5348,7 @@ int parsenewchannel(FILE *chf, char *url, int dlcode)
         {
           fprintf(stderr,"Error downloading item '%s' - Out of Memory!\n", latestenc->url);
           if (latestenc->url != NULL) free(latestenc->url);
-          if latestenc->type != NULL) free(latestenc->type);
+          if (latestenc->type != NULL) free(latestenc->type);
           free(latestenc);
           free(itemfn);
           free(itemtfn);
@@ -5382,7 +5382,7 @@ int parsenewchannel(FILE *chf, char *url, int dlcode)
           {
             fprintf(stderr,"Error adding downloaded item '%s' to database!\n", latestenc->url);
             if (latestenc->url != NULL) free(latestenc->url);
-            if latestenc->type != NULL) free(latestenc->type);
+            if (latestenc->type != NULL) free(latestenc->type);
             free(latestenc);
             free(itemfn);
             free(itemtfn);
@@ -5404,7 +5404,7 @@ int parsenewchannel(FILE *chf, char *url, int dlcode)
           {
             fprintf(stderr,"Error adding downloaded item '%s' to database!\n", latestenc->url);
             if (latestenc->url != NULL) free(latestenc->url);
-            if latestenc->type != NULL) free(latestenc->type);
+            if (latestenc->type != NULL) free(latestenc->type);
             free(latestenc);
             free(itemfn);
             free(itemtfn);
@@ -5438,7 +5438,7 @@ int parsenewchannel(FILE *chf, char *url, int dlcode)
         
       }
       if (latestenc->url != NULL) free(latestenc->url);
-      if latestenc->type != NULL) free(latestenc->type);
+      if (latestenc->type != NULL) free(latestenc->type);
       free(latestenc);
       latestenc = NULL;
     }/* End Item Download Latest */
