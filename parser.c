@@ -3268,7 +3268,12 @@ int parsersstoll(FILE *rf)
                       /* Free everything and end. */
                       goto OOMEMERROR;
                     }
-                    strcpy(curitem->enclosure.url,epptr->data);
+                    if (epptr->data[0] == '"' && epptr->data[strlen(epptr->data)-1] == '"')
+                    {
+                      strcpy(curitem->enclosure.url,epptr->data + sizeof(char));
+                      curitem->enclosure.url[strlen(curitem->enclosure.url)-1] = 0;
+                    }
+                    else strcpy(curitem->enclosure.url,epptr->data);
                   }
                 }
                 else if (streq_i(epptr->name,"length"))
@@ -3293,7 +3298,12 @@ int parsersstoll(FILE *rf)
                       /* Free everything and end. */
                       goto OOMEMERROR;
                     }
-                    strcpy(curitem->enclosure.type,epptr->data);
+                    if (epptr->data[0] == '"' && epptr->data[strlen(epptr->data)-1] == '"')
+                    {
+                      strcpy(curitem->enclosure.type,epptr->data + sizeof(char));
+                      curitem->enclosure.type[strlen(curitem->enclosure.type)-1] = 0;
+                    }
+                    else strcpy(curitem->enclosure.type,epptr->data);
                   }
                 }
                 
@@ -3727,7 +3737,7 @@ int getencfileext(char *fileext, rssenclosure *enc)
   char anext[256] = "";
   if (dotpt != NULL && dotpt[0] == '.')
   {
-    strcpy(anext, dotpt);
+    strcpy(anext, dotpt+sizeof(char));
     if (streq_i(anext,"asp") || streq_i(anext,"php") || streq_i(anext,"cgi") || streq_i(anext,"pl") || streq_i(anext, "py") || startsame_i(anext, "htm") || startsame_i(anext,"sht") || startsame_(anext,"xht") || startsame_(anext,"mht"))
     {
       /* Resort to type */
@@ -4811,29 +4821,53 @@ int parsenewchannel(FILE *chf, char *url, int dlcode)
   if (opendb(1) == 0) return -3;
   rv = parsersstoll(chf);
   if (rv != 1) return rv;
+#ifdef DEBUG
+  	printf("Preparing Channel Statement.\n");
+#endif
   rv = preparechannelstatement();
   if (!rv) return -3;
+#ifdef DEBUG
+  	printf("Preparing Channel Category Statement.\n");
+#endif
   rv = preparechancatstatement();
   if (!rv)
   {
+#ifdef DEBUG
+  	printf("ChanCatErr.\n");
+#endif
     finalisechannelstatement();
     return -3;
   }
+#ifdef DEBUG
+  	printf("Preparing Item DL Statement.\n");
+#endif
   rv = prepareitemstatementdownloaded();
   if (!rv)
   {
+#ifdef DEBUG
+  	printf("ItemDLErr.\n");
+#endif
     finalisechannelstatement();
     finalisechancatstatement();
     return -3;
   }
+#ifdef DEBUG
+  	printf("Preparing Item NDL Statement.\n");
+#endif
   rv = prepareitemstatementnotdownloaded();
   if (!rv)
   {
+#ifdef DEBUG
+  	printf("ItemNDLErr.\n");
+#endif
     finalisechannelstatement();
     finalisechancatstatement();
     finaliseitemdlstatement();
     return -3;
   }
+#ifdef DEBUG
+  	printf("Preparing Item Category Statement.\n");
+#endif
   rv = prepareitemcatstatement();
   if (!rv)
   {
@@ -4901,6 +4935,9 @@ int parsenewchannel(FILE *chf, char *url, int dlcode)
   /* Channels */
   for (cpptr = cproot; cpptr != NULL; cpptr = cpptr->next)
   {
+#ifdef DEBUG
+  	printf("cpptr->title='%s'.\n",cpptr->title);
+#endif
     chandir = (char *) malloc(sizeof(char)*2*(51+strlen(cpptr->title)));
     if (chandir == NULL)
     {
@@ -4927,8 +4964,15 @@ int parsenewchannel(FILE *chf, char *url, int dlcode)
       finaliseitemcatstatement();
       return -4;
     }
+#ifdef DEBUG
+  	printf("ChanDir='%s'.\n",chandir);
+#endif
     
     dbchanid = addchannel(cpptr, url, rssversion, chandir);
+#ifdef DEBUG
+  	printf("ChanID=%lu.\n",dbchanid);
+  	/*fprintf(stderr,"ChanID=%lu.\n",dbchanid);*/
+#endif
     if (dbchanid == 0)
     {
       fprintf(stderr,"Error adding channel '%s' to database!\n", cpptr->title);
@@ -5250,6 +5294,9 @@ int parsenewchannel(FILE *chf, char *url, int dlcode)
           return -1;
         }
         dbitemid = getlatestitemid(dbchanid);
+#ifdef DEBUG
+        	printf("Latest item: %lu, '%s'\n",dbitemid,itemofn);
+#endif
         /* for (ipptr = iproot; ipptr != NULL; ipptr = ipptr->next)
         {
           if (ipptr->chanid == llchanid && ipptr->dbiid == dbitemid) break;
@@ -5298,6 +5345,9 @@ int parsenewchannel(FILE *chf, char *url, int dlcode)
           finaliseitemcatstatement();
           return -1;
         }
+#ifdef DEBUG
+        	printf("Latest item extension: '%s'\n",itemofext);
+#endif
         itemtfn = (char *) malloc(sizeof(char)*(1+strlen(itemofn)));
         if (itemtfn == NULL)
         {
@@ -5322,6 +5372,9 @@ int parsenewchannel(FILE *chf, char *url, int dlcode)
         dotpos = strstr(itemtfn,".");
         if (dotpos != NULL) dotpos[0] = 0;
         dotpos = NULL;
+#ifdef DEBUG
+        	printf("Latest item safename: '%s'\n",itemtfn);
+#endif
         itemfn = (char *) malloc(sizeof(char)*(102+strlen(itemtfn)+strlen(itemofext)));
         if (itemfn == NULL)
         {
@@ -5365,6 +5418,9 @@ int parsenewchannel(FILE *chf, char *url, int dlcode)
           finaliseitemcatstatement();
           return -1;
         }
+#ifdef DEBUG
+        	printf("Latest item newname: '%s'\n",itemfn);
+#endif
         strcat(itemfn,".");
         strcat(itemfn,itemofext);
         rv = dodownload(latestenc->url, chandir, itemfn);
@@ -5374,9 +5430,15 @@ int parsenewchannel(FILE *chf, char *url, int dlcode)
           dlexcept = 1;
         }
         else dlexcept = 0;
+#ifdef DEBUG
+        	printf("Download except: '%d'\n",dlexcept);
+#endif
         
         if (dlexcept == 0)
         {
+#ifdef DEBUG
+        	printf("Marking as downloaded.\n");
+#endif
           rv = prepareuditemdlstatement();
           if (rv == 0)
           {
