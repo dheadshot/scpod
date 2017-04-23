@@ -196,3 +196,9 @@ void strdsqs(char *outstr, char *instr)
     j++;
   }
 }
+
+long strLen(char *a)
+{
+  if (a == NULL) return 0;
+  return strlen(a);
+}

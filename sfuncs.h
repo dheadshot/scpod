@@ -14,5 +14,6 @@ int strtrimws1(char *astr);
 void freentsa(char **antsa);
 long searchbackch(char *astr, char findchar);
 void strdsqs(char *outstr, char *instr);
+long strLen(char *a);
 
 #endif
