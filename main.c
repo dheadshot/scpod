@@ -347,7 +347,7 @@ int docmd(char **cmdntsa, int offset)
     {
       if (cmdntsa[i+2] == NULL)
       {
-        printf("Subscribe:\n  Subscribes to a podcast feed.  Use the command as:\n    'subscribe <URL of feed> download <download type>'.\n  The following download types are available:\n*\tnone\n*\tlatest\n*\tall\n  For help on these, use the command:\n  'help subscribe download <download type>'.\n");
+        printf("Subscribe:\n  Subscribes to a podcast feed.  Use the command as:\n    'subscribe <URL of feed> download <download type>'.\n  The following download types are available:\n*\tnone\n*\tlatest\n*\tall\n  For help on these, use the command:\n    'help subscribe download <download type>'.\n");
         return 0;
       }
       else if (streq_i(cmdntsa[i+2],"download") == 0)
@@ -357,7 +357,7 @@ int docmd(char **cmdntsa, int offset)
       }
       else if (cmdntsa[i+3] == NULL)
       {
-        printf("Subscribe:\n  Subscribes to a podcast feed.  Use the command as:\n    'subscribe <URL of feed> download <download type>'.\n  The following download types are available:\n*\tnone\n*\tlatest\n*\tall\n  For help on these, use the command:\n  'help subscribe download <download type>'.\n");
+        printf("Subscribe:\n  Subscribes to a podcast feed.  Use the command as:\n    'subscribe <URL of feed> download <download type>'.\n  The following download types are available:\n*\tnone\n*\tlatest\n*\tall\n  For help on these, use the command:\n    'help subscribe download <download type>'.\n");
         return 0;
       }
       else if (streq_i(cmdntsa[i+3],"none"))
@@ -683,7 +683,7 @@ int dosubscribe(char *url, int dlcode)
   }
   strcpy(feedfn,pdir);
   strcat(feedfn,dirsep);
-  strcat(feedfn,"newfeed.xml");
+  strcat(feedfn,"new_feed.xml");
   free(pdir);
   free(dirsep);
   FILE *feedfile = fopen(feedfn,"r");
