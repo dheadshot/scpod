@@ -13,6 +13,10 @@
 #define DLCODE_NEW 2
 #define DLCODE_ALL 3
 
+#include <stdlib.h>
+#define atoul(x) strtoul(x, NULL, 0)
+#define atoull(x) strtoull(x, NULL, 0)
+
 /* Remember to ignore unknown elements! */
 
 typedef struct rssdate_struct {
@@ -66,7 +70,7 @@ typedef struct chanpropnode_struct {
   m1tna skiphours;
   ntsa skipdays;
   
-  unsigned long dbcid; /* Channel_ID Database field */
+  unsigned long long dbcid; /* Channel_ID Database field */
   
   struct chanpropnode_struct *next;
 } chanpropnode;
@@ -103,7 +107,7 @@ typedef struct itempropnode_struct {
   /* Used by the BBC */
   rssimage image;
   
-  unsigned long dbiid; /* Item_ID Database field */
+  unsigned long long dbiid; /* Item_ID Database field */
   int isnew; /* Is the item fresh to the DB or did it exist in the DB already? */
   
   struct itempropnode_struct *next;

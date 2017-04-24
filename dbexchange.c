@@ -13,6 +13,7 @@ int dbisopen = 0;
 sqlite3 *db;
 char *passbackstr = NULL;
 unsigned long passbackul = 0;
+unsigned long long passbackull = 0;
 sqlite3_stmt *channelstmt = NULL, *itemdlstmt = NULL, *configstmt = NULL, 
              *chancatstmt = NULL, *selitemstmt = NULL, *itemcatstmt = NULL, 
              *itemndlstmt = NULL, *uditemdlstmt = NULL;
@@ -272,7 +273,7 @@ int preparechannelstatement()
   return 1;
 }
 
-unsigned long addchannel(chanpropnode *achan, char *chanurl, char *rss_version, char *directory)
+unsigned long long addchannel(chanpropnode *achan, char *chanurl, char *rss_version, char *directory)
 {
   if (channelstmt == NULL) return 0;
   if (achan == NULL || directory == NULL || chanurl == NULL) return 0;
@@ -491,7 +492,7 @@ unsigned long addchannel(chanpropnode *achan, char *chanurl, char *rss_version, 
   /* Get Channel_ID */
   char gcidsql[] = "SELECT Channel_ID FROM Channel WHERE ROWID=last_insert_rowid();";
   /*char *anerrmsg;*/
-  passbackul = 0;
+  passbackull = 0;
   rc = sqlite3_exec(db,gcidsql,callback_gcid,0,&anerrmsg);
   if (rc != SQLITE_OK && rc != SQLITE_DONE && rc != SQLITE_ROW)
   {
@@ -501,8 +502,8 @@ unsigned long addchannel(chanpropnode *achan, char *chanurl, char *rss_version, 
     return 0;
   }
   
-  if (passbackul == 0) return 0;
-  achan->dbcid = passbackul;
+  if (passbackull == 0) return 0;
+  achan->dbcid = passbackull;
   
   /* Insert Skip-Hours */
   int i;
@@ -511,7 +512,7 @@ unsigned long addchannel(chanpropnode *achan, char *chanurl, char *rss_version, 
   {
     for (i=0;achan->skiphours[i] != -1;i++)
     {
-      sprintf(shsql,"INSERT INTO \"Channel_Skip_Hour\" (CSHID, Channel_ID, Hour) VALUES (NULL, %lu, %d);", achan->dbcid, achan->skiphours[i]);
+      sprintf(shsql,"INSERT INTO \"Channel_Skip_Hour\" (CSHID, Channel_ID, Hour) VALUES (NULL, %llu, %d);", achan->dbcid, achan->skiphours[i]);
       rc = sqlite3_exec(db,shsql,NULL,0,&anerrmsg);
       if (rc != SQLITE_OK && rc != SQLITE_DONE && rc != SQLITE_ROW)
       {
@@ -540,7 +541,7 @@ unsigned long addchannel(chanpropnode *achan, char *chanurl, char *rss_version, 
       else if (startsame_i(achan->skipdays[i],"Sat")) n = 6;
       else n = 0;
       while ((sqpos = strstr(achan->skipdays[i],"'")) != NULL) sqpos[0] = '_';
-      sprintf(shsql,"INSERT INTO \"Channel_Skip_Day\" (CSHID, Channel_ID, Day_Name, Day_Number) VALUES (NULL, %lu, '%s', %d);", achan->dbcid, achan->skipdays[i], n);
+      sprintf(shsql,"INSERT INTO \"Channel_Skip_Day\" (CSHID, Channel_ID, Day_Name, Day_Number) VALUES (NULL, %llu, '%s', %d);", achan->dbcid, achan->skipdays[i], n);
       rc = sqlite3_exec(db,shsql,NULL,0,&anerrmsg);
       if (rc != SQLITE_OK && rc != SQLITE_DONE && rc != SQLITE_ROW)
       {
@@ -553,7 +554,7 @@ unsigned long addchannel(chanpropnode *achan, char *chanurl, char *rss_version, 
     }
   }
   
-  return passbackul;
+  return passbackull;
 }
 
 int finalisechannelstatement()
@@ -568,7 +569,7 @@ int checkupdatechannel(chanpropnode *achan, char *rss_version)
   int rc;
   
   /* Find out what needs to be updated */
-  sprintf(somesql,"SELECT * FROM Channel WHERE Channel_ID = %lu;",achan->dbcid);
+  sprintf(somesql,"SELECT * FROM Channel WHERE Channel_ID = %llu;",achan->dbcid);
   if (passbackstr != NULL) free(passbackstr);
   passbackstr = NULL;
   rc = sqlite3_exec(db,somesql,callback_cuc,(void *) achan,&anerrmsg);
@@ -607,7 +608,7 @@ int checkupdatechannel(chanpropnode *achan, char *rss_version)
       free(tmpstr);
       return 0;
     }
-    sprintf(udsql,"UPDATE Channel SET Title = '%s' WHERE Channel_ID = %lu;",tmpstr,achan->dbcid);
+    sprintf(udsql,"UPDATE Channel SET Title = '%s' WHERE Channel_ID = %llu;",tmpstr,achan->dbcid);
     free(tmpstr);
     rc = sqlite3_exec(db,udsql,NULL,0,&anerrmsg);
     if (rc != SQLITE_OK && rc != SQLITE_DONE && rc != SQLITE_ROW)
@@ -636,7 +637,7 @@ int checkupdatechannel(chanpropnode *achan, char *rss_version)
       free(tmpstr);
       return 0;
     }
-    sprintf(udsql,"UPDATE Channel SET Link = '%s' WHERE Channel_ID = %lu;",tmpstr,achan->dbcid);
+    sprintf(udsql,"UPDATE Channel SET Link = '%s' WHERE Channel_ID = %llu;",tmpstr,achan->dbcid);
     free(tmpstr);
     rc = sqlite3_exec(db,udsql,NULL,0,&anerrmsg);
     if (rc != SQLITE_OK && rc != SQLITE_DONE && rc != SQLITE_ROW)
@@ -665,7 +666,7 @@ int checkupdatechannel(chanpropnode *achan, char *rss_version)
       free(tmpstr);
       return 0;
     }
-    sprintf(udsql,"UPDATE Channel SET Description = '%s' WHERE Channel_ID = %lu;",tmpstr,achan->dbcid);
+    sprintf(udsql,"UPDATE Channel SET Description = '%s' WHERE Channel_ID = %llu;",tmpstr,achan->dbcid);
     free(tmpstr);
     rc = sqlite3_exec(db,udsql,NULL,0,&anerrmsg);
     if (rc != SQLITE_OK && rc != SQLITE_DONE && rc != SQLITE_ROW)
@@ -694,7 +695,7 @@ int checkupdatechannel(chanpropnode *achan, char *rss_version)
       free(tmpstr);
       return 0;
     }
-    sprintf(udsql,"UPDATE Channel SET Language_Major = '%s' WHERE Channel_ID = %lu;",tmpstr,achan->dbcid);
+    sprintf(udsql,"UPDATE Channel SET Language_Major = '%s' WHERE Channel_ID = %llu;",tmpstr,achan->dbcid);
     free(tmpstr);
     rc = sqlite3_exec(db,udsql,NULL,0,&anerrmsg);
     if (rc != SQLITE_OK && rc != SQLITE_DONE && rc != SQLITE_ROW)
@@ -723,7 +724,7 @@ int checkupdatechannel(chanpropnode *achan, char *rss_version)
       free(tmpstr);
       return 0;
     }
-    sprintf(udsql,"UPDATE Channel SET Language_Minor = '%s' WHERE Channel_ID = %lu;",tmpstr,achan->dbcid);
+    sprintf(udsql,"UPDATE Channel SET Language_Minor = '%s' WHERE Channel_ID = %llu;",tmpstr,achan->dbcid);
     free(tmpstr);
     rc = sqlite3_exec(db,udsql,NULL,0,&anerrmsg);
     if (rc != SQLITE_OK && rc != SQLITE_DONE && rc != SQLITE_ROW)
@@ -752,7 +753,7 @@ int checkupdatechannel(chanpropnode *achan, char *rss_version)
       free(tmpstr);
       return 0;
     }
-    sprintf(udsql,"UPDATE Channel SET Copyright = '%s' WHERE Channel_ID = %lu;",tmpstr,achan->dbcid);
+    sprintf(udsql,"UPDATE Channel SET Copyright = '%s' WHERE Channel_ID = %llu;",tmpstr,achan->dbcid);
     free(tmpstr);
     rc = sqlite3_exec(db,udsql,NULL,0,&anerrmsg);
     if (rc != SQLITE_OK && rc != SQLITE_DONE && rc != SQLITE_ROW)
@@ -781,7 +782,7 @@ int checkupdatechannel(chanpropnode *achan, char *rss_version)
       free(tmpstr);
       return 0;
     }
-    sprintf(udsql,"UPDATE Channel SET Managing_Editor = '%s' WHERE Channel_ID = %lu;",tmpstr,achan->dbcid);
+    sprintf(udsql,"UPDATE Channel SET Managing_Editor = '%s' WHERE Channel_ID = %llu;",tmpstr,achan->dbcid);
     free(tmpstr);
     rc = sqlite3_exec(db,udsql,NULL,0,&anerrmsg);
     if (rc != SQLITE_OK && rc != SQLITE_DONE && rc != SQLITE_ROW)
@@ -810,7 +811,7 @@ int checkupdatechannel(chanpropnode *achan, char *rss_version)
       free(tmpstr);
       return 0;
     }
-    sprintf(udsql,"UPDATE Channel SET Webmaster = '%s' WHERE Channel_ID = %lu;",tmpstr,achan->dbcid);
+    sprintf(udsql,"UPDATE Channel SET Webmaster = '%s' WHERE Channel_ID = %llu;",tmpstr,achan->dbcid);
     free(tmpstr);
     rc = sqlite3_exec(db,udsql,NULL,0,&anerrmsg);
     if (rc != SQLITE_OK && rc != SQLITE_DONE && rc != SQLITE_ROW)
@@ -839,7 +840,7 @@ int checkupdatechannel(chanpropnode *achan, char *rss_version)
       free(tmpstr);
       return 0;
     }
-    sprintf(udsql,"UPDATE Channel SET Publication_Date = '%s' WHERE Channel_ID = %lu;",tmpstr,achan->dbcid);
+    sprintf(udsql,"UPDATE Channel SET Publication_Date = '%s' WHERE Channel_ID = %llu;",tmpstr,achan->dbcid);
     free(tmpstr);
     rc = sqlite3_exec(db,udsql,NULL,0,&anerrmsg);
     if (rc != SQLITE_OK && rc != SQLITE_DONE && rc != SQLITE_ROW)
@@ -868,7 +869,7 @@ int checkupdatechannel(chanpropnode *achan, char *rss_version)
       free(tmpstr);
       return 0;
     }
-    sprintf(udsql,"UPDATE Channel SET Last_Build_Date = '%s' WHERE Channel_ID = %lu;",tmpstr,achan->dbcid);
+    sprintf(udsql,"UPDATE Channel SET Last_Build_Date = '%s' WHERE Channel_ID = %llu;",tmpstr,achan->dbcid);
     free(tmpstr);
     rc = sqlite3_exec(db,udsql,NULL,0,&anerrmsg);
     if (rc != SQLITE_OK && rc != SQLITE_DONE && rc != SQLITE_ROW)
@@ -897,7 +898,7 @@ int checkupdatechannel(chanpropnode *achan, char *rss_version)
       free(tmpstr);
       return 0;
     }
-    sprintf(udsql,"UPDATE Channel SET Generator = '%s' WHERE Channel_ID = %lu;",tmpstr,achan->dbcid);
+    sprintf(udsql,"UPDATE Channel SET Generator = '%s' WHERE Channel_ID = %llu;",tmpstr,achan->dbcid);
     free(tmpstr);
     rc = sqlite3_exec(db,udsql,NULL,0,&anerrmsg);
     if (rc != SQLITE_OK && rc != SQLITE_DONE && rc != SQLITE_ROW)
@@ -926,7 +927,7 @@ int checkupdatechannel(chanpropnode *achan, char *rss_version)
       free(tmpstr);
       return 0;
     }
-    sprintf(udsql,"UPDATE Channel SET Documentation = '%s' WHERE Channel_ID = %lu;",tmpstr,achan->dbcid);
+    sprintf(udsql,"UPDATE Channel SET Documentation = '%s' WHERE Channel_ID = %llu;",tmpstr,achan->dbcid);
     free(tmpstr);
     rc = sqlite3_exec(db,udsql,NULL,0,&anerrmsg);
     if (rc != SQLITE_OK && rc != SQLITE_DONE && rc != SQLITE_ROW)
@@ -955,7 +956,7 @@ int checkupdatechannel(chanpropnode *achan, char *rss_version)
       free(tmpstr);
       return 0;
     }
-    sprintf(udsql,"UPDATE Channel SET RSS_Version = '%s' WHERE Channel_ID = %lu;",tmpstr,achan->dbcid);
+    sprintf(udsql,"UPDATE Channel SET RSS_Version = '%s' WHERE Channel_ID = %llu;",tmpstr,achan->dbcid);
     free(tmpstr);
     rc = sqlite3_exec(db,udsql,NULL,0,&anerrmsg);
     if (rc != SQLITE_OK && rc != SQLITE_DONE && rc != SQLITE_ROW)
@@ -984,7 +985,7 @@ int checkupdatechannel(chanpropnode *achan, char *rss_version)
       free(tmpstr);
       return 0;
     }
-    sprintf(udsql,"UPDATE Channel SET TTL = %s WHERE Channel_ID = %lu;",tmpstr,achan->dbcid);
+    sprintf(udsql,"UPDATE Channel SET TTL = %s WHERE Channel_ID = %llu;",tmpstr,achan->dbcid);
     free(tmpstr);
     rc = sqlite3_exec(db,udsql,NULL,0,&anerrmsg);
     if (rc != SQLITE_OK && rc != SQLITE_DONE && rc != SQLITE_ROW)
@@ -1013,7 +1014,7 @@ int checkupdatechannel(chanpropnode *achan, char *rss_version)
       free(tmpstr);
       return 0;
     }
-    sprintf(udsql,"UPDATE Channel SET Image_URL = '%s' WHERE Channel_ID = %lu;",tmpstr,achan->dbcid);
+    sprintf(udsql,"UPDATE Channel SET Image_URL = '%s' WHERE Channel_ID = %llu;",tmpstr,achan->dbcid);
     free(tmpstr);
     rc = sqlite3_exec(db,udsql,NULL,0,&anerrmsg);
     if (rc != SQLITE_OK && rc != SQLITE_DONE && rc != SQLITE_ROW)
@@ -1042,7 +1043,7 @@ int checkupdatechannel(chanpropnode *achan, char *rss_version)
       free(tmpstr);
       return 0;
     }
-    sprintf(udsql,"UPDATE Channel SET Image_Title = '%s' WHERE Channel_ID = %lu;",tmpstr,achan->dbcid);
+    sprintf(udsql,"UPDATE Channel SET Image_Title = '%s' WHERE Channel_ID = %llu;",tmpstr,achan->dbcid);
     free(tmpstr);
     rc = sqlite3_exec(db,udsql,NULL,0,&anerrmsg);
     if (rc != SQLITE_OK && rc != SQLITE_DONE && rc != SQLITE_ROW)
@@ -1071,7 +1072,7 @@ int checkupdatechannel(chanpropnode *achan, char *rss_version)
       free(tmpstr);
       return 0;
     }
-    sprintf(udsql,"UPDATE Channel SET Image_Link = '%s' WHERE Channel_ID = %lu;",tmpstr,achan->dbcid);
+    sprintf(udsql,"UPDATE Channel SET Image_Link = '%s' WHERE Channel_ID = %llu;",tmpstr,achan->dbcid);
     free(tmpstr);
     rc = sqlite3_exec(db,udsql,NULL,0,&anerrmsg);
     if (rc != SQLITE_OK && rc != SQLITE_DONE && rc != SQLITE_ROW)
@@ -1100,7 +1101,7 @@ int checkupdatechannel(chanpropnode *achan, char *rss_version)
       free(tmpstr);
       return 0;
     }
-    sprintf(udsql,"UPDATE Channel SET Image_Description = '%s' WHERE Channel_ID = %lu;",tmpstr,achan->dbcid);
+    sprintf(udsql,"UPDATE Channel SET Image_Description = '%s' WHERE Channel_ID = %llu;",tmpstr,achan->dbcid);
     free(tmpstr);
     rc = sqlite3_exec(db,udsql,NULL,0,&anerrmsg);
     if (rc != SQLITE_OK && rc != SQLITE_DONE && rc != SQLITE_ROW)
@@ -1129,7 +1130,7 @@ int checkupdatechannel(chanpropnode *achan, char *rss_version)
       free(tmpstr);
       return 0;
     }
-    sprintf(udsql,"UPDATE Channel SET Image_Width = %s WHERE Channel_ID = %lu;",tmpstr,achan->dbcid);
+    sprintf(udsql,"UPDATE Channel SET Image_Width = %s WHERE Channel_ID = %llu;",tmpstr,achan->dbcid);
     free(tmpstr);
     rc = sqlite3_exec(db,udsql,NULL,0,&anerrmsg);
     if (rc != SQLITE_OK && rc != SQLITE_DONE && rc != SQLITE_ROW)
@@ -1158,7 +1159,7 @@ int checkupdatechannel(chanpropnode *achan, char *rss_version)
       free(tmpstr);
       return 0;
     }
-    sprintf(udsql,"UPDATE Channel SET Image_Height = %s WHERE Channel_ID = %lu;",tmpstr,achan->dbcid);
+    sprintf(udsql,"UPDATE Channel SET Image_Height = %s WHERE Channel_ID = %llu;",tmpstr,achan->dbcid);
     free(tmpstr);
     rc = sqlite3_exec(db,udsql,NULL,0,&anerrmsg);
     if (rc != SQLITE_OK && rc != SQLITE_DONE && rc != SQLITE_ROW)
@@ -1190,7 +1191,7 @@ int preparechancatstatement()
   return 1;
 }
 
-int addchancat(unsigned long channelid, catnode *acat)
+int addchancat(unsigned long long channelid, catnode *acat)
 {
   if (acat == NULL) return 0;
   if (acat->type != channel_cat) return 0;
@@ -1256,7 +1257,7 @@ int prepareitemcatstatement()
   return 1;
 }
 
-int additemcat(unsigned long itemid, catnode *acat)
+int additemcat(unsigned long long itemid, catnode *acat)
 {
   if (acat == NULL) return 0;
   if (acat->type != item_cat) return 0;
@@ -1342,8 +1343,8 @@ int prepareitemstatementnotdownloaded()
   return 1;
 }
 
-unsigned long additemdled(itempropnode *anitem, unsigned long chanid, char *ofn, 
-                          char *thefn)
+unsigned long long additemdled(itempropnode *anitem, unsigned long long chanid, 
+                               char *ofn, char *thefn)
 {
   int rc = 0;
   if (ofn == NULL || thefn == NULL || chanid == 0 || anitem == NULL) return 0;
@@ -1462,7 +1463,7 @@ unsigned long additemdled(itempropnode *anitem, unsigned long chanid, char *ofn,
   /* Get itemid */
   char giidsql[] = "SELECT Item_ID FROM Item WHERE ROWID=last_insert_rowid();";
   char *anerrmsg;
-  passbackul = 0;
+  passbackull = 0;
   rc = sqlite3_exec(db,giidsql,callback_giid,0,&anerrmsg);
   if (rc != SQLITE_OK && rc != SQLITE_DONE && rc != SQLITE_ROW)
   {
@@ -1472,13 +1473,14 @@ unsigned long additemdled(itempropnode *anitem, unsigned long chanid, char *ofn,
     return 0;
   }
   
-  if (passbackul == 0) return 0;
-  anitem->dbiid = passbackul;
+  if (passbackull == 0) return 0;
+  anitem->dbiid = passbackull;
   
-  return passbackul;
+  return passbackull;
 }
 
-unsigned long additemndled(itempropnode *anitem, unsigned long chanid, char *ofn)
+unsigned long long additemndled(itempropnode *anitem, unsigned long long chanid, 
+                                char *ofn)
 {
   int rc = 0;
   if (chanid == 0 || anitem == NULL) return 0;
@@ -1591,7 +1593,7 @@ unsigned long additemndled(itempropnode *anitem, unsigned long chanid, char *ofn
   /* Get itemid */
   char giidsql[] = "SELECT Item_ID FROM Item WHERE ROWID=last_insert_rowid();";
   char *anerrmsg;
-  passbackul = 0;
+  passbackull = 0;
   rc = sqlite3_exec(db,giidsql,callback_giid,0,&anerrmsg);
   if (rc != SQLITE_OK && rc != SQLITE_DONE && rc != SQLITE_ROW)
   {
@@ -1601,10 +1603,10 @@ unsigned long additemndled(itempropnode *anitem, unsigned long chanid, char *ofn
     return 0;
   }
   
-  if (passbackul == 0) return 0;
-  anitem->dbiid = passbackul;
+  if (passbackull == 0) return 0;
+  anitem->dbiid = passbackull;
   
-  return passbackul;
+  return passbackull;
 }
 
 void finaliseitemdlstatement()
@@ -1636,7 +1638,7 @@ int prepareuditemdlstatement()
   return 1;
 }
 
-int updateitemdownloaded(char *filename, unsigned long itemid)
+int updateitemdownloaded(char *filename, unsigned long long itemid)
 {
   if (uditemdlstmt == NULL) return 0;
   int rc;
@@ -1697,7 +1699,7 @@ int prepareselitemstatement()
   return 1;
 }
 
-int isitemnew(itempropnode *anitem, unsigned long dbchannelid)
+int isitemnew(itempropnode *anitem, unsigned long long dbchannelid)
 {
   /* Returns: 1 if new, 0 if in DB already and -1 on errors */
   if (selitemstmt == NULL) return -1;
@@ -1813,11 +1815,11 @@ void finaliseselitemstatement()
   selitemstmt = NULL;
 }
 
-rssenclosure *getlatestitemenc(unsigned long chanid)
+rssenclosure *getlatestitemenc(unsigned long long chanid)
 {
   /* Returns NULL on OoM or DB Error, or empty enc if none in DB */
   char thesql[1024] = "";
-  sprintf(thesql, "SELECT Enclosure_URL, Enclosure_Length, Enclosure_Type FROM Item WHERE Channel_ID = %lu AND Enclosure_URL NOT NULL ORDER BY strftime('%%s',Item.Publication_Date) DESC LIMIT 1;",chanid);
+  sprintf(thesql, "SELECT Enclosure_URL, Enclosure_Length, Enclosure_Type FROM Item WHERE Channel_ID = %llu AND Enclosure_URL NOT NULL ORDER BY strftime('%%s',Item.Publication_Date) DESC LIMIT 1;",chanid);
   rssenclosure *anenc = NULL;
   anenc = (rssenclosure *) malloc(sizeof(rssenclosure));
   if (anenc == NULL)
@@ -1851,10 +1853,10 @@ rssenclosure *getlatestitemenc(unsigned long chanid)
   return anenc;
 }
 
-char *getlatestitemofn(unsigned long chanid)
+char *getlatestitemofn(unsigned long long chanid)
 { /* Returns NULL on OoM, blank str on no OFN */
   char thesql[1024] = "";
-  sprintf(thesql, "SELECT Original_Filename FROM Item WHERE Channel_ID = %lu AND Enclosure_URL NOT NULL AND Original_Filename NOT NULL ORDER BY strftime('%%s',Item.Publication_Date) DESC LIMIT 1;",chanid);
+  sprintf(thesql, "SELECT Original_Filename FROM Item WHERE Channel_ID = %llu AND Enclosure_URL NOT NULL AND Original_Filename NOT NULL ORDER BY strftime('%%s',Item.Publication_Date) DESC LIMIT 1;",chanid);
   int rc;
   char *anerrmsg = NULL;
   if (passbackstr != NULL) free(passbackstr);
@@ -1880,13 +1882,13 @@ char *getlatestitemofn(unsigned long chanid)
   return astr;
 }
 
-unsigned long getlatestitemid(unsigned long chanid)
+unsigned long long getlatestitemid(unsigned long long chanid)
 {
   char thesql[1024] = "";
-  sprintf(thesql, "SELECT Item_ID FROM Item WHERE Channel_ID = %lu AND Enclosure_URL NOT NULL  ORDER BY strftime('%%s',Item.Publication_Date) DESC LIMIT 1;",chanid);
+  sprintf(thesql, "SELECT Item_ID FROM Item WHERE Channel_ID = %llu AND Enclosure_URL NOT NULL  ORDER BY strftime('%%s',Item.Publication_Date) DESC LIMIT 1;",chanid);
   int rc;
   char *anerrmsg = NULL;
-  passbackul = 0;
+  passbackull = 0;
   rc = sqlite3_exec(db,thesql,callback_giid,NULL,&anerrmsg); /* Reuse callback_giid() */
   if (rc != SQLITE_OK && rc != SQLITE_DONE && rc != SQLITE_ROW)
   {
@@ -1895,10 +1897,10 @@ unsigned long getlatestitemid(unsigned long chanid)
     sqlite3_free(anerrmsg);
     return 0;
   }
-  return passbackul;
+  return passbackull;
 }
 
-unsigned long getchanidfromurl(char *chanurl)
+unsigned long long getchanidfromurl(char *chanurl)
 {
   if (chanurl == NULL) return 0;
   char *safeurl = (char *) malloc(sizeof(char)*2*(1+strlen(chanurl)));
@@ -1917,7 +1919,7 @@ unsigned long getchanidfromurl(char *chanurl)
   }
   sprintf(somesql,"SELECT Channel_ID FROM Channel WHERE Channel_URL = '%s';",safeurl);
   free(safeurl);
-  passbackul = 0;
+  passbackull = 0;
   char *anerrmsg = NULL;
   int rc;
   rc = sqlite3_exec(db,somesql,callback_gcid,NULL,&anerrmsg); /* Reuse the callback_gcid function */
@@ -1931,7 +1933,7 @@ unsigned long getchanidfromurl(char *chanurl)
   }
   
   free(somesql);
-  return passbackul;
+  return passbackull;
 }
 
 
@@ -1970,7 +1972,7 @@ static int callback_glie(void *anenc, int argc, char **argv, char **azColName)
     }
     else if (streq_i(azColName[i], "Enclosure_Length"))
     {
-      theenc->length = atol(argv[i]);
+      theenc->length = atoul(argv[i]);
     }
     else if (streq_i(azColName[i], "Enclosure_Type"))
     {
@@ -2180,7 +2182,7 @@ static int callback_gcid(void *NotUsed, int argc, char **argv, char **azColName)
     if (streq_i(azColName[i],"Channel_ID"))
     {
       /*if (!streq_i(argv[i],"Last Opened")) return 0;*/
-      passbackul = atol(argv[i]);
+      passbackull = atoull(argv[i]);
       return 0;
     }
   }
@@ -2196,7 +2198,7 @@ static int callback_giid(void *NotUsed, int argc, char **argv, char **azColName)
     if (streq_i(azColName[i],"Item_ID"))
     {
       /*if (!streq_i(argv[i],"Last Opened")) return 0;*/
-      passbackul = atol(argv[i]);
+      passbackull = atoull(argv[i]);
       return 0;
     }
   }

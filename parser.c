@@ -3281,9 +3281,9 @@ int parsersstoll(FILE *rf)
                   if (epptr->data[0] == '"' && epptr->data[strlen(epptr->data)-1] == '"')
                   {
                     epptr->data[strlen(epptr->data)-1] = 0;
-                    curitem->enclosure.length = atol(epptr->data+sizeof(char));
+                    curitem->enclosure.length = atoul(epptr->data+sizeof(char));
                   }
-                  else curitem->enclosure.length = atol(epptr->data);
+                  else curitem->enclosure.length = atoul(epptr->data);
 #ifdef DEBUG
                   	printf("Enclosure Length: %s (%d)\n",epptr->data, curitem->enclosure.length);
 #endif
@@ -4816,7 +4816,8 @@ int parsenewchannel(FILE *chf, char *url, int dlcode)
   /* Returns: 1=worked, 0=File reading error, -1=Memory error, -2=Not RSS,
               -3=DB Error, -4=File System Error, -5=Config error */
   int rv = 0;
-  unsigned long dbchanid, llchanid, dbitemid, llitemid;
+  unsigned long long dbchanid, dbitemid;
+  unsigned long llchanid, llitemid;
   if (chf == NULL || url == NULL) return 0;
   if (opendb(1) == 0) return -3;
   rv = parsersstoll(chf);
@@ -4970,8 +4971,8 @@ int parsenewchannel(FILE *chf, char *url, int dlcode)
     
     dbchanid = addchannel(cpptr, url, rssversion, chandir);
 #ifdef DEBUG
-  	printf("ChanID=%lu.\n",dbchanid);
-  	/*fprintf(stderr,"ChanID=%lu.\n",dbchanid);*/
+  	printf("ChanID=%llu.\n",dbchanid);
+  	/*fprintf(stderr,"ChanID=%llu.\n",dbchanid);*/
 #endif
     if (dbchanid == 0)
     {
@@ -5295,7 +5296,7 @@ int parsenewchannel(FILE *chf, char *url, int dlcode)
         }
         dbitemid = getlatestitemid(dbchanid);
 #ifdef DEBUG
-        	printf("Latest item: %lu, '%s'\n",dbitemid,itemofn);
+        	printf("Latest item: %llu, '%s'\n",dbitemid,itemofn);
 #endif
         /* for (ipptr = iproot; ipptr != NULL; ipptr = ipptr->next)
         {
