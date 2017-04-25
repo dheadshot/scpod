@@ -255,6 +255,55 @@ int setconfigsetting(char *setting, char *value)
   return 1;
 }
 
+int listallchannels()
+{
+  char sqlstmt[] = "SELECT Channel_ID, Title FROM Channel;";
+  char *anerrmsg;
+  int rc;
+  passbackul = 0;
+  printf("ID\tTitle\n----------------\n");
+  rc = sqlite3_exec(db, sqlstmt, callback_lac, 0, &anerrmsg);
+  if (rc != SQLITE_OK && rc != SQLITE_DONE && rc != SQLITE_ROW)
+  {
+    dbwriteerror(rc);
+#ifdef DEBUG
+    	printf("rc=%d, %d\n",rc, sqlite3_extended_errcode(db));
+#endif
+    fprintf(stderr, "(Returned Error: %s)\n", anerrmsg);
+    sqlite3_free(anerrmsg);
+    return 0;
+  }
+  if (passbackul == 0) printf("You have not subscribed to any channels!\n");
+  return 1;
+}
+
+int listchannelinfo(unsigned long long channelid)
+{
+  char sqlselstmt[] = "SELECT Channel.Channel_ID, Channel.Title, Channel.Channel_URL, Channel.Link, Channel.Description, Channel.Language_Major, Channel.Language_Minor, Channel.Copyright, Channel.Managing_Editor, Channel.Webmaster, Channel.Publication_Date, Channel.Last_Build_Date, Channel.Generator, Channel.TTL, Channel.Last_Refresh_Date, Channel.Directory Channel_Category.Category, Channel_Category.Domain FROM Channel INNER JOIN Channel_Category ON Channel.Channel_ID = Channel_Category.Channel_ID %s ORDER BY Channel.Channel_ID;";
+  char sqlwherestmt[] = "WHERE Channel_ID = %llu";
+  char wherebit[256] = "";
+  char sqlstmt[1024] = "";
+  char *anerrmsg;
+  int rc;
+  if (channelid != 0) sprintf(wherebit, sqlwherestmt, channelid);
+  sprintf(sqlstmt,sqlselstmt,wherebit);
+  passbackull = 0;
+  rc = sqlite3_exec(db, sqlstmt, callback_lci, 0, &anerrmsg);
+  if (rc != SQLITE_OK && rc != SQLITE_DONE && rc != SQLITE_ROW)
+  {
+    dbwriteerror(rc);
+#ifdef DEBUG
+    	printf("rc=%d, %d\n",rc, sqlite3_extended_errcode(db));
+#endif
+    fprintf(stderr, "(Returned Error: %s)\n", anerrmsg);
+    sqlite3_free(anerrmsg);
+    return 0;
+  }
+  if (passbackull == 0) printf("Channel Not Found!\n");
+  return 1;
+  
+}
+
 int preparechannelstatement()
 {
   char sqlstmt[] = "INSERT INTO Channel (Channel_ID, Channel_URL, Title, Link, Description, Language_Major, Language_Minor, Copyright, Managing_Editor, Webmaster, Publication_Date, Last_Build_Date, Generator, Documentation, RSS_Version, TTL, Image_URL, Image_Title, Image_Link, Image_Description, Image_Width, Image_Height, Last_Refresh_Date, Directory) VALUES (NULL, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, datetime('now'), ?);";
@@ -2132,6 +2181,144 @@ static int callback_gsd(void *NotUsed, int argc, char **argv, char **azColName)
       return 0;
     }
   }
+  return 0;
+  
+}
+
+static int callback_lac(void *NotUsed, int argc, char **argv, char **azColName)
+{ /* List All Channels Callback */
+  int i, sn = 0, dn = 0;
+  for (i=0;i<argc;i++)
+  {
+    if (streq_i(azColName[i],"Channel_id"))
+    {
+      sn = i;
+    }
+    else if (streq_i(azColName[i],"Title"))
+    {
+      dn = i;
+    }
+  }
+  
+  printf("%s\t%s\n", argv[sn], argv[dn]);
+  passbackul = 1;
+  
+  return 0;
+  
+}
+
+static int callback_lci(void *NotUsed, int argc, char **argv, char **azColName)
+{ /* List Channel Info Callback */
+  int i, cn = 0, tn = 0, un = 0, ln = 0, dn = 0, lmjn = 0, lmnn = 0, crn = 0, 
+      men = 0, wn = 0, pdn = 0, lbdn = 0, gn = 0, ttln = 0, lrdn = 0, dirn = 0, 
+      catn = 0, domn = 0, iteration = 0;
+  for (i=0;i<argc;i++)
+  {
+    if (endwith_i(azColName[i],"Channel_id"))
+    {
+      cn = i;
+      if (passbackull == atoull(argv[i])) iteration = 1;
+      else
+      {
+        iteration = 0;
+        passbackull = atoull(argv[i]);
+      }
+    }
+    else if (endwith_i(azColName[i],"Title"))
+    {
+      tn = i;
+    }
+    else if (endwith_i(azColName[i],"Channel_URL"))
+    {
+      un = i;
+    }
+    else if (endwith_i(azColName[i],"Link"))
+    {
+      ln = i;
+    }
+    else if (endwith_i(azColName[i],"Description"))
+    {
+      dn = i;
+    }
+    else if (endwith_i(azColName[i],"Language_Major"))
+    {
+      lmjn = i;
+    }
+    else if (endwith_i(azColName[i],"Language_Minor"))
+    {
+      lmnn = i;
+    }
+    else if (endwith_i(azColName[i],"Copyright"))
+    {
+      crn = i;
+    }
+    else if (endwith_i(azColName[i],"Managing_Editor"))
+    {
+      men = i;
+    }
+    else if (endwith_i(azColName[i],"Webmaster"))
+    {
+      wn = i;
+    }
+    else if (endwith_i(azColName[i],"Publication_Date"))
+    {
+      pdn = i;
+    }
+    else if (endwith_i(azColName[i],"Last_Build_Date"))
+    {
+      lbdn = i;
+    }
+    else if (endwith_i(azColName[i],"Generator"))
+    {
+      gn = i;
+    }
+    else if (endwith_i(azColName[i],"TTL"))
+    {
+      ttln = i;
+    }
+    else if (endwith_i(azColName[i],"Last_Refresh_Date"))
+    {
+      lrdn = i;
+    }
+    else if (endwith_i(azColName[i],"Directory"))
+    {
+      dirn = i;
+    }
+    else if (endwith_i(azColName[i],"Category"))
+    {
+      catn = i;
+    }
+    else if (endwith_i(azColName[i],"Domain"))
+    {
+      domn = i;
+    }
+  }
+  
+  if (iteration == 0)
+  {
+    printf("\n%s\t%s\n  URL: %s\n  Link: %s\n", argv[cn], argv[tn], argv[un], argv[ln]);
+    printf("  Description: %s\n", argv[dn]);
+    if (argv[lmjn] != NULL && argv[lmjn][0] != 0) printf("  Language: %s",argv[lmjn]);
+    if (argv[lmnn] != NULL && argv[lmnn][0] != 0) printf("-%s\n",argv[lmnn]);
+    else if (argv[lmjn] != NULL && argv[lmjn][0] != 0) printf("\n");
+    if (argv[crn] != NULL && argv[crn][0] != 0) printf("  Copyright: %s",argv[crn]);
+    if (argv[men] != NULL && argv[men][0] != 0) printf("  Managing Editor: %s",argv[men]);
+    if (argv[wn] != NULL && argv[wn][0] != 0) printf("  Webmaster: %s",argv[wn]);
+    if (argv[pdn] != NULL && argv[pdn][0] != 0) printf("  Publication Date: %s",argv[pdn]);
+    if (argv[lbdn] != NULL && argv[lbdn][0] != 0) printf("  Last Build Date: %s",argv[lbdn]);
+    if (argv[gn] != NULL && argv[gn][0] != 0) printf("  Generator: %s",argv[gn]);
+    if (argv[ttln] != NULL && argv[ttln][0] != 0) printf("  Time To Live: %s minute(s)",argv[ttln]);
+    if (argv[lrdn] != NULL && argv[lrdn][0] != 0) printf("  Last Update: %s",argv[lrdn]);
+    if (argv[dirn] != NULL && argv[dirn][0] != 0) printf("  Directory: %s",argv[dirn]);
+    printf("  Categories:\n");
+  }
+  if (argv[catn] != NULL && argv[catn][0] != 0)
+  {
+    printf("  *\t%s",argv[catn]);
+    if (argv[domn] != NULL && argv[domn][0] != 0) printf(" (of domain %s)",argv[domn]);
+    printf("\n");
+  }
+  
   return 0;
   
 }

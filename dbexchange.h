@@ -16,6 +16,8 @@ int preparecsstatement(char *setting); /* Run this before setting a config setti
 int setconfigsetting(char *setting, char *value);
 char *getsettingdata(char *setting);
 int writecsview(char *setting);
+int listallchannels();
+int listchannelinfo(unsigned long long channelid);
 int preparechannelstatement(); /* Run this before adding any channels */
 unsigned long long addchannel(chanpropnode *achan, char *chanurl, 
                               char *rss_version, char *directory);
@@ -48,6 +50,8 @@ unsigned long long getchanidfromurl(char *chanurl);
 static int callback_glio(void *NotUsed, int argc, char **argv, char **azColName);
 static int callback_glie(void *anenc, int argc, char **argv, char **azColName);
 static int callback_cuc(void *achan, int argc, char **argv, char **azColName);
+static int callback_lac(void *NotUsed, int argc, char **argv, char **azColName);
+static int callback_lci(void *NotUsed, int argc, char **argv, char **azColName);
 static int callback_csview(void *NotUsed, int argc, char **argv, char **azColName);
 static int callback_gsd(void *NotUsed, int argc, char **argv, char **azColName);
 static int callback_csset(void *NotUsed, int argc, char **argv, char **azColName);
