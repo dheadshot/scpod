@@ -9,6 +9,6 @@ int newfilename(char *outfilename, char *inpath, char *infilename, char *inext);
 int domkdir(char *directory);
 void makevalidfilename(char *outfn, char *infn);
 int mkchandir(char *outdir, char *channame); /* Makes channel dir and outputs name to outdir */
-
+long gettimezoneoffset();
 
 #endif

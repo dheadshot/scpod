@@ -5,6 +5,8 @@
 
 #ifdef OS_LINUX
 /* Linux Methods */
+#define _GNU_SOURCE
+#include <time.h>
 #include <unistd.h>
 #include <sys/stat.h>
 #include <sys/types.h>
@@ -14,6 +16,7 @@
 #include <windows.h>
 #include <tchar.h>
 #include <direct.h>
+#include <Winbase.h>
 #else
 /* Other Methods */
 #endif
@@ -440,4 +443,34 @@ int mkchandir(char *outdir, char *channame)
   free(dirsep);
   free(tdirn2);
   return 1;
+}
+
+long gettimezoneoffset()
+{ /* Attempt at getting timezone offset system independently */
+#ifdef OS_LINUX
+  time_t t = time(NULL);
+  struct tm lt = {0};
+  localtime_r(&t, &lt);
+  return ((long) (lt.tm_gmtoff));
+#elif defined(OS_WINDOWS)
+  TIME_ZONE_INFORMATION tzi = {0};
+  DWORD dsinfo = 0;
+  dsinfo = GetTimeZoneInformation(&tzi)
+  if (dsinfo == TIME_ZONE_ID_INVALID)
+  {
+    return 0;
+  }
+  long gmtoff = ((long) tzi.Bias);
+  if (dsinfo == TIME_ZONE_ID_DAYLIGHT)
+  {
+    gmtoff += ((long) (tzi.DaylightBias));
+  }
+  else
+  {
+    gmtoff += ((long) (tzi.StandardBias));
+  }
+  return (gmtoff*60);
+#else
+  return 0;
+#endif
 }

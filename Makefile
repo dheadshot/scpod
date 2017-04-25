@@ -5,7 +5,7 @@ CC = gcc
 DEBUGFLAGS = -DDEBUG
 OSLINUX = -DOS_LINUX
 OSWINDOWS = -DOS_WINDOWS
-WINLIB = -lShlwapi
+WINLIB = -lShlwapi -lKernel32
 LINLIB = 
 
 #Uncomment the below to turn on Debug mode:
