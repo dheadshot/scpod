@@ -16,6 +16,8 @@ int preparecsstatement(char *setting); /* Run this before setting a config setti
 int setconfigsetting(char *setting, char *value);
 char *getsettingdata(char *setting);
 int writecsview(char *setting);
+unsigned long long getchannelidfromtitle(char *title);
+unsigned long long getlatestupdatedchannel();
 int listallchannels();
 int listchannelinfo(unsigned long long channelid);
 int preparechannelstatement(); /* Run this before adding any channels */

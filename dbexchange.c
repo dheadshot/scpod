@@ -255,6 +255,67 @@ int setconfigsetting(char *setting, char *value)
   return 1;
 }
 
+unsigned long long getchannelidfromtitle(char *title)
+{
+  char sqlstmt[] = "SELECT Channel_ID FROM Channel WHERE Title = '%s';";
+  char *stitle, *sqlcode;
+  stitle = (char *) malloc(sizeof(char)*2*(1+strlen(title)));
+  if (stitle == NULL)
+  {
+    fprintf(stderr, "Error: Out of Memory resolving channel title!\n");
+    return 0;
+  }
+  strdsqs(stitle, title);
+  sqlcode = (char *) malloc(sizeof(char)*(256+strlen(stitle)));
+  if (sqlcode == NULL)
+  {
+    fprintf(stderr, "Error: Out of Memory resolving channel title!\n");
+    free(stitle);
+    return 0;
+  }
+  sprintf(sqlcode, sqlstmt, stitle);
+  free(stitle);
+  int rc;
+  char *anerrmsg;
+  passbackull = 0;
+  rc = sqlite3_exec(db, sqlcode, callback_gcid, 0, &anerrmsg); /* Reuse callback_gcid */
+  if (rc != SQLITE_OK && rc != SQLITE_DONE && rc != SQLITE_ROW)
+  {
+    dbwriteerror(rc);
+#ifdef DEBUG
+    	printf("rc=%d, %d\n",rc, sqlite3_extended_errcode(db));
+#endif
+    fprintf(stderr, "(Returned Error: %s)\n", anerrmsg);
+    sqlite3_free(anerrmsg);
+    free(sqlcode);
+    return 0;
+  }
+  free(sqlcode);
+  if (passbackull == 0) fprintf(stderr, "Error: Channel '%s' not found!\n", title);
+  return passbackull;
+}
+
+unsigned long long getlatestupdatedchannel()
+{
+  char sqlstmt[] = "SELECT Channel_ID FROM Channel ORDER BY strftime('%s', Last_Refresh_Date) DESC LIMIT 1;";
+  char *anerrmsg;
+  int rc;
+  passbackull = 0;
+  rc = sqlite3_exec(db, sqlstmt, callback_gcid, 0, &anerrmsg); /* Reuse callback_gcid */
+  if (rc != SQLITE_OK && rc != SQLITE_DONE && rc != SQLITE_ROW)
+  {
+    dbwriteerror(rc);
+#ifdef DEBUG
+    	printf("rc=%d, %d\n",rc, sqlite3_extended_errcode(db));
+#endif
+    fprintf(stderr, "(Returned Error: %s)\n", anerrmsg);
+    sqlite3_free(anerrmsg);
+    return 0;
+  }
+  if (passbackull == 0) fprintf(stderr, "Error: No channels found!\n");
+  return passbackull;
+}
+
 int listallchannels()
 {
   char sqlstmt[] = "SELECT Channel_ID, Title FROM Channel;";

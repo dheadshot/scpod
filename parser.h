@@ -138,6 +138,25 @@ typedef struct elementpnode_struct {
 } elementpnode;
 
 
+typedef union chanitemmetaid {
+  char *title;
+  unsigned long long id;
+  int dlcode;
+} ci_identifier_union;
+
+typedef enum ci_id_types_enum {
+  ci_title,
+  ci_dbid,
+  ci_meta,
+  ci_none
+} ci_id_types;
+
+typedef struct ci_identifier_struct {
+  ci_id_types type;
+  ci_identifier_union id;
+} ci_identifier;
+
+
 int createcategory(enum categorytype ctype, unsigned long refid, char *domain, 
                    char *category);
 void freeacatn(catnode *acatn);
@@ -165,6 +184,7 @@ int getencfileext(char *fileext, rssenclosure *enc);
 int parsenewchannel(FILE *chf, char *url, int dlcode);
 /* Returns: 1=worked, 0=File reading error, -1=Memory error, -2=Not RSS, 
             -3=DB Error, -4=File System Error, -5=Config Error */
+int listchanneldetails(ci_identifier *chanident);
 
 
 #endif
