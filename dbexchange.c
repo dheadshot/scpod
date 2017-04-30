@@ -461,7 +461,7 @@ int listiteminfoinchannel(unsigned long long itemid,
     return 0;
   }
   
-  /* ? */
+  if (passbackull == 0) printf("No Items found\n");
   
   return 1;
 }
@@ -2401,7 +2401,7 @@ static int callback_liiic(void *StoChannelID, int argc, char **argv, char **azCo
       else
       {
         citeration = 0;
-        (*((unsigned long long *) StoChannelID)) = atoull(argv[i])
+        (*((unsigned long long *) StoChannelID)) = atoull(argv[i]);
       }
     }
     else if (endwith_i(azColName[i],"Channel.Title"))

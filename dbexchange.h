@@ -57,6 +57,8 @@ static int callback_glio(void *NotUsed, int argc, char **argv, char **azColName)
 static int callback_glie(void *anenc, int argc, char **argv, char **azColName);
 static int callback_cuc(void *achan, int argc, char **argv, char **azColName);
 static int callback_laiic(void *NotUsed, int argc, char **argv, char **azColName);
+static int callback_liiic(void *StoChannelID, int argc, char **argv, char **azColName);
+static int callback_ciliiic(void *NotUsed, int argc, char **argv, char **azColName);
 static int callback_lac(void *NotUsed, int argc, char **argv, char **azColName);
 static int callback_lci(void *NotUsed, int argc, char **argv, char **azColName);
 static int callback_csview(void *NotUsed, int argc, char **argv, char **azColName);
