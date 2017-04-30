@@ -340,7 +340,7 @@ int listallchannels()
 
 int listchannelinfo(unsigned long long channelid)
 {
-  char sqlselstmt[] = "SELECT Channel.Channel_ID, Channel.Title, Channel.Channel_URL, Channel.Link, Channel.Description, Channel.Language_Major, Channel.Language_Minor, Channel.Copyright, Channel.Managing_Editor, Channel.Webmaster, Channel.Publication_Date, Channel.Last_Build_Date, Channel.Generator, Channel.TTL, Channel.Last_Refresh_Date, Channel.Directory Channel_Category.Category, Channel_Category.Domain FROM Channel INNER JOIN Channel_Category ON Channel.Channel_ID = Channel_Category.Channel_ID %s ORDER BY Channel.Channel_ID;";
+  char sqlselstmt[] = "SELECT Channel.Channel_ID, Channel.Title, Channel.Channel_URL, Channel.Link, Channel.Description, Channel.Language_Major, Channel.Language_Minor, Channel.Copyright, Channel.Managing_Editor, Channel.Webmaster, Channel.Publication_Date, Channel.Last_Build_Date, Channel.Generator, Channel.TTL, Channel.Last_Refresh_Date, Channel.Directory Channel_Category.Category, Channel_Category.Domain FROM Channel LEFT JOIN Channel_Category ON Channel.Channel_ID = Channel_Category.Channel_ID %s ORDER BY Channel.Channel_ID;";
   char sqlwherestmt[] = "WHERE Channel_ID = %llu";
   char wherebit[256] = "";
   char sqlstmt[1024] = "";
@@ -363,6 +363,107 @@ int listchannelinfo(unsigned long long channelid)
   if (passbackull == 0) printf("Channel Not Found!\n");
   return 1;
   
+}
+
+int listallitemsinchannel(unsigned long long chanid)
+{
+  char sqlstmt[1024] = "";
+  sprintf(sqlstmt,"SELECT Item_ID, Title FROM Item WHERE Channel_ID = %llu;", chanid);
+  char *anerrmsg;
+  int rc;
+  passbackul = 0;
+  printf("ID\tTitle\n----------------\n");
+  rc = sqlite3_exec(db, sqlstmt, callback_laiic, 0, &anerrmsg);
+  if (rc != SQLITE_OK && rc != SQLITE_DONE && rc != SQLITE_ROW)
+  {
+    dbwriteerror(rc);
+#ifdef DEBUG
+    	printf("rc=%d, %d\n",rc, sqlite3_extended_errcode(db));
+#endif
+    fprintf(stderr, "(Returned Error: %s)\n", anerrmsg);
+    sqlite3_free(anerrmsg);
+    return 0;
+  }
+  if (passbackul == 0) printf("No Items Found!\n");
+  return 1;
+  
+}
+
+int listiteminfoinchannel(unsigned long long itemid, 
+                          unsigned long long channelid, int specdl)
+{ /* Specdl: 0=all, 1=dled, -1=ndled */
+  char sqlstmt[1024] = "";
+  char sqlsubstmt[256] = "";
+  char wheredlstmt[256] = "";
+  char *anerrmsg;
+  int rc;
+  unsigned long long stochanid = 0;
+  if (specdl == 1)
+  {
+    strcpy(wheredlstmt, "AND   Item.Downloaded > 0");
+  }
+  else if (specdl == -1)
+  {
+    strcpy(wheredlstmt, "AND   Item.Downloaded = 0");
+  }
+  if (itemid != 0)
+  {
+    sprintf(sqlstmt, "SELECT Item.Item_ID, Item.Title, Item.Link, Item.Description, Item.Author, Item.Enclosure_Length, Item.GUID, Item.Publication_Date, Item.Source_URL, Item.Source_Name, Item.Downloaded, Item.Downloaded_Date, Item.Filename, Item.Play_Count, Item_Category.Category, Item_Category.Domain FROM Item LEFT JOIN Item_Category ON Item.Item_ID = Item_Category.Item_ID WHERE Item.Item_ID = %llu %s ORDER BY strftime('%%s',Item.Publication_Date) ASC;", itemid, wheredlstmt);
+  }
+  else if (channelid != 0)
+  {
+    sprintf(sqlstmt, "SELECT Item.Item_ID, Item.Title, Item.Link, Item.Description, Item.Author, Item.Enclosure_Length, Item.GUID, Item.Publication_Date, Item.Source_URL, Item.Source_Name, Item.Downloaded, Item.Downloaded_Date, Item.Filename, Item.Play_Count, Item_Category.Category, Item_Category.Domain FROM Item LEFT JOIN Item_Category ON Item.Item_ID = Item_Category.Item_ID WHERE Item.Channel_ID = %llu %s ORDER BY strftime('%%s',Item.Publication_Date) ASC;", channelid, wheredlstmt);
+  }
+  else
+  {
+    if (wheredlstmt[0] != 0)
+    {
+      wheredlstmt[0] = 'W';
+      wheredlstmt[1] = 'H';
+      wheredlstmt[2] = 'E';
+      wheredlstmt[3] = 'R';
+      wheredlstmt[4] = 'E';
+    }
+    sprintf(sqlstmt, "SELECT Channel.Channel_ID, Channel.Title, Item.Item_ID, Item.Title, Item.Link, Item.Description, Item.Author, Item.Enclosure_Length, Item.GUID, Item.Publication_Date, Item.Source_URL, Item.Source_Name, Item.Downloaded, Item.Downloaded_Date, Item.Filename, Item.Play_Count, Item_Category.Category, Item_Category.Domain FROM Channel INNER JOIN Item ON Channel.Channel_ID = Item.Channel_ID LEFT JOIN Item_Category ON Item.Item_ID = Item_Category.Item_ID %s ORDER BY Channel.Channel_ID ASC, strftime('%%s',Item.Publication_Date) ASC;", wheredlstmt);
+  }
+  if (itemid != 0 || channelid != 0)
+  {
+    /* Write some channel info */
+    sprintf(sqlsubstmt, "SELECT Channel_ID, Title FROM Channel WHERE Channel_ID = %llu LIMIT 1;", channelid);
+    passbackul = 0;
+    rc = sqlite3_exec(db, sqlsubstmt, callback_ciliiic, 0, &anerrmsg);
+    if (rc != SQLITE_OK && rc != SQLITE_DONE && rc != SQLITE_ROW)
+    {
+      dbwriteerror(rc);
+#ifdef DEBUG
+      	printf("rc=%d, %d\n",rc, sqlite3_extended_errcode(db));
+#endif
+      fprintf(stderr, "(Returned Error: %s)\n", anerrmsg);
+      sqlite3_free(anerrmsg);
+      return 0;
+    }
+    if (passbackul == 0)
+    {
+      fprintf(stderr,"Error: Channel Not Found!\n");
+      return 0;
+    }
+  }
+  passbackull = 0;
+  rc = sqlite3_exec(db, sqlstmt, callback_liiic, &stochanid, &anerrmsg);
+  if (rc != SQLITE_OK && rc != SQLITE_DONE && rc != SQLITE_ROW)
+  {
+    dbwriteerror(rc);
+#ifdef DEBUG
+    	printf("rc=%d, %d\n",rc, sqlite3_extended_errcode(db));
+#endif
+    fprintf(stderr, "(Returned Error: %s)\n", anerrmsg);
+    sqlite3_free(anerrmsg);
+    return 0;
+  }
+  
+  /* ? */
+  
+  return 1;
 }
 
 int preparechannelstatement()
@@ -2242,6 +2343,214 @@ static int callback_gsd(void *NotUsed, int argc, char **argv, char **azColName)
       return 0;
     }
   }
+  return 0;
+  
+}
+
+static int callback_laiic(void *NotUsed, int argc, char **argv, char **azColName)
+{ /* List All Items In Channel Callback */
+  int i, sn = 0, dn = 0;
+  for (i=0;i<argc;i++)
+  {
+    if (streq_i(azColName[i],"Item_id"))
+    {
+      sn = i;
+    }
+    else if (streq_i(azColName[i],"Title"))
+    {
+      dn = i;
+    }
+  }
+  
+  printf("%s\t%s\n", argv[sn], argv[dn]);
+  passbackul = 1;
+  
+  return 0;
+  
+}
+
+static int callback_liiic(void *StoChannelID, int argc, char **argv, char **azColName)
+{ /* List Item Info In Channel Callback */
+/*  *((unsigned long long *) StoChannelID)*/
+  int i, citeration, iiteration;
+  int cin = -1, ctn = -1, iin = 0, itn = 0, iln = 0, idn = 0, ian = 0, ieln = 0, 
+      ign = 0, ipdn = 0, isun = 0, isnn = 0, idon = 0, idodn = 0, ifn = 0, 
+      ipcn = 0, iccn = 0, icdn = 0;
+/* "SELECT Channel.Channel_ID, Channel.Title, Item.Item_ID, Item.Title, 
+           Item.Link, Item.Description, Item.Author, Item.Enclosure_Length, 
+           Item.GUID, Item.Publication_Date, Item.Source_URL, Item.Source_Name, 
+           Item.Downloaded, Item.Downloaded_Date, Item.Filename, 
+           Item.Play_Count, Item_Category.Category, Item_Category.Domain 
+    FROM Channel INNER JOIN Item ON Channel.Channel_ID = Item.Channel_ID 
+    LEFT JOIN Item_Category ON Item.Item_ID = Item_Category.Item_ID 
+    ORDER BY Channel.Channel_ID ASC, strftime('%s',Item.Publication_Date) ASC;" */
+/* "SELECT Item.Item_ID, Item.Title, Item.Link, Item.Description, Item.Author, 
+           Item.Enclosure_Length, Item.GUID, Item.Publication_Date, 
+           Item.Source_URL, Item.Source_Name, Item.Downloaded, 
+           Item.Downloaded_Date, Item.Filename, Item.Play_Count, 
+           Item_Category.Category, Item_Category.Domain 
+    FROM Item LEFT JOIN Item_Category ON Item.Item_ID = Item_Category.Item_ID 
+    WHERE Item.Channel_ID = %llu 
+    ORDER BY strftime('%s',Item.Publication_Date) ASC;" */
+  for (i=0;i<argc;i++)
+  {
+    if (endwith_i(azColName[i],"Channel_ID"))
+    {
+      cin = i;
+      if ((*((unsigned long long *) StoChannelID)) == atoull(argv[i])) citeration = 1;
+      else
+      {
+        citeration = 0;
+        (*((unsigned long long *) StoChannelID)) = atoull(argv[i])
+      }
+    }
+    else if (endwith_i(azColName[i],"Channel.Title"))
+    {
+      ctn = i;
+    }
+    else if (endwith_i(azColName[i],"Item.Item_ID"))
+    {
+      iin = i;
+      if (passbackull == atoull(argv[i])) iiteration = 1;
+      else
+      {
+        iiteration = 0;
+        passbackull = atoull(argv[i]);
+      }
+    }
+    else if (endwith_i(azColName[i],"Item.Title"))
+    {
+      itn = i;
+    }
+    else if (endwith_i(azColName[i],"Link"))
+    {
+      iln = i;
+    }
+    else if (endwith_i(azColName[i],"Description"))
+    {
+      idn = i;
+    }
+    else if (endwith_i(azColName[i],"Author"))
+    {
+      ian = i;
+    }
+    else if (endwith_i(azColName[i],"Enclosure_Length"))
+    {
+      ieln = i;
+    }
+    else if (endwith_i(azColName[i],"GUID"))
+    {
+      ign = i;
+    }
+    else if (endwith_i(azColName[i],"Publication_Date"))
+    {
+      ipdn = i;
+    }
+    else if (endwith_i(azColName[i],"Source_URL"))
+    {
+      isun = i;
+    }
+    else if (endwith_i(azColName[i],"Source_Name"))
+    {
+      isnn = i;
+    }
+    else if (endwith_i(azColName[i],"Downloaded"))
+    {
+      idon = i;
+    }
+    else if (endwith_i(azColName[i],"Downloaded_Date"))
+    {
+      idodn = i;
+    }
+    else if (endwith_i(azColName[i],"Filename"))
+    {
+      ifn = i;
+    }
+    else if (endwith_i(azColName[i],"Play_Count"))
+    {
+      ipcn = i;
+    }
+    else if (endwith_i(azColName[i],"Item_Category.Category"))
+    {
+      iccn = i;
+    }
+    else if (endwith_i(azColName[i],"Item_Category.Domain"))
+    {
+      icdn = i;
+    }
+    
+  }
+  /* Write it all out here, as before */
+  if (citeration == 0)
+  {
+    /* Channel Details */
+    if (cin >= 0)
+    {
+      printf("Channel %s: ", argv[cin]);
+      if (ctn >= 0 && argv[ctn] != NULL && argv[ctn][0] != 0) printf("- %s",argv[ctn]);
+      printf("\n------------------------------------------------------------------------------\n");
+    }
+  }
+  if (iiteration == 0)
+  {
+    /* Item Details */
+    printf("  Item: %s ", argv[iin]);
+    if (argv[itn] != NULL && argv[itn][0] != 0) printf("- %s",argv[itn]);
+    printf("\n");
+    if (argv[iln] != NULL && argv[iln][0] != 0) printf("    Link: %s\n",argv[iln]);
+    if (argv[idn] != NULL && argv[idn][0] != 0) printf("    Description: %s\n",argv[idn]);
+    if (argv[ian] != NULL && argv[ian][0] != 0) printf("    Author: %s\n",argv[ian]);
+    if (argv[ign] != NULL && argv[ign][0] != 0) printf("    GUID: '%s'\n",argv[ign]);
+    if ((argv[isnn] != NULL && argv[isnn][0] != 0) || (argv[isun] != NULL && argv[isun][0] != 0))
+    {
+      printf("    Source: ");
+      if (argv[isnn] != NULL && argv[isnn][0] != 0) printf("%s ",argv[isnn]);
+      if (argv[isun] != NULL && argv[isun][0] != 0) printf("(%s)",argv[isun]);
+      printf("\n");
+    }
+    if (atol(argv[idon]) > 0)
+    {
+      printf("    Item was downloaded ");
+      if (argv[idodn] != NULL && argv[idodn][0] != 0) printf("on: %s",argv[idodn]);
+      printf("\n");
+      if (argv[ifn] != NULL && argv[ifn][0] != 0) printf("    File Name: %s\n",argv[ifn]);
+      if (argv[ieln] != NULL && argv[ieln][0] != 0) printf("    File Size: %s\n",argv[ieln]);
+      if (argv[ipcn] != NULL && argv[ipcn][0] != 0) printf("    Played %s time(s)\n",argv[ipcn]);
+    }
+    else
+    {
+      printf("    Item not yet downloaded.\n");
+    }
+    printf("    Categories:\n");
+  }
+  /* Item Category Details */
+  if (argv[iccn] != NULL && argv[iccn][0] != 0)
+  {
+    printf("    *\t%s",argv[iccn]);
+    if (argv[icdn] != NULL && argv[icdn][0] != 0) printf(" (%s)", argv[icdn]);
+    printf("\n");
+  }
+}
+
+static int callback_ciliiic(void *NotUsed, int argc, char **argv, char **azColName)
+{ /* List Channel Info for Item Info In Channel Callback */
+  int i, sn = 0, dn = 0;
+  for (i=0;i<argc;i++)
+  {
+    if (streq_i(azColName[i],"Channel_id"))
+    {
+      sn = i;
+    }
+    else if (streq_i(azColName[i],"Title"))
+    {
+      dn = i;
+    }
+  }
+  
+  printf("%s\t%s:\n", argv[sn], argv[dn]);
+  printf("-----------------------------------------------------------------------------\n");
+  passbackul = 1;
+  
   return 0;
   
 }

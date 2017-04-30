@@ -12,6 +12,8 @@
 #define DLCODE_LATEST 1
 #define DLCODE_NEW 2
 #define DLCODE_ALL 3
+#define DLCODE_DOWNLOADED 4
+#define DLCODE_NOTDOWNLOADED 5
 
 #include <stdlib.h>
 #define atoul(x) strtoul(x, NULL, 0)

@@ -20,6 +20,10 @@ unsigned long long getchannelidfromtitle(char *title);
 unsigned long long getlatestupdatedchannel();
 int listallchannels();
 int listchannelinfo(unsigned long long channelid);
+int listallitemsinchannel(unsigned long long chanid);
+int listiteminfoinchannel(unsigned long long itemid, 
+                          unsigned long long channelid, int specdl);
+/* Specdl: 0=all, 1=dled, -1=ndled */
 int preparechannelstatement(); /* Run this before adding any channels */
 unsigned long long addchannel(chanpropnode *achan, char *chanurl, 
                               char *rss_version, char *directory);
@@ -52,6 +56,7 @@ unsigned long long getchanidfromurl(char *chanurl);
 static int callback_glio(void *NotUsed, int argc, char **argv, char **azColName);
 static int callback_glie(void *anenc, int argc, char **argv, char **azColName);
 static int callback_cuc(void *achan, int argc, char **argv, char **azColName);
+static int callback_laiic(void *NotUsed, int argc, char **argv, char **azColName);
 static int callback_lac(void *NotUsed, int argc, char **argv, char **azColName);
 static int callback_lci(void *NotUsed, int argc, char **argv, char **azColName);
 static int callback_csview(void *NotUsed, int argc, char **argv, char **azColName);
