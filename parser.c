@@ -5559,3 +5559,70 @@ int listchanneldetails(ci_identifier *chanident)
   if (listchannelinfo(dbchanid) == 0) return 0;
   return 1;
 }
+
+int listitemdetails(ci_identifier *chanident, ci_identifier *itemident)
+{
+  if (chanident->type == ci_none || (chanident->type == ci_title && chanident->id.title == NULL)) return 0;
+  if (itemident->type == ci_none || (itemident->type == ci_title && itemident->id.title == NULL)) return 0;
+  unsigned long long dbchanid = 0, dbitemid = 0;
+  int specdl = 0;
+  /* Channel */
+  if (chanident->type == ci_dbid) dbchanid = chanident->id.id;
+  else if (chanident->type == ci_title)
+  {
+    dbchanid = getchannelidfromtitle(chanident->id.title);
+    if (dbchanid == 0) return 0;
+  }
+  else if (chanident->type == ci_meta)
+  {
+    if (chanident->id.dlcode == DLCODE_NONE) return 1;
+    else if (chanident->id.dlcode == DLCODE_ALL) dbchanid = 0;
+    else if (chanident->id.dlcode == DLCODE_LATEST)
+    {
+      dbchanid = getlatestupdatedchannel();
+      if (dbchanid == 0) return 0;
+    }
+    else
+    {
+      fprintf(stderr,"Error: Invalid download code!\n");
+      return 0;
+    }
+  }
+  /* Item */
+  if (itemident->type == ci_dbid) dbitemid = itemident->id.id;
+  else if (itemident->type == ci_title)
+  {
+    if (dbchanid == 0)
+    {
+      fprintf(stderr, "Error: Cannot list multiple items by item name!\n");
+      return 0;
+    }
+    dbitemid = getitemidfromtitle(itemident->id.title, dbchanid);
+    if (dbitemid == 0) return 0;
+  }
+  else if (itemident->type == ci_meta)
+  {
+    if (itemident->id.dlcode == DLCODE_NONE) return 1;
+    else if (itemident->id.dlcode == DLCODE_ALL) dbitemid = 0;
+    else if (itemident->id.dlcode == DLCODE_LATEST)
+    {
+      if (dbchanid == 0)
+      {
+        fprintf(stderr,"Error: Cannot list latest items from all channels!  This must be done\nindividually!");
+        return 0;
+      }
+      dbitemid = getlatestiteminchannel(dbchanid);
+      if (dbitemid == 0) return 0;
+    }
+    else if (itemident->id.dlcode == DLCODE_DOWNLOADED) specdl = 1;
+    else if (itemident->id.dlcode == DLCODE_NOTDOWNLOADED) specdl = -1;
+    else
+    {
+      fprintf(stderr,"Error: Invalid download code!\n");
+      return 0;
+    }
+  }
+  
+  if (listiteminfoinchannel(dbitemid, dbchanid, specdl) == 0) return 0;
+  return 1;
+}

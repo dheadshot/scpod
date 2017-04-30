@@ -316,6 +316,70 @@ unsigned long long getlatestupdatedchannel()
   return passbackull;
 }
 
+unsigned long long getitemidfromtitle(char *title, unsigned long long chanid)
+{
+  char sqlstmt[] = "SELECT Item_ID FROM Item WHERE Title = '%s' AND Channel_ID = '%ull' LIMIT 1;";
+  char *stitle, *sqlcode;
+  if (chanid == 0) return 0;
+  stitle = (char *) malloc(sizeof(char)*2*(1+strlen(title)));
+  if (stitle == NULL)
+  {
+    fprintf(stderr, "Error: Out of Memory resolving item title!\n");
+    return 0;
+  }
+  strdsqs(stitle, title);
+  sqlcode = (char *) malloc(sizeof(char)*(512+strlen(stitle)));
+  if (sqlcode == NULL)
+  {
+    fprintf(stderr, "Error: Out of Memory resolving item title!\n");
+    free(stitle);
+    return 0;
+  }
+  sprintf(sqlcode, sqlstmt, stitle, chanid);
+  free(stitle);
+  int rc;
+  char *anerrmsg;
+  passbackull = 0;
+  rc = sqlite3_exec(db, sqlcode, callback_giid, 0, &anerrmsg); /* Reuse callback_giid */
+  if (rc != SQLITE_OK && rc != SQLITE_DONE && rc != SQLITE_ROW)
+  {
+    dbwriteerror(rc);
+#ifdef DEBUG
+    	printf("rc=%d, %d\n",rc, sqlite3_extended_errcode(db));
+#endif
+    fprintf(stderr, "(Returned Error: %s)\n", anerrmsg);
+    sqlite3_free(anerrmsg);
+    free(sqlcode);
+    return 0;
+  }
+  free(sqlcode);
+  if (passbackull == 0) fprintf(stderr, "Error: Item '%s' not found in channel number %ull!\n", title, chanid);
+  return passbackull;
+}
+
+unsigned long long getlatestiteminchannel(unsigned long long chanid)
+{
+  char sqlstmt[384] = "";
+  char *anerrmsg;
+  int rc;
+  if (chanid == 0) return 0;
+  sprintf(sqlstmt,"SELECT Item_ID FROM Item WHERE Channel_ID = %llu ORDER BY strftime('%%s', Publication_Date) DESC LIMIT 1;",chanid);
+  passbackull = 0;
+  rc = sqlite3_exec(db, sqlstmt, callback_giid, 0, &anerrmsg); /* Reuse callback_giid */
+  if (rc != SQLITE_OK && rc != SQLITE_DONE && rc != SQLITE_ROW)
+  {
+    dbwriteerror(rc);
+#ifdef DEBUG
+    	printf("rc=%d, %d\n",rc, sqlite3_extended_errcode(db));
+#endif
+    fprintf(stderr, "(Returned Error: %s)\n", anerrmsg);
+    sqlite3_free(anerrmsg);
+    return 0;
+  }
+  if (passbackull == 0) fprintf(stderr, "Error: No items found in this channel!\n");
+  return passbackull;
+}
+
 int listallchannels()
 {
   char sqlstmt[] = "SELECT Channel_ID, Title FROM Channel;";

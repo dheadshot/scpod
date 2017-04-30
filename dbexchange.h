@@ -18,6 +18,8 @@ char *getsettingdata(char *setting);
 int writecsview(char *setting);
 unsigned long long getchannelidfromtitle(char *title);
 unsigned long long getlatestupdatedchannel();
+unsigned long long getitemidfromtitle(char *title, unsigned long long chanid);
+unsigned long long getlatestiteminchannel(unsigned long long chanid);
 int listallchannels();
 int listchannelinfo(unsigned long long channelid);
 int listallitemsinchannel(unsigned long long chanid);
