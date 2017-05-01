@@ -5560,6 +5560,35 @@ int listchanneldetails(ci_identifier *chanident)
   return 1;
 }
 
+int listchannelitems(ci_identifier *chanident)
+{
+  if (chanident->type == ci_none || (chanident->type == ci_title && chanident->id.title == NULL)) return 0;
+  unsigned long long dbchanid = 0;
+  if (chanident->type == ci_dbid) dbchanid = chanident->id.id;
+  else if (chanident->type == ci_title)
+  {
+    dbchanid = getchannelidfromtitle(chanident->id.title);
+    if (dbchanid == 0) return 0;
+  }
+  else if (chanident->type == ci_meta)
+  {
+    if (chanident->id.dlcode == DLCODE_NONE) return 1;
+    else if (chanident->id.dlcode == DLCODE_ALL) dbchanid = 0;
+    else if (chanident->id.dlcode == DLCODE_LATEST)
+    {
+      dbchanid = getlatestupdatedchannel();
+      if (dbchanid == 0) return 0;
+    }
+    else
+    {
+      fprintf(stderr,"Error: Invalid download code!\n");
+      return 0;
+    }
+  }
+  if (listallitemsinchannel(dbchanid) == 0) return 0;
+  return 1;
+}
+
 int listitemdetails(ci_identifier *chanident, ci_identifier *itemident)
 {
   if (chanident->type == ci_none || (chanident->type == ci_title && chanident->id.title == NULL)) return 0;
@@ -5624,5 +5653,13 @@ int listitemdetails(ci_identifier *chanident, ci_identifier *itemident)
   }
   
   if (listiteminfoinchannel(dbitemid, dbchanid, specdl) == 0) return 0;
+  return 1;
+}
+
+int freeciid(ci_identifier *aciid)
+{
+  if (aciid == NULL) return 0;
+  if (aciid->type == ci_title && aciid->id.title != NULL) free(aciid->id.title);
+  free(aciid);
   return 1;
 }

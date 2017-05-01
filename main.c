@@ -211,12 +211,144 @@ int docmd(char **cmdntsa, int offset)
       return 1;
     }
   }
+  else if (streq_i(cmdntsa[i], "list"))
+  {
+    if (cmdntsa[i+1] == NULL)
+    {
+      fprintf(stderr, "Error: List subcommand not specified - see 'help list' for available\nsubcommands.  List what?\n");
+      return 1;
+    }
+    else if (streq_i(cmdntsa[i+1], "channels"))
+    {
+      /* List all channels */
+      if (opendb(0) == 0)
+      {
+        fprintf(stderr, "Error: Could not open database!\n");
+        closedb();
+        return 2;
+      }
+      if (listallchannels() == 1)
+      {
+        closedb();
+        return 0;
+      }
+      closedb();
+      return 2;
+    }
+    else if (streq_i(cmdntsa[i+1], "channel"))
+    {
+      /* List channel <channel identifier> */
+      if (cmdntsa[i+2] == NULL)
+      {
+        fprintf(stderr,"Error: Channel Identifier not specified - see 'help list channel' for details.\nList which channel?");
+        return 1;
+      }
+      else
+      {
+        /* list channel n - do this in a subfunction */
+        return listchannelarg(cmdntsa[i+2]);
+      }
+    }
+    else if (streq_i(cmdntsa[i+2], "items"))
+    {
+      /* List items in channel <channel identifier> */
+      if (cmdntsa[i+2] == NULL)
+      {
+        fprintf(stderr,"Error: Subcommand 'in' not specified - see 'help list items' for details.\n");
+        return 1;
+      }
+      else if (streq_i(cmdntsa[i+2], "in"))
+      {
+        if (cmdntsa[i+3] == NULL)
+        {
+          fprintf(stderr,"Error: Subcommand 'channel' not specified - see 'help list items' for details.  List items in where?\n");
+          return 1;
+        }
+        else if (streq_i(cmdntsa[i+3],"channel"))
+        {
+          if (cmdntsa[i+4] == NULL)
+          {
+            fprintf(stderr,"Error: Channel Identifier not specified - see 'help list items' for details.\nList items in which channel?\n");
+            return 1;
+          }
+          else
+          {
+            /* List Items in channel n - deal with this in a subfunction */
+            return listitemsinchannelarg(cmdntsa[i+4]);
+          }
+        }
+        else
+        {
+          fprintf(stderr,"Error: Unknown subcommand '%s' - should be 'channel'.  See 'help list items'\nfor details.  List items in where?\n",cmdntsa[i+3]);
+          return 1;
+        }
+      }
+      else
+      {
+        fprintf(stderr,"Error: Unknown subcommand '%s' - should be 'in'.  See 'help list items' for\ndetails.\n",cmdntsa[i+2]);
+        return 1;
+      }
+    }
+    else if (streq_i(cmdntsa[i+2], "item"))
+    {
+      /* List item <item identifier> in channel <channel identifier> */
+      if (cmdntsa[i+2] == NULL)
+      {
+        fprintf(stderr,"Error: Item Identifier not specified - see 'help list item' for details.  List\nwhich item?\n");
+        return 1;
+      }
+      else
+      {
+        if (cmdntsa[i+3] == NULL)
+        {
+          fprintf(stderr, "Error: Subcommand 'in' not specified - see 'help list item' for details.\n");
+          return 1;
+        }
+        else if (streq_i(cmdntsa[i+3],"in"))
+        {
+          if (cmdntsa[i+4] == NULL)
+          {
+            fprintf(stderr, "Error: Subcommand 'channel' not specified - see 'help list item' for details.\nList item in where?\n");
+            return 1;
+          }
+          else if (streq_i(cmdntsa[i+4],"channel"))
+          {
+            if (cmdntsa[i+5] == NULL)
+            {
+              fprintf(stderr, "Error: Channel Identifier not specified - see 'help list item' for details.\nList item in where?\n");
+              return 1;
+            }
+            else
+            {
+              /* List item x in y - Deal with this in a subfunction */
+              return listitemarginchannelarg(cmdntsa[i+2],cmdntsa[i+5]);
+            }
+          }
+          else
+          {
+            fprintf(stderr, "Error: Unknown subcommand '%s', subcommand 'channel' expected - see\n'help list item' for details.  List item in where?\n", cmdntsa[i+4]);
+            return 1;
+          }
+        }
+        else
+        {
+          fprintf(stderr, "Error: Unknown subcommand '%s', subcommand 'in' expected - see 'help list item'\nfor details.\n",cmdntsa[i+3]);
+          return 1;
+        }
+      }
+    }
+    else
+    {
+      fprintf(stderr,"Error: Unknown subcommand '%s' - see 'help list' for details.\n", cmdntsa[i+2]);
+      return 1;
+    }
+  }
   else if (streq_i(cmdntsa[i], "help"))
   {
     if (cmdntsa[i+1] == NULL || (cmdntsa[i+2] == NULL && streq_i(cmdntsa[i+1], "help")))
     {
       printf("Use the command 'help <command>' where '<command>' is a command you want to\nunderstand.\n");
-      printf("Commands:\n*\ttest\n*\tconfigure\n*\tsubscribe\n*\thelp\n");
+      printf("Commands:\n*\ttest\n*\tconfigure\n*\tsubscribe\n*\tlist\n*\thelp\n");
       return 0;
     }
     else if (streq_i(cmdntsa[i+1], "test"))
@@ -381,9 +513,42 @@ int docmd(char **cmdntsa, int offset)
         return 1;
       }
     }
+    else if (streq_i(cmdntsa[i+1], "list"))
+    {
+      if (cmdntsa[i+2] == NULL)
+      {
+        printf("List:\n  List channels or items in a channel.\n  Subcommands:\n*\tchannels\n*\tchannel\n*\titems\n*\titem\n");
+        return 0;
+      }
+      else if (streq_i(cmdntsa[i+2],"channels"))
+      {
+        printf("List Channels:\n  Lists all the channels to which you have subscribed.  This subcommand takes\nno arguments.\n");
+        return 0;
+      }
+      else if (streq_i(cmdntsa[i+2],"channel"))
+      {
+        printf("List Channel:\n  This lists the details of a specific channel.  The syntax of this command is\n'list channel <channel identifier>', where '<channel identifier>' is the\nidentifier of the channel.  This can be:\n*\tThe Channel Title (if this begins with an exclamation mark ('!'),\n\tdouble the exclamation mark to escape it; e.g. '!title' becomes\n\t'!!title').\n*\tAn exclamation mark ('!') followed by the number of the channel (as\n\twritten next to the channel title in the output of the 'list channels'\n\tcommand), e.g. '!1'.\n*\tThe special code '!LATEST', meaning the channel to have been last\n\tupdated.\n*\tThe special code '!ALL', meaning to list all channels providing details\n\ton each.\n");
+        return 0;
+      }
+      else if (streq_i(cmdntsa[i+2],"items"))
+      {
+        printf("List Items In Channel:\n  This lists the items in a specific channel.  The syntax of this command is\n'list items in channel <channel identifier>', where '<channel identifier>' is\nthe identifier of the channel containing the items.  This can be:\n*\tThe Channel Title (if this begins with an exclamation mark ('!'),\n\tdouble the exclamation mark to escape it; e.g. '!title' becomes\n\t'!!title').\n*\tAn exclamation mark ('!') followed by the number of the channel (as\n\twritten next to the channel title in the output of the 'list channels'\n\tcommand), e.g. '!1'.\n*\tThe special code '!LATEST', meaning the channel to have been last\n\tupdated.\n*\tThe special code '!ALL', meaning to list all channels providing details\n\ton each.\n");
+        return 0;
+      }
+      else if (streq_i(cmdntsa[i+2],"item"))
+      {
+        printf("List (Specific) Item In Channel:\n  This lists the details of a specific item in a specific channel.  The syntax\nof this command is:\n'list item <item identifier> in channel <channel identifier>', where\n'<item identifier>' is the identifier of the item on which to provide details\nand '<channel identifier>' is the identifier of the channel containing the\nitems.  The Item Identifier can be:\n*\tThe Item Title (if it begins with an exclamation mark ('!'),\n\twrite the exclamation mark twice to escape it; e.g. '!title' becomes\n\t'!!title').\n*\tAn exclamation mark ('!') followed by the number of the item (as written\n\tnext to the title of the item in the output of the\n\t'list items in channel <channel identifier>' command), e.g. '!1'\n*\tThe special code '!LATEST', meaning the item in the channel with the\n\tmost recent publication date.\n*\tThe special code '!DOWNLOADED', meaning to list details on all the\n\titems in the specified channel(s) that have been downloaded.\n*\tThe special code '!NOTDOWNLOADED', meaning to list details on all the\n\titems in the specified channel(s) that have not yet been downloaded.\n*\tThe special code '!ALL', meaning to list all items in the specified\n\tchannel(s) and provide details on each.\n  The output from the last three special codes will be really long and should\nbe piped into a file or a program to break it down.\n  The Channel Identifier can be:\n*\tThe Channel Title (if this begins with an exclamation mark ('!'),\n\tdouble the exclamation mark to escape it; e.g. '!title' becomes\n\t'!!title').\n*\tAn exclamation mark ('!') followed by the number of the channel (as\n\twritten next to the channel title in the output of the 'list channels'\n\tcommand), e.g. '!1'.\n*\tThe special code '!LATEST', meaning the channel to have been last\n\tupdated.\n*\tThe special code '!ALL', meaning to list all channels providing\n\tdetails on each.  This code can only be used with item identifiers of\n\t'!DOWNLOADED', '!NOTDOWNLOADED' and '!ALL'.\n");
+        return 0;
+      }
+      else
+      {
+        fprintf(stderr,"Error: Invalid Help List Command!\n");
+        return 1;
+      }
+    }
     else if (streq_i(cmdntsa[i+1], "help") && cmdntsa[i+2] != NULL)
     {
-      fprintf(stderr, "Error: Too many commands!  Hey, no recursing!\n");
+      fprintf(stderr, "Error: Too many help commands!  Hey, no recursing!\n");
       return 1;
     }
     else
@@ -397,6 +562,7 @@ int docmd(char **cmdntsa, int offset)
     fprintf(stderr, "Error: Unknown Command '%s'!  Use the 'help' command for a command\nlist.\n", cmdntsa[i]);
     return 1;
   }
+  return 1;
 }
 
 int main(int argc, char *argv[])
@@ -405,7 +571,7 @@ int main(int argc, char *argv[])
   {
     printf("Usage:\n\t%s [-q] [{-y | -n}] [-f] <command> [<subcommand>] [<arguments>]\n", argv[0]);
     printf("Flags:\n\t-q\tQuiet Mode\n\t-y\tAnswer 'Yes' to everything\n\t-n\tAnswer 'No' to everything\n\t-f\tForce command\n");
-    printf("Commands:\n*\ttest\n*\tconfigure\n*\tsubscribe\n*\thelp\n");
+    printf("Commands:\n*\ttest\n*\tconfigure\n*\tsubscribe\n*\tlist\n*\thelp\n");
     printf("Test Usage: %s test parser <feed file>\n   Where <feed file> is the file containing the RSS feed.\n", argv[0]);
     return 1;
   }
@@ -747,6 +913,181 @@ int dosubscribe(char *url, int dlcode)
   }
   if (isquiet == 0) printf("Operation completed successfully!\n");
   free(feedfn);
+  closedb();
+  return 0;
+}
+
+ci_identifier *argtociid(char *arg)
+{
+  /* Convert an identifier expressed as an argument into an identifier structure */
+  if (arg == NULL || arg[0] == 0 || (arg[0] == '!' && arg[1] == '0'))
+  {
+    fprintf(stderr,"Error: Invalid identifier specified!\n");
+    return NULL;
+  }
+  ci_identifier *aciid = (ci_identifier *) malloc(sizeof(ci_identifier));
+  if (aciid == NULL)
+  {
+    fprintf(stderr,"Error: Out of memory while converting identifier!\n");
+    return NULL;
+  }
+  aciid->type = ci_none;
+  
+  if (arg[0] == '!')
+  {
+    if (arg[1] == '!')
+    {
+      aciid->type = ci_title;
+      aciid->id.title = (char *) malloc(sizeof(char)*(strlen(arg)));
+      if (aciid->id.title == NULL)
+      {
+        fprintf(stderr,"Error: Out of memory while converting identifier!\n");
+        freeciid(aciid);
+        return NULL;
+      }
+      strcpy(aciid->id.title, arg+sizeof(char));
+    }
+    else if (isdigit(arg[1]))
+    {
+      aciid->type = ci_dbid;
+      aciid->id.id = atoull(arg+sizeof(char));
+    }
+    else if (streq_i(arg,"!NONE"))
+    {
+      aciid->type = ci_meta;
+      aciid->id.dlcode = DLCODE_NONE;
+    }
+    else if (streq_i(arg,"!LATEST"))
+    {
+      aciid->type = ci_meta;
+      aciid->id.dlcode = DLCODE_LATEST;
+    }
+    else if (streq_i(arg,"!NEW"))
+    {
+      aciid->type = ci_meta;
+      aciid->id.dlcode = DLCODE_NEW;
+    }
+    else if (streq_i(arg,"!ALL"))
+    {
+      aciid->type = ci_meta;
+      aciid->id.dlcode = DLCODE_ALL;
+    }
+    else if (streq_i(arg,"!DOWNLOADED"))
+    {
+      aciid->type = ci_meta;
+      aciid->id.dlcode = DLCODE_DOWNLOADED;
+    }
+    else if (streq_i(arg,"!NOTDOWNLOADED"))
+    {
+      aciid->type = ci_meta;
+      aciid->id.dlcode = DLCODE_NOTDOWNLOADED;
+    }
+    else
+    {
+      fprintf(stderr,"Error: Unrecognised Identifier code '%s'!\n",arg);
+      freeciid(aciid);
+      return NULL;
+    }
+  }
+  else
+  {
+    aciid->type = ci_title;
+    aciid->id.title = (char *) malloc(sizeof(char)*(1+strlen(arg)));
+    if (aciid->id.title == NULL)
+    {
+      fprintf(stderr,"Error: Out of memory while converting identifier!\n");
+      freeciid(aciid);
+      return NULL;
+    }
+    strcpy(aciid->id.title, arg);
+  }
+  return aciid;
+}
+
+int listchannelarg(char *arg)
+{
+  /* Returns 0 on success */
+  if (opendb(0) == 0)
+  {
+    fprintf(stderr, "Error: Could not open database!\n");
+    closedb();
+    return 2;
+  }
+  ci_identifier *aciid = argtociid(arg);
+  if (aciid == NULL)
+  {
+    closedb();
+    return 1;
+  }
+  if (listchanneldetails(aciid) == 0)
+  {
+    freeciid(aciid);
+    closedb();
+    return 2;
+  }
+  freeciid(aciid);
+  closedb();
+  return 0;
+}
+
+int listitemsinchannelarg(char *arg)
+{
+  /* Returns 0 on success */
+  if (opendb(0) == 0)
+  {
+    fprintf(stderr, "Error: Could not open database!\n");
+    closedb();
+    return 2;
+  }
+  ci_identifier *aciid = argtociid(arg);
+  if (aciid == NULL)
+  {
+    closedb();
+    return 1;
+  }
+  if (listchannelitems(aciid) == 0)
+  {
+    freeciid(aciid);
+    closedb();
+    return 2;
+  }
+  freeciid(aciid);
+  closedb();
+  return 0;
+}
+
+int listitemarginchannelarg(char *itemarg, char *chanarg)
+{
+  /* Returns 0 on success */
+  if (opendb(0) == 0)
+  {
+    fprintf(stderr, "Error: Could not open database!\n");
+    closedb();
+    return 2;
+  }
+  ci_identifier *itemciid = NULL, *chanciid = NULL;
+  itemciid = argtociid(itemarg);
+  if (itemciid == NULL)
+  {
+    closedb();
+    return 1;
+  }
+  chanciid = argtociid(chanarg);
+  if (chanciid == NULL)
+  {
+    freeciid(itemciid);
+    closedb();
+    return 1;
+  }
+  if (listitemdetails(chanciid, itemciid) == 0)
+  {
+    freeciid(chanciid);
+    freeciid(itemciid);
+    closedb();
+    return 2;
+  }
+  freeciid(chanciid);
+  freeciid(itemciid);
   closedb();
   return 0;
 }
