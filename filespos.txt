@@ -1,0 +1,8 @@
+"Where did I leave off?"
+==========================
+
+File	Line	Column
+-------------------------
+main.c	277	53
+Database_Design.md	212	1
+buglefeed.xml	---	--- (less, so at point of "        <![CDATA[The last 22 weeks have contained a lot of news, too much even f")
