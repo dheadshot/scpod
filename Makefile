@@ -19,9 +19,11 @@ OSLIB = ${LINLIB}
 
 dochip: scpod
 	mv *.o scpod chip/
+	cp scpoddb.bin chip/
 
 dox86linux: scpod
 	mv *.o scpod x86linux/
+	cp scpoddb.bin x86linux/
 
 scpod: main.o sfuncs.o parser.o dbexchange.o extprgfuncs.o
 	${CC} ${DCFLAGS} ${OSDEF} main.o sfuncs.o parser.o dbexchange.o extprgfuncs.o -lsqlite3 ${OSLIB} -o scpod
