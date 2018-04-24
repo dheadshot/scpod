@@ -17,6 +17,12 @@ OSDEF = ${OSLINUX}
 #Change the below to WINLIB from LINLIB to compile in Windows:
 OSLIB = ${LINLIB}
 
+dochip: scpod
+	mv *.o scpod chip/
+
+dox86linux: scpod
+	mv *.o scpod x86linux/
+
 scpod: main.o sfuncs.o parser.o dbexchange.o extprgfuncs.o
 	${CC} ${DCFLAGS} ${OSDEF} main.o sfuncs.o parser.o dbexchange.o extprgfuncs.o -lsqlite3 ${OSLIB} -o scpod
 	chmod +x scpod
