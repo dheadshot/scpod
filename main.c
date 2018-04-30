@@ -935,7 +935,7 @@ ci_identifier *argtociid(char *arg)
   
   if (arg[0] == '!')
   {
-    if (arg[1] == '!')
+    if (arg[1] == '!') /* "!!" at beginning means title starts with "!" (escaped). */
     {
       aciid->type = ci_title;
       aciid->id.title = (char *) malloc(sizeof(char)*(strlen(arg)));
@@ -947,7 +947,7 @@ ci_identifier *argtociid(char *arg)
       }
       strcpy(aciid->id.title, arg+sizeof(char));
     }
-    else if (isdigit(arg[1]))
+    else if (isdigit(arg[1])) /* "!(num)" means id of (num).*/
     {
       aciid->type = ci_dbid;
       aciid->id.id = atoull(arg+sizeof(char));
