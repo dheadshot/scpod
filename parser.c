@@ -5135,7 +5135,7 @@ int parsenewchannel(FILE *chf, char *url, int dlcode)
             }
             else
             {
-              newestitem = ipptr;
+              newestitem = ipptr; /* Why don't we actually use this?! */
             }
           }
           else if (dlcode == DLCODE_NEW || dlcode == DLCODE_ALL)
@@ -5255,7 +5255,7 @@ int parsenewchannel(FILE *chf, char *url, int dlcode)
     /* Download Latest Item if appropriate */
     if (dlcode == DLCODE_LATEST)
     {
-      latestenc = getlatestitemenc(dbchanid);
+      latestenc = getlatestitemenc(dbchanid); /* Why aren't we using the newestitem pointer here?! */
       if (latestenc == NULL)
       {
         fprintf(stderr,"Error downloading latest item - Out of Memory!\n");
