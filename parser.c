@@ -3742,6 +3742,12 @@ int getencfileext(char *fileext, rssenclosure *enc)
     {
       /* Resort to type */
     }
+    else if (startswith_i(anext,"mp3@"))
+    {
+      anext[3] = 0;
+      strcpy(fileext, anext);
+      return 1;
+    }
     else
     {
       strcpy(fileext, anext);

@@ -95,6 +95,43 @@ int startsame_i(char *a, char *b)
   return ans;
 }
 
+int startswith_(char *a, char *with)
+{
+  unsigned long al, bl;
+  if (a == NULL || with == NULL) return 0;
+  al = strlen(a);
+  bl = strlen(with);
+  if (al < bl)
+  {
+    return 0;
+  }
+  else
+  {
+    if (memcmp(a,with,bl)==0) return 1;
+  }
+  return 0;
+}
+
+int startswith_i(char *a, char *with)
+{
+  char *ai, *wi;
+  if (a==NULL || with==NULL) return 0;
+  ai = (char *) malloc(sizeof(char)*(1+strlen(a)));
+  if (ai==NULL) return 0;
+  wi = (char *) malloc(sizeof(char)*(1+strlen(with)));
+  if (wi==NULL)
+  {
+    free(ai);
+    return 0;
+  }
+  strtoupper(ai,a);
+  strtoupper(wi,with);
+  int ans = startswith_(ai,wi);
+  free(ai);
+  free(wi);
+  return ans;
+}
+
 int endwith_(char *exstring, char *refstring)
 {
   unsigned long el, rl;
