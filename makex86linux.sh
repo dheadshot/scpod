@@ -1,4 +1,4 @@
-#!/bin/bash
+#!/bin/sh
 if test  -z "$1" -o "$1" = "t"; then
 make dox86linuxtest
 elif test "$1" = "f"; then
