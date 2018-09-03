@@ -809,6 +809,10 @@ int parsersstoll(FILE *rf)
       {
         inelename = 0;
         curelementname[ceni] = 0;
+        if (streq_i(curelementname, "br"))
+        {
+          issingletag = 1;
+        }
         if (!inctag)
         {
           curepn = createelementpnode(curelementname,NULL);

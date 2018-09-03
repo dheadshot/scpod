@@ -404,8 +404,8 @@ int listallchannels()
 
 int listchannelinfo(unsigned long long channelid)
 {
-  char sqlselstmt[] = "SELECT Channel.Channel_ID, Channel.Title, Channel.Channel_URL, Channel.Link, Channel.Description, Channel.Language_Major, Channel.Language_Minor, Channel.Copyright, Channel.Managing_Editor, Channel.Webmaster, Channel.Publication_Date, Channel.Last_Build_Date, Channel.Generator, Channel.TTL, Channel.Last_Refresh_Date, Channel.Directory Channel_Category.Category, Channel_Category.Domain FROM Channel LEFT JOIN Channel_Category ON Channel.Channel_ID = Channel_Category.Channel_ID %s ORDER BY Channel.Channel_ID;";
-  char sqlwherestmt[] = "WHERE Channel_ID = %llu";
+  char sqlselstmt[] = "SELECT Channel.Channel_ID, Channel.Title, Channel.Channel_URL, Channel.Link, Channel.Description, Channel.Language_Major, Channel.Language_Minor, Channel.Copyright, Channel.Managing_Editor, Channel.Webmaster, Channel.Publication_Date, Channel.Last_Build_Date, Channel.Generator, Channel.TTL, Channel.Last_Refresh_Date, Channel.Directory, Channel_Category.Category, Channel_Category.Domain FROM Channel LEFT JOIN Channel_Category ON Channel.Channel_ID = Channel_Category.Channel_ID %s ORDER BY Channel.Channel_ID;";
+  char sqlwherestmt[] = "WHERE Channel.Channel_ID = %llu";
   char wherebit[256] = "";
   char sqlstmt[1024] = "";
   char *anerrmsg;
@@ -420,6 +420,7 @@ int listchannelinfo(unsigned long long channelid)
 #ifdef DEBUG
     	printf("rc=%d, %d\n",rc, sqlite3_extended_errcode(db));
 #endif
+    	printf("Stmt=%s\n",sqlstmt);
     fprintf(stderr, "(Returned Error: %s)\n", anerrmsg);
     sqlite3_free(anerrmsg);
     return 0;
@@ -2735,15 +2736,15 @@ static int callback_lci(void *NotUsed, int argc, char **argv, char **azColName)
     if (argv[lmjn] != NULL && argv[lmjn][0] != 0) printf("  Language: %s",argv[lmjn]);
     if (argv[lmnn] != NULL && argv[lmnn][0] != 0) printf("-%s\n",argv[lmnn]);
     else if (argv[lmjn] != NULL && argv[lmjn][0] != 0) printf("\n");
-    if (argv[crn] != NULL && argv[crn][0] != 0) printf("  Copyright: %s",argv[crn]);
-    if (argv[men] != NULL && argv[men][0] != 0) printf("  Managing Editor: %s",argv[men]);
-    if (argv[wn] != NULL && argv[wn][0] != 0) printf("  Webmaster: %s",argv[wn]);
-    if (argv[pdn] != NULL && argv[pdn][0] != 0) printf("  Publication Date: %s",argv[pdn]);
-    if (argv[lbdn] != NULL && argv[lbdn][0] != 0) printf("  Last Build Date: %s",argv[lbdn]);
-    if (argv[gn] != NULL && argv[gn][0] != 0) printf("  Generator: %s",argv[gn]);
-    if (argv[ttln] != NULL && argv[ttln][0] != 0) printf("  Time To Live: %s minute(s)",argv[ttln]);
-    if (argv[lrdn] != NULL && argv[lrdn][0] != 0) printf("  Last Update: %s",argv[lrdn]);
-    if (argv[dirn] != NULL && argv[dirn][0] != 0) printf("  Directory: %s",argv[dirn]);
+    if (argv[crn] != NULL && argv[crn][0] != 0) printf("  Copyright: %s\n",argv[crn]);
+    if (argv[men] != NULL && argv[men][0] != 0) printf("  Managing Editor: %s\n",argv[men]);
+    if (argv[wn] != NULL && argv[wn][0] != 0) printf("  Webmaster: %s\n",argv[wn]);
+    if (argv[pdn] != NULL && argv[pdn][0] != 0) printf("  Publication Date: %s\n",argv[pdn]);
+    if (argv[lbdn] != NULL && argv[lbdn][0] != 0) printf("  Last Build Date: %s\n",argv[lbdn]);
+    if (argv[gn] != NULL && argv[gn][0] != 0) printf("  Generator: %s\n",argv[gn]);
+    if (argv[ttln] != NULL && argv[ttln][0] != 0) printf("  Time To Live: %s minute(s)\n",argv[ttln]);
+    if (argv[lrdn] != NULL && argv[lrdn][0] != 0) printf("  Last Update: %s\n",argv[lrdn]);
+    if (argv[dirn] != NULL && argv[dirn][0] != 0) printf("  Directory: %s\n",argv[dirn]);
     printf("  Categories:\n");
   }
   if (argv[catn] != NULL && argv[catn][0] != 0)

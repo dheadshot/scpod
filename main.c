@@ -249,7 +249,7 @@ int docmd(char **cmdntsa, int offset)
         return listchannelarg(cmdntsa[i+2]);
       }
     }
-    else if (streq_i(cmdntsa[i+2], "items"))
+    else if (streq_i(cmdntsa[i+1], "items"))
     {
       /* List items in channel <channel identifier> */
       if (cmdntsa[i+2] == NULL)
@@ -289,7 +289,7 @@ int docmd(char **cmdntsa, int offset)
         return 1;
       }
     }
-    else if (streq_i(cmdntsa[i+2], "item"))
+    else if (streq_i(cmdntsa[i+1], "item"))
     {
       /* List item <item identifier> in channel <channel identifier> */
       if (cmdntsa[i+2] == NULL)
