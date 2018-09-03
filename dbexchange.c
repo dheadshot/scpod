@@ -433,11 +433,11 @@ int listchannelinfo(unsigned long long channelid)
 int listallitemsinchannel(unsigned long long chanid)
 {
   char sqlstmt[1024] = "";
-  sprintf(sqlstmt,"SELECT Item_ID, Title FROM Item WHERE Channel_ID = %llu;", chanid);
+  sprintf(sqlstmt,"SELECT Item_ID, Title, Downloaded FROM Item WHERE Channel_ID = %llu;", chanid);
   char *anerrmsg;
   int rc;
   passbackul = 0;
-  printf("ID\tTitle\n----------------\n");
+  printf("ID\tTitle\t\tDownloaded?\n-------------------------------------------------\n");
   rc = sqlite3_exec(db, sqlstmt, callback_laiic, 0, &anerrmsg);
   if (rc != SQLITE_OK && rc != SQLITE_DONE && rc != SQLITE_ROW)
   {
@@ -2414,7 +2414,8 @@ static int callback_gsd(void *NotUsed, int argc, char **argv, char **azColName)
 
 static int callback_laiic(void *NotUsed, int argc, char **argv, char **azColName)
 { /* List All Items In Channel Callback */
-  int i, sn = 0, dn = 0;
+  int i, sn = 0, dn = 0, cn=0;
+  char dnlc = 'Y';
   for (i=0;i<argc;i++)
   {
     if (streq_i(azColName[i],"Item_id"))
@@ -2425,9 +2426,15 @@ static int callback_laiic(void *NotUsed, int argc, char **argv, char **azColName
     {
       dn = i;
     }
+    else if (streq_i(azColName[i],"Downloaded"))
+    {
+      cn = i;
+    }
   }
   
-  printf("%s\t%s\n", argv[sn], argv[dn]);
+  if (streq_(argv[cn],"0")) dnlc = 'N';
+  
+  printf("%s\t%s\t%c\n", argv[sn], argv[dn], dnlc);
   passbackul = 1;
   
   return 0;
