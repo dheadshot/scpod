@@ -211,6 +211,68 @@ int docmd(char **cmdntsa, int offset)
       return 1;
     }
   }
+  else if (streq_i(cmdntsa[i], "download") || streq_i(cmdntsa[i], "dl"))
+  {
+    if (cmdntsa[i+1] == NULL)
+    {
+      fprintf(stderr, "Error: Download subcommand not specified - see 'help download' for available\nsubcommands.  Download what?\n");
+      return 1;
+    }
+    else if (streq_i(cmdntsa[i+1], "channel"))
+    {
+      
+      if (cmdntsa[i+2] == NULL)
+      {
+        fprintf(stderr,"Error: Channel Identifier not specified - see 'help download channel' for\ndetails.  Download from which channel?\n");
+        return 1;
+      }
+      else
+      {
+        if (cmdntsa[i+3] == NULL)
+        {
+          fprintf(stderr, "Error: Subcommand not specified - see 'help download channel' for details.\nDownload what?\n");
+          return 1;
+        }
+        else if (streq_i(cmdntsa[i+3], "none"))
+        {
+          //Download None - do nothing!
+          return 0;
+        }
+        else if (streq_i(cmdntsa[i+3], "latest"))
+        {
+          //Download Latest
+          return downloadchannellatest(cmdntsa[i+2]);
+        }
+        else if (streq_i(cmdntsa[i+3], "all"))
+        {
+          //Download All
+        }
+        else if (streq_i(cmdntsa[i+3], "item"))
+        {
+          //Download a specific item:
+          if (cmdntsa[i+4] == NULL)
+          {
+            fprintf(stderr, "Error: Subcommand not specified - see 'help download channel item' for details.\nDownload which item?\n");
+            return 1;
+          }
+          else
+          {
+            //Download item cmdntsa[i+4]
+          }//Offset 4 Download Channel (chanid) Item __
+        }
+        else
+        {
+          fprintf(stderr,"Error: Unknown subcommand '%s' - see 'help download channel' for details.\n", cmdntsa[i+2]);
+          return 1;
+        }//Offset 3 Download Channel (chanid) __
+      }//Offset 2 Download Channel __
+    }
+    else
+    {
+      fprintf(stderr,"Error: Unknown subcommand '%s' - see 'help download' for details.\n", cmdntsa[i+2]);
+      return 1;
+    }//Offset 1 Download __
+  }
   else if (streq_i(cmdntsa[i], "list"))
   {
     if (cmdntsa[i+1] == NULL)
@@ -1088,6 +1150,40 @@ int listitemarginchannelarg(char *itemarg, char *chanarg)
   }
   freeciid(chanciid);
   freeciid(itemciid);
+  closedb();
+  return 0;
+}
+
+int downloadchannellatest(char *arg)
+{
+  /* Return 0 on success */
+  if (opendb(1) == 0)
+  {
+    fprintf(stderr, "Error: could not open database!\n");
+    closedb();
+    return 1;
+  }
+  ci_identifier *chanciid = argtociid(arg);
+  if (chanciid == NULL)
+  {
+    closedb();
+    return 1;
+  }
+  ci_identifier *itemciid = (ci_identifier *) malloc(sizeof(ci_identifier));
+  if (itemciid == NULL)
+  {
+    fprintf(stderr,"Error: Out of memory while converting identifier!\n");
+    freeciid(chanciid);
+    closedb();
+    return 1;
+  }
+  itemciid->type = ci_meta;
+  itemciid->id.dlcode = DLCODE_LATEST;
+  
+  /* TODO: At this point, call a function to download itemciid of chanciid! */
+  
+  freeciid(itemciid);
+  freeciid(chanciid);
   closedb();
   return 0;
 }
