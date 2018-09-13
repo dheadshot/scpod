@@ -190,5 +190,17 @@ int listchanneldetails(ci_identifier *chanident);
 int listchannelitems(ci_identifier *chanident);
 int listitemdetails(ci_identifier *chanident, ci_identifier *itemident);
 int freeciid(ci_identifier *aciid);
+int getchannelid(ci_identifier *chanident, unsigned long long *channelid);
+/* Returns:  1 = Success and *channelid = the channel id (or 0 for all);
+             0 = Success, but Referred to a None;
+            -1 = Failure, channel doesn't exist;
+            -2 = Failure, bad download code! */
+int getitemid(ci_identifier *itemident, unsigned long long *itemid, 
+              int *specdl, unsigned long long dbchanid);
+  /* Returns:  1 = Success and *channelid = the channel id (or 0 for all);
+               0 = Success, but Referred to a None;
+              -1 = Failure, channel doesn't exist;
+              -2 = Failure, bad download code;
+              -3 = Failure, can't be implemented! */
 
 #endif

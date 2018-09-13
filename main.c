@@ -1154,6 +1154,165 @@ int listitemarginchannelarg(char *itemarg, char *chanarg)
   return 0;
 }
 
+int downloadchannelitemmain(ci_identifier *chanident, ci_identifier *itemident)
+{
+  /* TODO: Finish this! */
+  
+  if (chanident->type == ci_none || (chanident->type == ci_title && chanident->id.title == NULL)
+      || itemident->type == ci_none || (itemident->type == ci_title && itemident->id.title == NULL))
+        return 0;
+  unsigned long long dbchanid = 0, dbitemid = 0;
+  int specdl = 0;
+  /* Channel ID */
+  int retcode = getchannelid(chanident, &dbchanid);
+  if (retcode == 0) return 1;
+  if (retcode < 0) return 0;
+  
+  /* Item ID */
+  retcode = getitemid(itemident, &dbitemid, &specdl, dbchanid);
+  if (retcode == 0) return 1;
+  if (retcode < 0) return 0;
+  
+  /* SQL and DB Stuff */
+  char *wherechantxt = NULL;
+  char *whereitemtxt = NULL;
+  char *wheredownloadedtxt = NULL;
+  if (dbchanid != 0) wherechantxt = "Item.Channel_ID = ?1";
+  if (dbitemid != 0) whereitemtxt = "Item.Item_ID = ?2"
+  if (specdl < 0) wheredownloadedtxt = "Item.Downloaded = 0";
+  else if (specdl > 0) wheredownloadedtxt = "Item.Downloaded = 1";
+  
+  char *sqlendtxt = (char *) malloc(sizeof(char)*201);
+  if (sqlendtxt == NULL)
+  {
+    return -1;
+  }
+  if ((!wherechantxt) && (!whereitemtxt) && (!wheredownloadedtxt))
+  {
+    strcat(sqlendtxt, ";");
+  }
+  else
+  {
+    strcat(sqlendtxt, " WHERE ");
+    retcode = 0;
+    if (wherechantxt)
+    {
+      strcat(sqlendtxt, wherechantxt);
+      retcode++;
+    }
+    if (whereitemtxt)
+    {
+      if (retcode)
+      {
+        strcat(sqlendtxt, " AND ");
+      }
+      strcat(sqlendtxt, whereitemtxt);
+      retcode++;
+    }
+    if (wheredownloadedtxt)
+    {
+      if (retcode)
+      {
+        strcat(sqlendtxt, " AND ");
+      }
+      strcat(sqlendtxt, wheredownloadedtxt);
+      retcode++;
+    }
+    strcat(sqlendtxt, ";");
+  }
+  
+  /* First, let's count the number of items affected */
+  char *sqlcounttxt = (char *) malloc(sizeof(char)*(121+201));
+  if (sqlcounttxt == NULL)
+  {
+    free(sqlendtxt);
+    return -1;
+  }
+  
+  strcpy(sqlcounttxt, "SELECT COUNT(DISTINCT Item.Item_ID) FROM Item LEFT JOIN Channel ON Item.Channel_ID = Channel.Channel_ID");
+  strcat(sqlcounttxt, sqlendtxt);
+  
+  sqlite3 *adb = getdb();
+  sqlite3_stmt *countstmt;
+  
+  retcode = sqlite3_prepare_v2(adb, sqlcounttxt, strlen(sqlcounttxt), &countstmt, NULL);
+  if (retcode != SQLITE_OK)
+  {
+    /* Do something here */
+    
+  }
+  
+  if (wherechantxt)
+  {
+    retcode = sqlite3_bind_int64(countstmt, 1, (sqlite3_int64) dbchanid);
+    if (retcode != SQLITE_OK)
+    {
+      /* Do something here! */
+    }
+  }
+  
+  if (whereitemtxt)
+  {
+    retcode = sqlite3_bind_int64(countstmt, 2, (sqlite3_int64) dbitemid);
+    if (retcode != SQLITE_OK)
+    {
+      /* Do something here! */
+    }
+  }
+  
+  unsigned long long numitems;
+  
+  retcode = sqlite3_step(countstmt);
+  if (retcode == SQLITE_ROW)
+  {
+    numitems = sqlite3_column_int64(countstmt, 0);
+  }
+  else
+  {
+    /* Do something here! */
+  }
+  
+  retcode = sqlite3_finalize(countstmt);
+  if (retcode != SQLITE_OK)
+  {
+    /* Do something here! */
+  }
+  
+  if (numitems <= 0)
+  {
+    /* Do something important here! */
+  }
+  
+  /* Now, create an array to hold the results of the downloads */
+  
+  typedef struct dlresult_struct
+  {
+    unsigned long long itemid;
+    int downloaded;
+  } dlresult;
+  
+  dlresult *dlres = (dlres *) malloc(sizeof(dlresult)*numitems);
+  if (dlres == NULL)
+  {
+    /* Do something important here! */
+  }
+  
+  memset(dlres, 0, sizeof(dlres)*numitems);
+  
+  /* Next, query the DB, do the downloads and hold the results in the array */
+  
+//  strcpy(sqltxt, "SELECT Item.Item_ID, Item.Channel_ID, Item.Title, Item.Enclosure_URL, Item.Enclosure_Length, Item.Enclosure_Type, Item.Downloaded, Item.Download_Date, Item.Original_Filename, Item.Filename, Channel.Directory, Channel.Title, Channel.Last_Refresh_Date FROM Item LEFT JOIN Channel ON Item.Channel_ID = Channel.Channel_ID";
+  
+  
+  
+  /* Then put the results from the array into the database! */
+  
+  
+  
+  
+  /* Then FINISH! */
+}
+
 int downloadchannellatest(char *arg)
 {
   /* Return 0 on success */
@@ -1179,6 +1338,41 @@ int downloadchannellatest(char *arg)
   }
   itemciid->type = ci_meta;
   itemciid->id.dlcode = DLCODE_LATEST;
+  
+  /* TODO: At this point, call a function to download itemciid of chanciid! */
+  
+  freeciid(itemciid);
+  freeciid(chanciid);
+  closedb();
+  return 0;
+}
+
+int downloadchannelall(char *arg)
+{
+  /* Return 0 on success.  This will actually implement the download of all
+   not downloaded to save time and space */
+  if (opendb(1) == 0)
+  {
+    fprintf(stderr, "Error: could not open database!\n");
+    closedb();
+    return 1;
+  }
+  ci_identifier *chanciid = argtociid(arg);
+  if (chanciid == NULL)
+  {
+    closedb();
+    return 1;
+  }
+  ci_identifier *itemciid = (ci_identifier *) malloc(sizeof(ci_identifier));
+  if (itemciid == NULL)
+  {
+    fprintf(stderr,"Error: Out of memory while converting identifier!\n");
+    freeciid(chanciid);
+    closedb();
+    return 1;
+  }
+  itemciid->type = ci_meta;
+  itemciid->id.dlcode = DLCODE_NOTDOWNLOADED;
   
   /* TODO: At this point, call a function to download itemciid of chanciid! */
   

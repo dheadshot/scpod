@@ -18,6 +18,12 @@ sqlite3_stmt *channelstmt = NULL, *itemdlstmt = NULL, *configstmt = NULL,
              *chancatstmt = NULL, *selitemstmt = NULL, *itemcatstmt = NULL, 
              *itemndlstmt = NULL, *uditemdlstmt = NULL;
 
+sqlite3 *getdb()
+{
+  if (dbisopen) return db;
+  else return NULL;
+}
+
 int opendb(int dolo)
 {
   int isnewdb = 0;
@@ -317,10 +323,12 @@ unsigned long long getlatestupdatedchannel()
 }
 
 unsigned long long getitemidfromtitle(char *title, unsigned long long chanid)
-{
-  char sqlstmt[] = "SELECT Item_ID FROM Item WHERE Title = '%s' AND Channel_ID = '%ull' LIMIT 1;";
+{ //This seems unsafe - TODO: revisit this code!
+  char sqlstmt1[] = "SELECT Item_ID FROM Item WHERE Title = '%s' AND Channel_ID = '%ull' LIMIT 1;";
+  char sqlstmt2[] = "SELECT Item_ID FROM Item WHERE Title = '%s' LIMIT 1;";
+  char *sqlstmt = sqlstmt1;
   char *stitle, *sqlcode;
-  if (chanid == 0) return 0;
+  if (chanid == 0) sqlstmt = sqlstmt2;
   stitle = (char *) malloc(sizeof(char)*2*(1+strlen(title)));
   if (stitle == NULL)
   {
@@ -335,7 +343,8 @@ unsigned long long getitemidfromtitle(char *title, unsigned long long chanid)
     free(stitle);
     return 0;
   }
-  sprintf(sqlcode, sqlstmt, stitle, chanid);
+  if (chanid) sprintf(sqlcode, sqlstmt, stitle, chanid);
+  else sprintf(sqlcode, sqlstmt, stitle);
   free(stitle);
   int rc;
   char *anerrmsg;
@@ -353,7 +362,11 @@ unsigned long long getitemidfromtitle(char *title, unsigned long long chanid)
     return 0;
   }
   free(sqlcode);
-  if (passbackull == 0) fprintf(stderr, "Error: Item '%s' not found in channel number %ull!\n", title, chanid);
+  if (passbackull == 0)
+  {
+    if (chanid) fprintf(stderr, "Error: Item '%s' not found in channel number %ull!\n", title, chanid);
+    else fprintf(stderr, "Error: Item '%s' not found in any channel!\n", title);
+  }
   return passbackull;
 }
 

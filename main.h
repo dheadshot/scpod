@@ -55,7 +55,7 @@ int docmd(char **cmdntsa, int offset);
  * update channel (chanid) download all
  * download channel (chanid) none
  * download channel (chanid) latest		(Started this - it'll call "Download channel (chanid) item (itemid)" 's processing function!
- * download channel (chanid) all
+ * download channel (chanid) all		(Ditto)
  * download channel (chanid) item (itemid)
  * play channel (chanid) none
  * play channel (chanid) latest
@@ -93,6 +93,8 @@ ci_identifier *argtociid(char *arg);
 int listchannelarg(char *arg);
 int listitemsinchannelarg(char *arg);
 int listitemarginchannelarg(char *itemarg, char *chanarg);
+int downloadchannelitemmain(ci_identifier *chanident, ci_identifier *itemident);
 int downloadchannellatest(char *arg); //Doesn't work yet!
+int downloadchannelall(char *arg);    //Doesn't work yet and will actually download not downloaded rather than everything!
 
 #endif

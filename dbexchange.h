@@ -10,6 +10,7 @@
 #endif /* This fixes a bug... */
 
 
+sqlite3 *getdb(); /*TODO: Move statements that use this into the dbexchange! */
 int opendb(int dolo); /* Run this before ANY DB functions! */
 int closedb(); /* Run this at the end of the program */
 int preparecsstatement(char *setting); /* Run this before setting a config setting */

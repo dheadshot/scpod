@@ -5606,7 +5606,7 @@ int listitemdetails(ci_identifier *chanident, ci_identifier *itemident)
   unsigned long long dbchanid = 0, dbitemid = 0;
   int specdl = 0;
   /* Channel */
-  if (chanident->type == ci_dbid) dbchanid = chanident->id.id;
+  /* if (chanident->type == ci_dbid) dbchanid = chanident->id.id;
   else if (chanident->type == ci_title)
   {
     dbchanid = getchannelidfromtitle(chanident->id.title);
@@ -5626,7 +5626,11 @@ int listitemdetails(ci_identifier *chanident, ci_identifier *itemident)
       fprintf(stderr,"Error: Invalid download code!\n");
       return 0;
     }
-  }
+  }*/
+  int retcode = getchannelid(chanident, &dbchanid);
+  if (retcode == 0) return 1;
+  else if (retcode < 0) return 0;
+  
   /* Item */
   if (itemident->type == ci_dbid) dbitemid = itemident->id.id;
   else if (itemident->type == ci_title)
@@ -5671,5 +5675,88 @@ int freeciid(ci_identifier *aciid)
   if (aciid == NULL) return 0;
   if (aciid->type == ci_title && aciid->id.title != NULL) free(aciid->id.title);
   free(aciid);
+  return 1;
+}
+
+int getchannelid(ci_identifier *chanident, unsigned long long *channelid)
+{
+  /* Returns:
+   *  1 = Success and *channelid = the channel id (or 0 for all)
+   *  0 = Success, but Referred to a None 
+   * -1 = Failure, channel doesn't exist
+   * -2 = Failure, bad download code! */
+  if (chanident->type == ci_none) return 0;
+  if (chanident->type == ci_title && chanident->id.title == NULL) return -1;
+  unsigned long long dbchanid = 0;
+  /* Channel */
+  if (chanident->type == ci_dbid) dbchanid = chanident->id.id;
+  else if (chanident->type == ci_title)
+  {
+    dbchanid = getchannelidfromtitle(chanident->id.title);
+    if (dbchanid == 0) return -1;
+  }
+  else if (chanident->type == ci_meta)
+  {
+    if (chanident->id.dlcode == DLCODE_NONE) return 0;
+    else if (chanident->id.dlcode == DLCODE_ALL) dbchanid = 0;
+    else if (chanident->id.dlcode == DLCODE_LATEST)
+    {
+      dbchanid = getlatestupdatedchannel();
+      if (dbchanid == 0) return -1;
+    }
+    else
+    {
+      fprintf(stderr,"Error: Invalid download code!\n");
+      return -2;
+    }
+  }
+  *channelid = dbchanid;
+  return 1;
+}
+
+int getitemid(ci_identifier *itemident, unsigned long long *itemid, 
+              int *specdl, unsigned long long dbchanid)
+{
+  /* Returns:
+   *  1 = Success and *channelid = the channel id (or 0 for all)
+   *  0 = Success, but Referred to a None 
+   * -1 = Failure, channel doesn't exist
+   * -2 = Failure, bad download code! 
+   * -3 = Failure, can't be implemented! */
+  if (itemident->type == ci_none) return 0;
+  if (itemident->type == ci_title && itemident->id.title == NULL) return -1;
+  unsigned long long dbitemid = 0;
+  *specdl = 0;
+  
+  /* Item */
+  if (itemident->type == ci_dbid) dbitemid = itemident->id.id;
+  else if (itemident->type == ci_title)
+  {
+    dbitemid = getitemidfromtitle(itemident->id.title, dbchanid);
+    if (dbitemid == 0) return -1;
+  }
+  else if (itemident->type == ci_meta)
+  {
+    if (itemident->id.dlcode == DLCODE_NONE) return 0;
+    else if (itemident->id.dlcode == DLCODE_ALL) dbitemid = 0;
+    else if (itemident->id.dlcode == DLCODE_LATEST)
+    {
+      if (dbchanid == 0)
+      {
+        fprintf(stderr,"Error: Cannot process latest items from \"all\" channels!  This must be done\nindividually!  If you meant the latest item from the latest updated channel,\nuse its code instead.");
+        return -3;
+      }
+      dbitemid = getlatestiteminchannel(dbchanid);
+      if (dbitemid == 0) return -1;
+    }
+    else if (itemident->id.dlcode == DLCODE_DOWNLOADED) *specdl = 1;
+    else if (itemident->id.dlcode == DLCODE_NOTDOWNLOADED) *specdl = -1;
+    else
+    {
+      fprintf(stderr,"Error: Invalid download code!\n");
+      return -2;
+    }
+  }
+  *itemid = dbitemid;
   return 1;
 }
