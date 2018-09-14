@@ -1154,9 +1154,41 @@ int listitemarginchannelarg(char *itemarg, char *chanarg)
   return 0;
 }
 
+void downloaddberr(int retcode)
+{
+    if (retcode == SQLITE_BUSY || retcode == SQLITE_LOCKED)
+    {
+      fprintf(stderr, " - Database is busy!\n");
+    }
+    else if (retcode == SQLITE_NOMEM || retcode == SQLITE_FULL || retcode == SQLITE_TOOBIG)
+    {
+      fprintf(stderr, " - Out of Memory!\n");
+    }
+    else if (retcode == SQLITE_IOERR || retcode == SQLITE_CANTOPEN)
+    {
+      fprintf(stderr, " - Input/Output Error!\n");
+    }
+    else if (retcode == SQLITE_CORRUPT | retcode == SQLITE_SCHEMA)
+    {
+      fprintf(stderr, " - Database is corrupt or has changed!\n");
+    }
+    else
+    {
+      fprintf(stderr, " - Internal Error!\n");
+    }
+    return;
+}
+
 int downloadchannelitemmain(ci_identifier *chanident, ci_identifier *itemident)
 {
   /* TODO: Finish this! */
+  
+  /* Returns:
+      1 = Success
+      0 = 
+     -1 = OoM
+     -2 = DB Error
+     -3 = Settings error */
   
   if (chanident->type == ci_none || (chanident->type == ci_title && chanident->id.title == NULL)
       || itemident->type == ci_none || (itemident->type == ci_title && itemident->id.title == NULL))
@@ -1233,12 +1265,18 @@ int downloadchannelitemmain(ci_identifier *chanident, ci_identifier *itemident)
   strcat(sqlcounttxt, sqlendtxt);
   
   sqlite3 *adb = getdb();
-  sqlite3_stmt *countstmt;
+  sqlite3_stmt *countstmt = NULL;
   
   retcode = sqlite3_prepare_v2(adb, sqlcounttxt, strlen(sqlcounttxt), &countstmt, NULL);
   if (retcode != SQLITE_OK)
   {
     /* Do something here */
+    fprintf(stderr, "Error: Could not count downloads");
+    downloaddberr(retcode);
+    sqlite3_finalize(countstmt);
+    free(sqlendtxt);
+    free(sqlcounttxt);
+    return -2;
     
   }
   
@@ -1248,6 +1286,12 @@ int downloadchannelitemmain(ci_identifier *chanident, ci_identifier *itemident)
     if (retcode != SQLITE_OK)
     {
       /* Do something here! */
+      fprintf(stderr, "Error: Could not count downloads");
+      downloaddberr(retcode);
+      sqlite3_finalize(countstmt);
+      free(sqlendtxt);
+      free(sqlcounttxt);
+      return -2;
     }
   }
   
@@ -1257,6 +1301,12 @@ int downloadchannelitemmain(ci_identifier *chanident, ci_identifier *itemident)
     if (retcode != SQLITE_OK)
     {
       /* Do something here! */
+      fprintf(stderr, "Error: Could not count downloads");
+      downloaddberr(retcode);
+      sqlite3_finalize(countstmt);
+      free(sqlendtxt);
+      free(sqlcounttxt);
+      return -2;
     }
   }
   
@@ -1267,27 +1317,54 @@ int downloadchannelitemmain(ci_identifier *chanident, ci_identifier *itemident)
   {
     numitems = sqlite3_column_int64(countstmt, 0);
   }
+  else if (retcode == SQLITE_OK || retcode == SQLITE_DONE)
+  {
+      fprintf(stderr, "Error: Could not count downloads - download count returned no value\n");
+      sqlite3_finalize(countstmt);
+      free(sqlendtxt);
+      free(sqlcounttxt);
+      return -2;
+  }
   else
   {
     /* Do something here! */
+      fprintf(stderr, "Error: Could not count downloads");
+      downloaddberr(retcode);
+      sqlite3_finalize(countstmt);
+      free(sqlendtxt);
+      free(sqlcounttxt);
+      return -2;
   }
   
   retcode = sqlite3_finalize(countstmt);
   if (retcode != SQLITE_OK)
   {
     /* Do something here! */
+      fprintf(stderr, "Error: Could not count downloads");
+      downloaddberr(retcode);
+      free(sqlendtxt);
+      free(sqlcounttxt);
+      return -2;
   }
   
   if (numitems <= 0)
   {
     /* Do something important here! */
+    printf("No items found to download!\n");
+    free(sqlendtxt);
+    free(sqlcounttxt);
+    return 0;
   }
+  
+  free(sqlcounttxt); /* We don't need this anymore! */
+  
   
   /* Now, create an array to hold the results of the downloads */
   
   typedef struct dlresult_struct
   {
     unsigned long long itemid;
+    char *fn;
     int downloaded;
   } dlresult;
   
@@ -1295,14 +1372,340 @@ int downloadchannelitemmain(ci_identifier *chanident, ci_identifier *itemident)
   if (dlres == NULL)
   {
     /* Do something important here! */
+    free(sqlendtxt);
+    return -1;
   }
   
   memset(dlres, 0, sizeof(dlres)*numitems);
   
+  /* Get settings data */
+  
+  char *poddir = getsettingdata("PODCAST_DIR");
+  if (poddir == NULL)
+  {
+    free(sqlendtxt);
+    free(dlres);
+    return -1;
+  }
+  else if (poddir[0] == 0)
+  {
+    fprintf(stderr, "Error: Podcast Directory not set!\n");
+    free(poddir);
+    free(sqlendtxt);
+    free(dlres);
+    return -3;
+  }
+  
+  char *dirsep = getsettingdata("DIR_SEPARATOR");
+  if (dirsep == NULL)
+  {
+    free(poddir);
+    free(sqlendtxt);
+    free(dlres);
+    return -1;
+  }
+  else if (dirsep[0] == 0)
+  {
+    fprintf(stderr, "Error: Directory Separator not set!\n");
+    free(poddir);
+    free(dirsep);
+    free(sqlendtxt);
+    free(dlres);
+    return -3;
+  }
+  
+  int settingssize = strlen(poddir) + strlen(dirsep) + 1;
+  
   /* Next, query the DB, do the downloads and hold the results in the array */
   
-//  strcpy(sqltxt, "SELECT Item.Item_ID, Item.Channel_ID, Item.Title, Item.Enclosure_URL, Item.Enclosure_Length, Item.Enclosure_Type, Item.Downloaded, Item.Download_Date, Item.Original_Filename, Item.Filename, Channel.Directory, Channel.Title, Channel.Last_Refresh_Date FROM Item LEFT JOIN Channel ON Item.Channel_ID = Channel.Channel_ID";
+  char *sqltxt = (char *) malloc(sizeof(char)*(351+121));
+  if (sqltext == NULL)
+  {
+    free(poddir);
+    free(dirsep);
+    free(sqlendtxt);
+    free(dlres);
+    return -1;
+  }
+  strcpy(sqltxt, "SELECT Item.Item_ID, Item.Channel_ID, Item.Title, Item.Enclosure_URL, Item.Enclosure_Length, Item.Enclosure_Type, Item.Downloaded, Item.Download_Date, Item.Original_Filename, Item.Filename, Channel.Directory, Channel.Title, Channel.Last_Refresh_Date FROM Item LEFT JOIN Channel ON Item.Channel_ID = Channel.Channel_ID");
+  strcat(sqltxt, sqlendtxt);
   
+  sqlite3_stmt *selstmt = NULL;
+  
+  retcode = sqlite3_prepare_v2(adb, sqltxt, strlen(sqltxt), &selstmt, NULL);
+  if (retcode != SQLITE_OK)
+  {
+    /* Do something here */
+    fprintf(stderr, "Error: Could not select downloads");
+    downloaddberr(retcode);
+    sqlite3_finalize(selstmt);
+    free(poddir);
+    free(dirsep);
+    free(sqlendtxt);
+    free(dlres);
+    free(sqltxt);
+    return -2;
+    
+  }
+  
+  if (wherechantxt)
+  {
+    retcode = sqlite3_bind_int64(countstmt, 1, (sqlite3_int64) dbchanid);
+    if (retcode != SQLITE_OK)
+    {
+      /* Do something here! */
+      fprintf(stderr, "Error: Could not select downloads");
+      downloaddberr(retcode);
+      sqlite3_finalize(selstmt);
+      free(poddir);
+      free(dirsep);
+      free(sqlendtxt);
+      free(dlres);
+      free(sqltxt);
+      return -2;
+    }
+  }
+  
+  if (whereitemtxt)
+  {
+    retcode = sqlite3_bind_int64(countstmt, 2, (sqlite3_int64) dbitemid);
+    if (retcode != SQLITE_OK)
+    {
+      /* Do something here! */
+      fprintf(stderr, "Error: Could not select downloads");
+      downloaddberr(retcode);
+      sqlite3_finalize(selstmt);
+      free(poddir);
+      free(dirsep);
+      free(sqlendtxt);
+      free(dlres);
+      free(sqltxt);
+      return -2;
+    }
+  }
+  
+  /* "SELECT 
+    Item.Item_ID, 
+    Item.Channel_ID, 
+    Item.Title, 
+    Item.Enclosure_URL, 
+    Item.Enclosure_Length, 
+    Item.Enclosure_Type, 
+    Item.Downloaded, 
+    Item.Download_Date, 
+    Item.Original_Filename, 
+    Item.Filename, 
+    Channel.Directory, 
+    Channel.Title, 
+    Channel.Last_Refresh_Date"
+   */
+  unsigned long long db_iid = 0, db_cid = 0, db_iendlen = 0, db_prevcid = 0, 
+                     i = 0;
+  const char *db_itit = NULL, *db_iencurl = NULL, *db_ienctyp = NULL, 
+             *db_idldate = NULL, *db_iofn = NULL, *db_ifn = NULL, 
+             *db_cdir = NULL, *db_ctit = NULL, *db_clrd = NULL, 
+             *chanpath = NULL, *iofext = NULL, *itfn = NULL;
+  int db_idled = 0;
+  int retcode2 = 0;
+  do
+  {
+    /* Step through results and do downloads, saving results in dlres array */#
+    retcode = sqlite3_step(selstmt);
+    if (retcode == SQLITE_ROW)
+    {
+      if (sqlite3_column_count(selstmt) < 13)
+      {
+        retcode = SQLITE_ERROR;
+        break;
+      }
+      db_prevcid = db_cid;
+      db_iid = sqlite3_column_int64(selstmt, 0);
+      db_cid = sqlite3_column_int64(selstmt, 1);
+      db_itit = sqlite3_column_text(selstmt, 2);
+      db_iencurl = sqlite3_column_text(selstmt, 3);
+      db_ienclen = sqlite3_column_int64(selstmt, 4);
+      db_ienctyp = sqlite3_column_text(selstmt, 5);
+      db_idled = sqlite3_column_int(selstmt, 6);
+      db_idldate = sqlite3_columnt_text(selstmt, 7);
+      db_iofn = sqlite3_column_text(selstmt, 8);
+      db_ifn = sqlite3_column_text(selstmt, 9);
+      db_cdir = sqlite3_column_text(selstmt, 10);
+      db_ctit = sqlite3_column_text(selstmt, 11);
+      db_lrd = sqlite3_column_text(selstmt, 12);
+      
+      if (db_idled)
+      {
+        printf("Overwriting download from %s '%s'\n",db_idldate, db_ifn);
+      }
+      
+      chanpath = (char *) malloc(sizeof(char)*(1+settingssize+strlen(db_cdir)));
+      if (chanpath == NULL)
+      {
+        retcode = SQLITE_NOMEM;
+        break;
+      }
+      strcpy(chanpath, poddir);
+      strcat(chanpath, dirsep);
+      strcat(chanpath, db_cdir);
+      
+      rssenclosure are; /* Don't need to free this stuff in 'are'! */
+      are.url = db_iencurl;
+      are.length = db_ienclen;
+      are.type = db_ienctyp;
+      
+      iofext = (char *) malloc(sizeof(char)*(1+strlen(db_iencurl)));
+      if (iofext == NULL)
+      {
+        free(chanpath);
+        chanpath = NULL;
+        retcode = SQLITE_NOMEM;
+        break;
+      }
+      
+      itfn = (char *) malloc(sizeof(char)*(1+strlen(db_iofn)));
+      if (itfn == NULL)
+      {
+        free(chanpath);
+        chanpath = NULL;
+        free(iofext);
+        iofext = NULL;
+        retcode = SQLITE_NOMEM;
+        break;
+      }
+      
+      retcode2 = getfileext(iofext,&are);
+      if (retcode2 == 0)
+      {
+        free(chanpath);
+        chanpath = NULL;
+        free(iofext);
+        iofext = NULL;
+        free(itfn);
+        itfn = NULL;
+        retcode = SQLITE_NOMEM;
+        break;
+      }
+      else if (retcode2 == -1) iofext[0] = 0;
+      else if (retcode2 == 2) fprintf(stderr, "Warning: Assumed file extension to be '%s'.\n", iofext);
+      makevalidfilename(itfn, db_iofn);
+      char *dotpos = NULL;
+      dotpos = strstr(itemtfn, ".");
+      if (dotpos != NULL) dotpos[0] = 0;
+      dotpos = NULL;
+      
+      char *ifn = NULL;
+      
+      if (db_ifn == NULL)
+      {
+        ifn = (char *) malloc(sizeof(char)*(102+strlen(itfn)+strlen(iofext)));
+      }
+      else ifn = (char *) malloc(sizeof(char)*(1+strlen(db_ifn)));
+      
+      if (ifn == NULL)
+      {
+        free(chanpath);
+        chanpath = NULL;
+        free(iofext);
+        iofext = NULL;
+        free(itfn);
+        itfn = NULL;
+        retcode = SQLITE_NOMEM;
+        break;
+      }
+      
+      if (db_ifn)
+      {
+        strcpy(ifn, dbifn);
+      }
+      else
+      {
+        retcode2 = newfilename(ifn, chanpath, itfn, iofext);
+        if (retcode2 == 0)
+        {
+          free(ifn);
+          ifn = NULL;
+          free(chanpath);
+          chanpath = NULL;
+          free(iofext);
+          iofext = NULL;
+          free(itfn);
+          itfn = NULL;
+          retcode = SQLITE_NOMEM;
+          break;
+        }
+        strcat(ifn,".");
+        strcat(ifn,iofext);
+      }
+      
+      if (db_cid != db_prevcid)
+      {
+        printf("Channel '%s' (%llu) last updated %s:\n",db_ctit,db_cid,db_lrd);
+      }
+      
+      printf(" Downloading item '%s' (%llu) to file '%s%s%s'\n",
+             db_itit,db_iid,db_cdir,dirsep,ifn);
+      
+      retcode2 = dodownload(db_iencurl, db_cdir, ifn);
+      
+      if (retcode2 == 0)
+      {
+        fprintf(stderr, "Warning: Error downloading item '%s' from URL '%s'.  Skipping this download.\n"db_itit,db_iencurl);
+        dlres[i].downloaded = 0;
+      }
+      else dlres[i].downloaded = 1;
+      
+      dlres.itemid = db_iid;
+      dlres.fn = ifn;
+      
+      /* Free unneeded strings (NOT ifn as it's used for dlres!) */
+      free(chanpath);
+      chanpath = NULL;
+      free(iofext);
+      iofext = NULL;
+      free(itfn);
+      itfn = NULL;
+      
+      
+      i++;
+    }
+    else if (retcode != SQLITE_DONE && retcode != SQLITE_OK) break;
+  } while (retcode != SQLITE_DONE && retcode != SQLITE_OK)
+  
+  /* With any frees from here, handle dlres.fn strings! */
+  /* Handle errors here */
+  if (retcode != SQLITE_DONE && retcode != SQLITE_OK)
+  {
+      fprintf(stderr, "Error: Failed during the download of items");
+      downloaddberr(retcode);
+      sqlite3_finalize(selstmt);
+      free(poddir);
+      free(dirsep);
+      free(sqlendtxt);
+      for (i=0;i<numitems;i++)
+      {
+        if (dlres[i].fn != NULL) free(dlres[i].fn);
+      }
+      free(dlres);
+      free(sqltxt);
+      return -2;
+  }
+  
+  retcode = sqlite3_finalize(selstmt);
+  if (retcode != SQLITE_OK)
+  {
+      fprintf(stderr, "Error: Failed during the finalisation of the download of items");
+      downloaddberr(retcode);
+      free(poddir);
+      free(dirsep);
+      free(sqlendtxt);
+      for (i=0;i<numitems;i++)
+      {
+        if (dlres[i].fn != NULL) free(dlres[i].fn);
+      }
+      free(dlres);
+      free(sqltxt);
+      return -2;
+  }
   
   
   /* Then put the results from the array into the database! */
