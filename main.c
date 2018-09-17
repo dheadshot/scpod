@@ -1185,6 +1185,7 @@ int downloadchannelitemmain(ci_identifier *chanident, ci_identifier *itemident)
   
   /* Returns:
       1 = Success
+      2 = Success, but some skipped.
       0 = 
      -1 = OoM
      -2 = DB Error
@@ -1506,7 +1507,7 @@ int downloadchannelitemmain(ci_identifier *chanident, ci_identifier *itemident)
              *db_cdir = NULL, *db_ctit = NULL, *db_clrd = NULL, 
              *chanpath = NULL, *iofext = NULL, *itfn = NULL;
   int db_idled = 0;
-  int retcode2 = 0;
+  int retcode2 = 0, dlfails = 0;
   do
   {
     /* Step through results and do downloads, saving results in dlres array */#
@@ -1651,6 +1652,7 @@ int downloadchannelitemmain(ci_identifier *chanident, ci_identifier *itemident)
       {
         fprintf(stderr, "Warning: Error downloading item '%s' from URL '%s'.  Skipping this download.\n"db_itit,db_iencurl);
         dlres[i].downloaded = 0;
+        dlsfailed++;
       }
       else dlres[i].downloaded = 1;
       
@@ -1710,10 +1712,58 @@ int downloadchannelitemmain(ci_identifier *chanident, ci_identifier *itemident)
   
   /* Then put the results from the array into the database! */
   
+  char *sqlupdtxt = "UPDATE Item SET Downloaded = ?, Downloaded_Date = datetime('now'), Filename = ? WHERE Item_ID = ?;";
+  sqlite3_stmt *updstmt = NULL;
+  
+  retcode = sqlite3_prepare_v2(adb, sqlupdtxt, strlen(sqlupdtxt), &updstmt, NULL);
+  if (retcode != SQLITE_OK)
+  {
+    /* Do something here */
+  }
+  
+  for (i=0;i<numitems;i++)
+  {
+  /* UPDATE Item SET Downloaded = ?, 
+     Downloaded_Date = datetime('now'), 
+     Filename = ? WHERE Item_ID = ?;";*/
+    if (dlres[i].itemid == 0) continue;
+    sqlite3_bind_int(updstmt,1,dlres[i].downloaded);
+    sqlite3_bind_text(updstmt,2,dlres[i].fn,-1,SQLITE_TRANSIENT);
+    sqlite3_bind_int64(updstmt,3,dlres[i].itemid);
+    retcode = sqlite3_step(updstmt);
+    if (retcode != SQLITE_OK)
+    {
+      /* Do something here */
+    }
+    retcode = sqlite3_reset(updstmt);
+    if (retcode != SQLITE_OK)
+    {
+      /* Do something here */
+    }
+  }
+  retcode = sqlite3_finalize(updstmt);
+  if (retcode != SQLITE_OK)
+  {
+    /* Do something here */
+  }
   
   
   
   /* Then FINISH! */
+  
+  free(poddir);
+  free(dirsep);
+  free(sqlendtxt);
+  for (i=0;i<numitems;i++)
+  {
+    if (dlres[i].fn != NULL) free(dlres[i].fn);
+  }
+  free(dlres);
+  free(sqltxt);
+  
+  if (dlsfailed) return 2;
+  return 1;
+  
 }
 
 int downloadchannellatest(char *arg)
@@ -1743,10 +1793,40 @@ int downloadchannellatest(char *arg)
   itemciid->id.dlcode = DLCODE_LATEST;
   
   /* TODO: At this point, call a function to download itemciid of chanciid! */
+  int retcode = downloadchannelitemmain(chanciid,itemciid);
+  
+  switch (retcode)
+  {
+    case 1:
+      printf("Downloading complete!  All downloads were successful.\n");
+    break;
+    
+    case 2:
+      printf("Downloading complete.  Some downloads were skipped.\n");
+    break;
+    
+    case 0:
+      printf("Downloading failed: one or more errors were encountered.\n");
+    break;
+    
+    case -2:
+      printf("Downloading failed: one or more database errors were encountered.\n");
+    break;
+    
+    case -3:
+      printf("Downloading failed: one or more configuration errors were encountered.\n");
+    break;
+    
+    case -1:
+      printf("Downloading failed: out of memory!\n");
+    break;
+  }
+  
   
   freeciid(itemciid);
   freeciid(chanciid);
   closedb();
+  if (retcode < 1) return (1+(0-retcode));
   return 0;
 }
 
@@ -1779,8 +1859,38 @@ int downloadchannelall(char *arg)
   
   /* TODO: At this point, call a function to download itemciid of chanciid! */
   
+  int retcode = downloadchannelitemmain(chanciid,itemciid);
+  
+  switch (retcode)
+  {
+    case 1:
+      printf("Downloading complete!  All downloads were successful.\n");
+    break;
+    
+    case 2:
+      printf("Downloading complete.  Some downloads were skipped.\n");
+    break;
+    
+    case 0:
+      printf("Downloading failed: one or more errors were encountered.\n");
+    break;
+    
+    case -2:
+      printf("Downloading failed: one or more database errors were encountered.\n");
+    break;
+    
+    case -3:
+      printf("Downloading failed: one or more configuration errors were encountered.\n");
+    break;
+    
+    case -1:
+      printf("Downloading failed: out of memory!\n");
+    break;
+  }
+  
   freeciid(itemciid);
   freeciid(chanciid);
   closedb();
+  if (retcode < 1) return (1+(0-retcode));
   return 0;
 }
