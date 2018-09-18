@@ -3,6 +3,14 @@
 
 #include "parser.h"
 
+typedef struct dlresult_struct
+{
+  unsigned long long itemid;
+  char *fn;
+  int downloaded;
+} dlresult;
+
+
 int docmd(char **cmdntsa, int offset);
 /*
  * Working cmds: (~=still checking, ^=ostensibly works but needs testing)
@@ -93,8 +101,11 @@ ci_identifier *argtociid(char *arg);
 int listchannelarg(char *arg);
 int listitemsinchannelarg(char *arg);
 int listitemarginchannelarg(char *itemarg, char *chanarg);
+void downloaddberr(int retcode);
 int downloadchannelitemmain(ci_identifier *chanident, ci_identifier *itemident);
-int downloadchannellatest(char *arg); //Doesn't work yet!
-int downloadchannelall(char *arg);    //Doesn't work yet and will actually download not downloaded rather than everything!
+void printdownloadstatus(int retcode);
+int downloadchannellatest(char *arg);
+int downloadchannelall(char *arg);  /* Actually downloads not downloaded rather than everything! */
+int downloadchannelitem(char *chanarg, char *itemarg);
 
 #endif

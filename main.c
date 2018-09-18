@@ -1211,7 +1211,7 @@ int downloadchannelitemmain(ci_identifier *chanident, ci_identifier *itemident)
   char *whereitemtxt = NULL;
   char *wheredownloadedtxt = NULL;
   if (dbchanid != 0) wherechantxt = "Item.Channel_ID = ?1";
-  if (dbitemid != 0) whereitemtxt = "Item.Item_ID = ?2"
+  if (dbitemid != 0) whereitemtxt = "Item.Item_ID = ?2";
   if (specdl < 0) wheredownloadedtxt = "Item.Downloaded = 0";
   else if (specdl > 0) wheredownloadedtxt = "Item.Downloaded = 1";
   
@@ -1362,14 +1362,14 @@ int downloadchannelitemmain(ci_identifier *chanident, ci_identifier *itemident)
   
   /* Now, create an array to hold the results of the downloads */
   
-  typedef struct dlresult_struct
+  /* typedef struct dlresult_struct
   {
     unsigned long long itemid;
     char *fn;
     int downloaded;
-  } dlresult;
+  } dlresult; */
   
-  dlresult *dlres = (dlres *) malloc(sizeof(dlresult)*numitems);
+  dlresult *dlres = (dlresult *) malloc(sizeof(dlresult)*numitems);
   if (dlres == NULL)
   {
     /* Do something important here! */
@@ -1377,7 +1377,7 @@ int downloadchannelitemmain(ci_identifier *chanident, ci_identifier *itemident)
     return -1;
   }
   
-  memset(dlres, 0, sizeof(dlres)*numitems);
+  memset(dlres, 0, sizeof(dlresult)*numitems);
   
   /* Get settings data */
   
@@ -1420,7 +1420,7 @@ int downloadchannelitemmain(ci_identifier *chanident, ci_identifier *itemident)
   /* Next, query the DB, do the downloads and hold the results in the array */
   
   char *sqltxt = (char *) malloc(sizeof(char)*(351+121));
-  if (sqltext == NULL)
+  if (sqltxt == NULL)
   {
     free(poddir);
     free(dirsep);
@@ -1500,12 +1500,12 @@ int downloadchannelitemmain(ci_identifier *chanident, ci_identifier *itemident)
     Channel.Title, 
     Channel.Last_Refresh_Date"
    */
-  unsigned long long db_iid = 0, db_cid = 0, db_iendlen = 0, db_prevcid = 0, 
+  unsigned long long db_iid = 0, db_cid = 0, db_ienclen = 0, db_prevcid = 0, 
                      i = 0;
   const char *db_itit = NULL, *db_iencurl = NULL, *db_ienctyp = NULL, 
              *db_idldate = NULL, *db_iofn = NULL, *db_ifn = NULL, 
-             *db_cdir = NULL, *db_ctit = NULL, *db_clrd = NULL, 
-             *chanpath = NULL, *iofext = NULL, *itfn = NULL;
+             *db_cdir = NULL, *db_ctit = NULL, *db_clrd = NULL;
+  char *chanpath = NULL, *iofext = NULL, *itfn = NULL;
   int db_idled = 0;
   int retcode2 = 0, dlfails = 0;
   do
@@ -1527,12 +1527,12 @@ int downloadchannelitemmain(ci_identifier *chanident, ci_identifier *itemident)
       db_ienclen = sqlite3_column_int64(selstmt, 4);
       db_ienctyp = sqlite3_column_text(selstmt, 5);
       db_idled = sqlite3_column_int(selstmt, 6);
-      db_idldate = sqlite3_columnt_text(selstmt, 7);
+      db_idldate = sqlite3_column_text(selstmt, 7);
       db_iofn = sqlite3_column_text(selstmt, 8);
       db_ifn = sqlite3_column_text(selstmt, 9);
       db_cdir = sqlite3_column_text(selstmt, 10);
       db_ctit = sqlite3_column_text(selstmt, 11);
-      db_lrd = sqlite3_column_text(selstmt, 12);
+      db_clrd = sqlite3_column_text(selstmt, 12);
       
       if (db_idled)
       {
@@ -1574,7 +1574,7 @@ int downloadchannelitemmain(ci_identifier *chanident, ci_identifier *itemident)
         break;
       }
       
-      retcode2 = getfileext(iofext,&are);
+      retcode2 = getencfileext(iofext,&are);
       if (retcode2 == 0)
       {
         free(chanpath);
@@ -1590,7 +1590,7 @@ int downloadchannelitemmain(ci_identifier *chanident, ci_identifier *itemident)
       else if (retcode2 == 2) fprintf(stderr, "Warning: Assumed file extension to be '%s'.\n", iofext);
       makevalidfilename(itfn, db_iofn);
       char *dotpos = NULL;
-      dotpos = strstr(itemtfn, ".");
+      dotpos = strstr(itfn, ".");
       if (dotpos != NULL) dotpos[0] = 0;
       dotpos = NULL;
       
@@ -1616,7 +1616,7 @@ int downloadchannelitemmain(ci_identifier *chanident, ci_identifier *itemident)
       
       if (db_ifn)
       {
-        strcpy(ifn, dbifn);
+        strcpy(ifn, db_ifn);
       }
       else
       {
@@ -1640,7 +1640,7 @@ int downloadchannelitemmain(ci_identifier *chanident, ci_identifier *itemident)
       
       if (db_cid != db_prevcid)
       {
-        printf("Channel '%s' (%llu) last updated %s:\n",db_ctit,db_cid,db_lrd);
+        printf("Channel '%s' (%llu) last updated %s:\n",db_ctit,db_cid,db_clrd);
       }
       
       printf(" Downloading item '%s' (%llu) to file '%s%s%s'\n",
@@ -1650,14 +1650,14 @@ int downloadchannelitemmain(ci_identifier *chanident, ci_identifier *itemident)
       
       if (retcode2 == 0)
       {
-        fprintf(stderr, "Warning: Error downloading item '%s' from URL '%s'.  Skipping this download.\n"db_itit,db_iencurl);
+        fprintf(stderr, "Warning: Error downloading item '%s' from URL '%s'.  Skipping this download.\n",db_itit,db_iencurl);
         dlres[i].downloaded = 0;
         dlfails++;
       }
       else dlres[i].downloaded = 1;
       
-      dlres.itemid = db_iid;
-      dlres.fn = ifn;
+      dlres[i].itemid = db_iid;
+      dlres[i].fn = ifn;
       
       /* Free unneeded strings (NOT ifn as it's used for dlres!) */
       free(chanpath);
@@ -1671,7 +1671,7 @@ int downloadchannelitemmain(ci_identifier *chanident, ci_identifier *itemident)
       i++;
     }
     else if (retcode != SQLITE_DONE && retcode != SQLITE_OK) break;
-  } while (retcode != SQLITE_DONE && retcode != SQLITE_OK)
+  } while (retcode != SQLITE_DONE && retcode != SQLITE_OK);
   
   /* With any frees from here, handle dlres.fn strings! */
   /* Handle errors here */
@@ -1891,6 +1891,40 @@ int downloadchannelall(char *arg)
   }
   itemciid->type = ci_meta;
   itemciid->id.dlcode = DLCODE_NOTDOWNLOADED;
+  
+  int retcode = downloadchannelitemmain(chanciid,itemciid);
+  printdownloadstatus(retcode);
+  
+  freeciid(itemciid);
+  freeciid(chanciid);
+  closedb();
+  if (retcode < 1) return (1+(0-retcode));
+  return 0;
+}
+
+int downloadchannelitem(char *chanarg, char *itemarg)
+{
+  /* Return 0 on success */
+  if (opendb(1) == 0)
+  {
+    fprintf(stderr, "Error: could not open database!\n");
+    closedb();
+    return 1;
+  }
+  ci_identifier *chanciid = argtociid(chanarg);
+  if (chanciid == NULL)
+  {
+    closedb();
+    return 1;
+  }
+  
+  ci_identifier *itemciid = argtociid(itemarg);
+  if (itemciid == NULL)
+  {
+    freeciid(chanciid);
+    closedb();
+    return 1;
+  }
   
   int retcode = downloadchannelitemmain(chanciid,itemciid);
   printdownloadstatus(retcode);

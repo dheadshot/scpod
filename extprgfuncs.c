@@ -28,7 +28,7 @@
 #include "extprgfuncs.h"
 
 
-int dodownload(char *url, char *dldir, char *filename)
+int dodownload(const char *url, const char *dldir, const char *filename)
 {
   char *pdir, *dirsep, *dnldr, *emptr, *posptr;
   char fullcmd[2048] = "";
@@ -337,7 +337,7 @@ int domkdir(char *directory)
 #endif
 }
 
-void makevalidfilename(char *outfn, char *infn)
+void makevalidfilename(char *outfn, const char *infn)
 {
   long i;
   for (i=0;infn[i]!=0;i++)
