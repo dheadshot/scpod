@@ -17,6 +17,9 @@ OSDEF = ${OSLINUX}
 #Change the below to WINLIB from LINLIB to compile in Windows:
 OSLIB = ${LINLIB}
 
+dummy: 
+	echo "Use make dochip, make dochiptest, make dox86linux or make dox86linuxtest!"
+
 dochip: dochiptest
 	cp scpoddb.bin chip/
 
