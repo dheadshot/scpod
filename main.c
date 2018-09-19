@@ -246,6 +246,7 @@ int docmd(char **cmdntsa, int offset)
         else if (streq_i(cmdntsa[i+3], "all"))
         {
           //Download All
+          return downloadchannelall(cmdntsa[i+2]);
         }
         else if (streq_i(cmdntsa[i+3], "item"))
         {
@@ -258,6 +259,8 @@ int docmd(char **cmdntsa, int offset)
           else
           {
             //Download item cmdntsa[i+4]
+            return downloadchannelitem(cmdntsa[i+2], cmdntsa[i+4]);
+            
           }//Offset 4 Download Channel (chanid) Item __
         }
         else
@@ -1200,11 +1203,17 @@ int downloadchannelitemmain(ci_identifier *chanident, ci_identifier *itemident)
   int retcode = getchannelid(chanident, &dbchanid);
   if (retcode == 0) return 1;
   if (retcode < 0) return 0;
+#ifdef DEBUG
+  	printf("ChannelID=%llu\n",dbchanid);
+#endif
   
   /* Item ID */
   retcode = getitemid(itemident, &dbitemid, &specdl, dbchanid);
   if (retcode == 0) return 1;
   if (retcode < 0) return 0;
+#ifdef DEBUG
+  	printf("ItemID=%llu, DownloadSpec=%d\n",dbchanid, specdl);
+#endif
   
   /* SQL and DB Stuff */
   char *wherechantxt = NULL;
@@ -1220,6 +1229,7 @@ int downloadchannelitemmain(ci_identifier *chanident, ci_identifier *itemident)
   {
     return -1;
   }
+  sqlendtxt[0] = 0;
   if ((!wherechantxt) && (!whereitemtxt) && (!wheredownloadedtxt))
   {
     strcat(sqlendtxt, ";");
@@ -1254,6 +1264,10 @@ int downloadchannelitemmain(ci_identifier *chanident, ci_identifier *itemident)
     strcat(sqlendtxt, ";");
   }
   
+#ifdef DEBUG
+  	printf("SQLEndTxt='%s'\n",sqlendtxt);
+#endif
+  
   /* First, let's count the number of items affected */
   char *sqlcounttxt = (char *) malloc(sizeof(char)*(121+201));
   if (sqlcounttxt == NULL)
@@ -1265,6 +1279,10 @@ int downloadchannelitemmain(ci_identifier *chanident, ci_identifier *itemident)
   strcpy(sqlcounttxt, "SELECT COUNT(DISTINCT Item.Item_ID) FROM Item LEFT JOIN Channel ON Item.Channel_ID = Channel.Channel_ID");
   strcat(sqlcounttxt, sqlendtxt);
   
+#ifdef DEBUG
+  	printf("SQLCountTxt='%s'\n",sqlcounttxt);
+#endif
+  
   sqlite3 *adb = getdb();
   sqlite3_stmt *countstmt = NULL;
   
@@ -1274,6 +1292,9 @@ int downloadchannelitemmain(ci_identifier *chanident, ci_identifier *itemident)
     /* Do something here */
     fprintf(stderr, "Error: Could not count downloads");
     downloaddberr(retcode);
+#ifdef DEBUG
+  	fprintf(stderr,"(Prepare)\n");
+#endif
     sqlite3_finalize(countstmt);
     free(sqlendtxt);
     free(sqlcounttxt);
@@ -1289,6 +1310,9 @@ int downloadchannelitemmain(ci_identifier *chanident, ci_identifier *itemident)
       /* Do something here! */
       fprintf(stderr, "Error: Could not count downloads");
       downloaddberr(retcode);
+#ifdef DEBUG
+  	fprintf(stderr,"(Bind Channel)\n");
+#endif
       sqlite3_finalize(countstmt);
       free(sqlendtxt);
       free(sqlcounttxt);
@@ -1304,6 +1328,9 @@ int downloadchannelitemmain(ci_identifier *chanident, ci_identifier *itemident)
       /* Do something here! */
       fprintf(stderr, "Error: Could not count downloads");
       downloaddberr(retcode);
+#ifdef DEBUG
+  	fprintf(stderr,"(Bind item)\n");
+#endif
       sqlite3_finalize(countstmt);
       free(sqlendtxt);
       free(sqlcounttxt);
@@ -1322,6 +1349,9 @@ int downloadchannelitemmain(ci_identifier *chanident, ci_identifier *itemident)
   {
       fprintf(stderr, "Error: Could not count downloads - download count returned no value\n");
       sqlite3_finalize(countstmt);
+#ifdef DEBUG
+  	fprintf(stderr,"(Step)\n");
+#endif
       free(sqlendtxt);
       free(sqlcounttxt);
       return -2;
@@ -1331,6 +1361,9 @@ int downloadchannelitemmain(ci_identifier *chanident, ci_identifier *itemident)
     /* Do something here! */
       fprintf(stderr, "Error: Could not count downloads");
       downloaddberr(retcode);
+#ifdef DEBUG
+  	fprintf(stderr,"(Step)\n");
+#endif
       sqlite3_finalize(countstmt);
       free(sqlendtxt);
       free(sqlcounttxt);
@@ -1343,6 +1376,9 @@ int downloadchannelitemmain(ci_identifier *chanident, ci_identifier *itemident)
     /* Do something here! */
       fprintf(stderr, "Error: Could not count downloads");
       downloaddberr(retcode);
+#ifdef DEBUG
+  	fprintf(stderr,"(Finalise)\n");
+#endif
       free(sqlendtxt);
       free(sqlcounttxt);
       return -2;
@@ -1419,7 +1455,7 @@ int downloadchannelitemmain(ci_identifier *chanident, ci_identifier *itemident)
   
   /* Next, query the DB, do the downloads and hold the results in the array */
   
-  char *sqltxt = (char *) malloc(sizeof(char)*(351+121));
+  char *sqltxt = (char *) malloc(sizeof(char)*(353+121));
   if (sqltxt == NULL)
   {
     free(poddir);
@@ -1428,8 +1464,12 @@ int downloadchannelitemmain(ci_identifier *chanident, ci_identifier *itemident)
     free(dlres);
     return -1;
   }
-  strcpy(sqltxt, "SELECT Item.Item_ID, Item.Channel_ID, Item.Title, Item.Enclosure_URL, Item.Enclosure_Length, Item.Enclosure_Type, Item.Downloaded, Item.Download_Date, Item.Original_Filename, Item.Filename, Channel.Directory, Channel.Title, Channel.Last_Refresh_Date FROM Item LEFT JOIN Channel ON Item.Channel_ID = Channel.Channel_ID");
+  strcpy(sqltxt, "SELECT Item.Item_ID, Item.Channel_ID, Item.Title, Item.Enclosure_URL, Item.Enclosure_Length, Item.Enclosure_Type, Item.Downloaded, Item.Downloaded_Date, Item.Original_Filename, Item.Filename, Channel.Directory, Channel.Title, Channel.Last_Refresh_Date FROM Item LEFT JOIN Channel ON Item.Channel_ID = Channel.Channel_ID");
   strcat(sqltxt, sqlendtxt);
+  
+#ifdef DEBUG
+  	printf("SQLSelectTxt='%s'\n",sqltxt);
+#endif
   
   sqlite3_stmt *selstmt = NULL;
   
@@ -1439,6 +1479,9 @@ int downloadchannelitemmain(ci_identifier *chanident, ci_identifier *itemident)
     /* Do something here */
     fprintf(stderr, "Error: Could not select downloads");
     downloaddberr(retcode);
+#ifdef DEBUG
+  	fprintf(stderr,"(Prepare)\n");
+#endif
     sqlite3_finalize(selstmt);
     free(poddir);
     free(dirsep);
@@ -1451,12 +1494,15 @@ int downloadchannelitemmain(ci_identifier *chanident, ci_identifier *itemident)
   
   if (wherechantxt)
   {
-    retcode = sqlite3_bind_int64(countstmt, 1, (sqlite3_int64) dbchanid);
+    retcode = sqlite3_bind_int64(selstmt, 1, (sqlite3_int64) dbchanid);
     if (retcode != SQLITE_OK)
     {
       /* Do something here! */
       fprintf(stderr, "Error: Could not select downloads");
       downloaddberr(retcode);
+#ifdef DEBUG
+  	fprintf(stderr,"(Bind Channel)\n");
+#endif
       sqlite3_finalize(selstmt);
       free(poddir);
       free(dirsep);
@@ -1469,12 +1515,15 @@ int downloadchannelitemmain(ci_identifier *chanident, ci_identifier *itemident)
   
   if (whereitemtxt)
   {
-    retcode = sqlite3_bind_int64(countstmt, 2, (sqlite3_int64) dbitemid);
+    retcode = sqlite3_bind_int64(selstmt, 2, (sqlite3_int64) dbitemid);
     if (retcode != SQLITE_OK)
     {
       /* Do something here! */
       fprintf(stderr, "Error: Could not select downloads");
       downloaddberr(retcode);
+#ifdef DEBUG
+  	fprintf(stderr,"(Bind Item)\n");
+#endif
       sqlite3_finalize(selstmt);
       free(poddir);
       free(dirsep);
@@ -1643,14 +1692,14 @@ int downloadchannelitemmain(ci_identifier *chanident, ci_identifier *itemident)
         printf("Channel '%s' (%llu) last updated %s:\n",db_ctit,db_cid,db_clrd);
       }
       
-      printf(" Downloading item '%s' (%llu) to file '%s%s%s'\n",
+      printf("  Downloading item '%s' (%llu) to file '%s%s%s'\n",
              db_itit,db_iid,db_cdir,dirsep,ifn);
       
       retcode2 = dodownload(db_iencurl, db_cdir, ifn);
       
       if (retcode2 == 0)
       {
-        fprintf(stderr, "Warning: Error downloading item '%s' from URL '%s'.  Skipping this download.\n",db_itit,db_iencurl);
+        fprintf(stderr, "  Warning: Error downloading item '%s' from URL '%s'.  Skipping this download.\n",db_itit,db_iencurl);
         dlres[i].downloaded = 0;
         dlfails++;
       }
