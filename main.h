@@ -30,6 +30,10 @@ int docmd(char **cmdntsa, int offset);
  * list channel (chanid)	~
  * list items in channel (chanid)	~
  * list item (itemid) in channel (chanid)	~
+ * download channel (chanid) none
+ * download channel (chanid) latest		~
+ * download channel (chanid) all		^ (Actually downloads all that have'nt yet been downloaded
+ * download channel (chanid) item (itemid)	^
  * help
  * help test
  * help test parser
@@ -61,10 +65,6 @@ int docmd(char **cmdntsa, int offset);
  * update channel (chanid) download latest
  * update channel (chanid) download new
  * update channel (chanid) download all
- * download channel (chanid) none
- * download channel (chanid) latest		(Started this - it'll call "Download channel (chanid) item (itemid)" 's processing function!
- * download channel (chanid) all		(Ditto)
- * download channel (chanid) item (itemid)
  * play channel (chanid) none
  * play channel (chanid) latest
  * play channel (chanid) all
@@ -77,7 +77,7 @@ int docmd(char **cmdntsa, int offset);
  * help update channel download new
  * help update channel download all
  * help update channel download item
- * help download
+ * help download			(TODO: Need to do this section ASAP!)
  * help download channel
  * help download channel none
  * help download channel latest
