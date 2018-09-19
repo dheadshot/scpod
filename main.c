@@ -413,7 +413,7 @@ int docmd(char **cmdntsa, int offset)
     if (cmdntsa[i+1] == NULL || (cmdntsa[i+2] == NULL && streq_i(cmdntsa[i+1], "help")))
     {
       printf("Use the command 'help <command>' where '<command>' is a command you want to\nunderstand.\n");
-      printf("Commands:\n*\ttest\n*\tconfigure\n*\tsubscribe\n*\tlist\n*\thelp\n");
+      printf("Commands:\n*\ttest\n*\tconfigure\n*\tsubscribe\n*\tlist\n*\tdownload\n*\thelp\n");
       return 0;
     }
     else if (streq_i(cmdntsa[i+1], "test"))
@@ -447,7 +447,7 @@ int docmd(char **cmdntsa, int offset)
       {
         fprintf(stderr, "Error: Unknown Help Test command '%s', use 'help test' for commands.\n", cmdntsa[i+2]);
       }
-    }
+    } /* End of Help Test */
     else if (streq_i(cmdntsa[i+1], "configure") || streq_i(cmdntsa[i+1], "config"))
     {
       if (cmdntsa[i+2] == NULL)
@@ -539,7 +539,7 @@ int docmd(char **cmdntsa, int offset)
         return 1;
       }
       
-    }
+    } /* End of Help Configure */
     else if (streq_i(cmdntsa[i+1], "subscribe"))
     {
       if (cmdntsa[i+2] == NULL)
@@ -577,7 +577,7 @@ int docmd(char **cmdntsa, int offset)
         fprintf(stderr, "Error: Unknown Download Type '%s' - see 'help subscribe' for the list.\n", cmdntsa[i+3]);
         return 1;
       }
-    }
+    } /* End of Help Subscribe */
     else if (streq_i(cmdntsa[i+1], "list"))
     {
       if (cmdntsa[i+2] == NULL)
@@ -610,7 +610,55 @@ int docmd(char **cmdntsa, int offset)
         fprintf(stderr,"Error: Invalid Help List Command!\n");
         return 1;
       }
-    }
+    } /* End of Help List */
+    else if (streq_i(cmdntsa[i+1], "download"))
+    {
+      if (cmdntsa[i+2] == NULL)
+      {
+        printf("Download:\n  Download items.\n  Subcommands:\n*\tchannel\n");
+        return 0;
+      }
+      else if (streq_i(cmdntsa[i+2], "channel"))
+      {
+        if (cmdntsa[i+3] == NULL)
+        {
+          printf("Download Channel:\n  Download items in a subscribed channel.  The syntax of this command is\n  'download channel <channel identifier> <subcommand>', where\n  '<channel identifier>' is the identifier of the channel.  This can be:\n*\tThe Channel Title (if this begins with an exclamation mark ('!'),\n\tdouble the exclamation mark to escape it; e.g. '!title' becomes\n\t('!!title').\n*\tAn exclamation mark ('!') followed by the number of the channel (as\n\twritten next to the channel title in the output of the 'list channels'\n\tcommand), e.g. '!1'.\n*\tThe special code '!LATEST', meaning the last channel to have been\n\tupdated.\n*\tThe special code '!ALL', meaning all channels.\n  Subcommands:\n*\tnone\n*\tlatest\n*\tall\n*\titem\n");
+          return 0;
+        }
+        else if (streq_i(cmdntsa[i+3],"none"))
+        {
+          printf("Download Channel None:\n  This is a dummy operation that does nothing.  The syntax of this command is\n  'download channel <channel identifier> none', where '<channel identifier>' is\n  the identifier of the channel.  This can be:\n*\tThe Channel Title (if this begins with an exclamation mark ('!'),\n\tdouble the exclamation mark to escape it; e.g. '!title' becomes\n\t'!!title').\n*\tAn exclamation mark ('!') followed by the number of the channel (as\n\twritten next to the channel title in the output of the 'list channels'\n\tcommand), e.g. '!1'.\n*\tThe special code '!LATEST', meaning the channel to have been last\n\tupdated.\n*\tThe special code '!ALL', meaning to download from all channels.\n");
+          return 0;
+        }
+        else if (streq_i(cmdntsa[i+3],"latest"))
+        {
+          printf("Download Channel Latest:\n  Download the latest item in the specified channel.  The syntax of this\n  command is 'download channel <channel identifier> latest', where\n  '<channel identifier>' is the identifier of the channel.  This can be:\n*\tThe Channel Title (if this begins with an exclamation mark ('!'),\n\tdouble the exclamation mark to escape it; e.g. '!title' becomes\n\t'!!title').\n*\tAn exclamation mark ('!') followed by the number of the channel (as\n\twritten next to the channel title in the output of the 'list channels'\n\tcommand), e.g. '!1'.\n*\tThe special code '!LATEST', meaning the channel to have been last\n\tupdated.\n*\tThe special code '!ALL', meaning to download from all channels.\n");
+          return 0;
+        }
+        else if (streq_i(cmdntsa[i+3],"all"))
+        {
+          printf("Download Channel All:\n  Download all the undownloaded items in the specified channel.  The syntax of\n  this command is 'download channel <channel identifier> all', where\n  '<channel identifier>' is the identifier of the channel.  This can be:\n*\tThe Channel Title (if this begins with an exclamation mark ('!'),\n\tdouble the exclamation mark to escape it; e.g. '!title' becomes\n\t'!!title').\n*\tAn exclamation mark ('!') followed by the number of the channel (as\n\twritten next to the channel title in the output of the 'list channels'\n\tcommand), e.g. '!1'.\n*\tThe special code '!LATEST', meaning the channel to have been last\n\tupdated.\n*\tThe special code '!ALL', meaning to download from all channels.\n");
+          return 0;
+        }
+        else if (streq_i(cmdntsa[i+3],"item"))
+        {
+          printf("Download Channel Item:\n  Download the specified item in the specified channel.  The syntax of this\n  command is 'download channel <channel identifier> item <item identifier>',\n  where '<channel identifier>' is the identifier of the channel and\n  '<item identifier>' is the identifier of the item.  The channel identifier\n  can be:\n*\tThe Channel Title (if this begins with an exclamation mark ('!'),\n\tdouble the exclamation mark to escape it; e.g. '!title' becomes\n\t'!!title').\n*\tAn exclamation mark ('!') followed by the number of the channel (as\n\twritten next to the channel title in the output of the 'list channels'\n\tcommand), e.g. '!1'.\n*\tThe special code '!LATEST', meaning the channel to have been last\n\tupdated.\n*\tThe special code '!ALL', meaning to download from all channels.\n");
+          printf("  The item identifier can be:\n*\tThe Item Title (if this begins with an exclamation mark ('!'),\n\tdouble the exclamation mark to escape it; e.g. '!title' becomes\n\t'!!title').\n*\tAn exclamation mark ('!') followed by the number of the channel (as\n\twritten next to the channel title in the output of the\n\t'list channels' command), e.g. '!1'.\n*\tThe special code '!LATEST', meaning the latest item in the specified\n\tchannel.\n*\tThe special code '!NOTDOWNLOADED', meaning to download every item in\n\tthe specified channel that has yet to be downloaded\n*\tThe special code '!DOWNLOADED', meaning to re-download every\n\tpreviously-downloaded item in the specified channel (not\n\trecommended).\n*\tThe special code '!ALL', meaning to download every item from the\n\tspecified channle, no matter whether or not it's been previously\n\tdownloaded.\n");
+          return 0;
+        }
+        else
+        {
+          fprintf(stderr, "Error: Invalid Help Download Channel Command!\n");
+          return 1;
+        }
+      } /* End of Help Download Channel */
+      else
+      {
+        fprintf(stderr, "Error: Invalid Help Download Command!\n");
+        return 1;
+      }
+      
+    } /* End of Help Download */
     else if (streq_i(cmdntsa[i+1], "help") && cmdntsa[i+2] != NULL)
     {
       fprintf(stderr, "Error: Too many help commands!  Hey, no recursing!\n");

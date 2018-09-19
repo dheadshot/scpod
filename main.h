@@ -32,7 +32,7 @@ int docmd(char **cmdntsa, int offset);
  * list item (itemid) in channel (chanid)	~
  * download channel (chanid) none
  * download channel (chanid) latest		~
- * download channel (chanid) all		^ (Actually downloads all that have'nt yet been downloaded
+ * download channel (chanid) all		^ (Actually downloads all that haven't yet been downloaded
  * download channel (chanid) item (itemid)	^
  * help
  * help test
@@ -55,6 +55,12 @@ int docmd(char **cmdntsa, int offset);
  * help list channel
  * help list items
  * help list item
+ * help download
+ * help download channel
+ * help download channel none
+ * help download channel latest
+ * help download channel all
+ * help download channel item
  * help help
  */
 
@@ -77,12 +83,6 @@ int docmd(char **cmdntsa, int offset);
  * help update channel download new
  * help update channel download all
  * help update channel download item
- * help download			(TODO: Need to do this section ASAP!)
- * help download channel
- * help download channel none
- * help download channel latest
- * help download channel all
- * help download channel item
  * help play
  * help play channel
  * help play channel none
