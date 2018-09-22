@@ -27,27 +27,27 @@ details.
 
 ### Working Commands
 
-Command | Checked | Tested (~=still checking, ^=ostensibly works but needs testing)
---------+---------+--------
+Command | Checked | Tested
+------- | ------- | --------
 test parser | * | *
 test download_parser | * | *
 test database | * | *
 test downloader | * | *
-subscribe download none | * |  	^
-subscribe download latest |   |   	~~? see notes in parser.h:parsenewchannel
-subscribe download all | * |   ^
+subscribe download none | * | 
+subscribe download latest |   |   (? see notes in parser.h:parsenewchannel)
+subscribe download all | * |   
 configure set (setting) = (value) | * | * 
 configure set (setting) (value) | * | *
 configure view | * | *
 configure view (setting) | * | *
-list channels |   |   		~
-list channel (chanid) |   |   	~
-list items in channel (chanid) |   |   	~
-list item (itemid) in channel (chanid) |   |   	~
+list channels |   |  
+list channel (chanid) |   |  
+list items in channel (chanid) |   |  
+list item (itemid) in channel (chanid) |   |  
 download channel (chanid) none | * | * 
-download channel (chanid) latest |   |   		~
-download channel (chanid) all |   |   		^ (Actually downloads all that haven't yet been downloaded
-download channel (chanid) item (itemid) |   |   ^
+download channel (chanid) latest |   |   
+download channel (chanid) all |   |   (Actually downloads all that haven't yet been downloaded
+download channel (chanid) item (itemid) |   |  
 help | * | *
 help test | * | *
 help test parser | * | *
