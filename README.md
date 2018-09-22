@@ -46,8 +46,8 @@ list items in channel (chanid) |   |
 list item (itemid) in channel (chanid) |   |  
 download channel (chanid) none | * | * 
 download channel (chanid) latest |   |   
-download channel (chanid) all |   |   (Actually downloads all that haven't yet been downloaded
-download channel (chanid) item (itemid) |   |  
+download channel (chanid) all | * |   (Actually downloads all that haven't yet been downloaded
+download channel (chanid) item (itemid) | * |  
 help | * | *
 help test | * | *
 help test parser | * | *
