@@ -2200,7 +2200,7 @@ unsigned long long getchanidfromurl(char *chanurl)
     fprintf(stderr,"Error: Out of Memory finding channel data!\n");
     return 0;
   }
-  strdsqs(safeurl,chanurl);
+  strdsqs(safeurl,chanurl); /* Not ideal way of sanitising... */
   char *somesql = (char *) malloc(sizeof(char)*(257+strlen(safeurl)));
   if (somesql == NULL)
   {
@@ -2208,6 +2208,7 @@ unsigned long long getchanidfromurl(char *chanurl)
     free(safeurl);
     return 0;
   }
+  
   sprintf(somesql,"SELECT Channel_ID FROM Channel WHERE Channel_URL = '%s';",safeurl);
   free(safeurl);
   passbackull = 0;
@@ -2225,6 +2226,89 @@ unsigned long long getchanidfromurl(char *chanurl)
   
   free(somesql);
   return passbackull;
+}
+
+int getchanurlfromid(char *chanurlout, unsigned long maxurllen, 
+                     unsigned long long chanid)
+{
+  /* Used for the download when updating a channel */
+  /* Returns:
+   *  1 = Success
+   *  0 = DB Failed
+   * -1 = Cannot find URL for Channel ID
+   */
+  
+  char *thesql = "SELECT Channel_URL WHERE Channel_ID = ?;";
+  sqlite3_stmt *stmt;
+  int retcode = sqlite3_prepare_v2(db, thesql, strlen(thesql), &stmt, NULL);
+  if (retcode != SQLITE_OK)
+  {
+    dbwriteerror(rc);
+    sqlite3_finalize(stmt);
+    return 0;
+  }
+  retcode = sqlite3_bind_int64(stmt,1,chanid);
+  if (retcode != SQLITE_OK)
+  {
+    dbwriteerror(rc);
+    sqlite3_finalize(stmt);
+    return 0;
+  }
+  retcode = sqlite3_step(stmt);
+  if (retcode == SQLITE_DONE || retcode == SQLITE_OK)
+  {
+    fprintf(stderr, "Channel %llu does not exist or has no URL associated with it!\n", chanid);
+    sqlite3_finalize(&stmt);
+    return -1;
+  }
+  if (retcode != SQLITE_ROW)
+  {
+    dbwriteerror(rc);
+    sqlite3_finalize(stmt);
+    return 0;
+  }
+  const char *url = sqlite3_column_text(stmt, 0);
+  strncpy(chanurlout, url, maxurllen);
+  sqlite3_finalize(stmt);
+  return 1;
+}
+
+int canupdatechannel(unsigned long long chanid)
+{
+  /* Returns 1 if NOW > LastUpdateDate + TTL mins, 0 if not, -1 on DB Error, -2 on No channel */
+  char *thesql = "SELECT (strftime('%s','now') - strftime('%s',Last_Refresh_Date, printf('+%ld Minutes', TTL))) >= 0 FROM Channel WHERE Channel_ID = ?;";
+  sqlite3_stmt *stmt;
+  int retcode = sqlite3_prepare_v2(db, thesql, strlen(thesql), &stmt, NULL);
+  if (retcode != SQLITE_OK)
+  {
+    dbwriteerror(rc);
+    sqlite3_finalize(stmt);
+    return -1;
+  }
+  retcode = sqlite3_bind_int64(stmt,1,chanid);
+  if (retcode != SQLITE_OK)
+  {
+    dbwriteerror(rc);
+    sqlite3_finalize(stmt);
+    return -1;
+  }
+  retcode = sqlite3_step(stmt);
+  if (retcode == SQLITE_DONE || retcode == SQLITE_OK)
+  {
+    fprintf(stderr, "Channel %llu does not exist!\n", chanid);
+    sqlite3_finalize(&stmt);
+    return -2;
+  }
+  if (retcode != SQLITE_ROW)
+  {
+    dbwriteerror(rc);
+    sqlite3_finalize(stmt);
+    return -1;
+  }
+  int boolres = sqlite3_column_int(stmt, 0);
+  sqlite3_finalize(stmt);
+  return boolres;
+  
 }
 
 

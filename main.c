@@ -912,6 +912,11 @@ int testdlparser(char *url)
 
 int dosubscribe(char *url, int dlcode)
 {
+  if (getchanidfromurl(url) != 0)
+  {
+    fprintf("Already subscribed to channel!\n");
+    return 8;
+  }
   if (dodownload(url, ".", "new_feed.xml") == 0)
   {
     fprintf(stderr, "Error: Feed download failed.\n");
