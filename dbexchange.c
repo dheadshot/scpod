@@ -854,6 +854,7 @@ int finalisechannelstatement()
 
 int checkupdatechannel(chanpropnode *achan, char *rss_version)
 {
+  /* Update channel details based on channel achan structure */
   char somesql[256] = "", *anerrmsg;
   int rc;
   
@@ -897,6 +898,7 @@ int checkupdatechannel(chanpropnode *achan, char *rss_version)
       free(tmpstr);
       return 0;
     }
+    /* This bit is NOT SAFE and needs Sanitising! */
     sprintf(udsql,"UPDATE Channel SET Title = '%s' WHERE Channel_ID = %llu;",tmpstr,achan->dbcid);
     free(tmpstr);
     rc = sqlite3_exec(db,udsql,NULL,0,&anerrmsg);
@@ -2278,6 +2280,7 @@ static int callback_glie(void *anenc, int argc, char **argv, char **azColName)
 
 static int callback_cuc(void *achan, int argc, char **argv, char **azColName)
 { /* Check Update Channel Callback */
+  /* If any field is different, pass back a 1 in the position of it! */
   int i;
   char rettxt[] = "0000000000000000000000", pubdate[256] = "", lbdate[256] = "";
   if (((chanpropnode *) achan)->pubdate.fulldate != NULL)

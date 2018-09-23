@@ -34,7 +34,7 @@ int finalisechannelstatement(); /* Run this after adding all channels */
 int preparechancatstatement(); /* Run this before adding any channel categories */
 int addchancat(unsigned long long channelid, catnode *acat);
 void finalisechancatstatement(); /* Run this after adding all channel categories */
-int checkupdatechannel(chanpropnode *achan, char *rss_version);
+int checkupdatechannel(chanpropnode *achan, char *rss_version); /* Updates CHANNEL DETAILS in table */
 int prepareitemcatstatement(); /* Run this before adding any item categories */
 int additemcat(unsigned long long itemid, catnode *acat);
 void finaliseitemcatstatement(); /* Run this after adding all item categories */
