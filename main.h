@@ -107,5 +107,9 @@ void printdownloadstatus(int retcode);
 int downloadchannellatest(char *arg);
 int downloadchannelall(char *arg);  /* Actually downloads not downloaded rather than everything! */
 int downloadchannelitem(char *chanarg, char *itemarg);
+int updatechanneldownloadall(char *arg); /* Actually downloads not downloaded rather than everything! */
+int updatechanneldownloadnew(char *arg);
+int updatechanneldownloadlatest(char *arg);
+int updatechanneldownloadnone(char *arg);
 
 #endif
