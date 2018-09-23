@@ -272,9 +272,77 @@ int docmd(char **cmdntsa, int offset)
     }
     else
     {
-      fprintf(stderr,"Error: Unknown subcommand '%s' - see 'help download' for details.\n", cmdntsa[i+2]);
+      fprintf(stderr,"Error: Unknown subcommand '%s' - see 'help download' for details.\n", cmdntsa[i+1]);
       return 1;
     }//Offset 1 Download __
+  }
+  else if (streq_i(cmdntsa[i], "update"))
+  {
+    if (cmdntsa[i+1] == NULL)
+    {
+      fprintf(stderr, "Error: Update subcommand not specified - see 'help Update' for available\nsubcommands.  Update what?\n");
+      return 1;
+    }
+    else if (streq_i(cmdntsa[i+1], "channel"))
+    {
+      if (cmdntsa[i+2] == NULL)
+      {
+        fprintf(stderr,"Error: Channel Identifier not specified - see 'help update channel' for\ndetails.  Update which channel?\n");
+        return 1;
+      }
+      else
+      {
+        if (cmdntsa[i+3] == NULL)
+        {
+          fprintf(stderr, "Error: Subcommand not specified - see 'help update channel' for details.\nUpdate channel and do what?\n");
+          return 1;
+        }
+        else if (streq_i(cmdntsa[i+3], "download"))
+        {
+          if (cmdntsa[i+4] == NULL)
+          {
+            fprintf(stderr, "Error: Subcommand not specified - see 'help update channel download' for\ndetails.  Update channel and download what?\n");
+            return 1;
+          }
+          else if (streq_i(cmdntsa[i+4],"none"))
+          {
+            /* Update and download none */
+            return updatechanneldownloadnone(cmdntsa[i+2]);
+          }
+          else if (streq_i(cmdntsa[i+4],"latest"))
+          {
+            /* Update and download latest */
+            return updatechanneldownloadlatest(cmdntsa[i+2]);
+          }
+          else if (streq_i(cmdntsa[i+4],"new"))
+          {
+            /* Update and download new */
+            return updatechanneldownloadnew(cmdntsa[i+2]);
+          }
+          else if (streq_i(cmdntsa[i+4],"all"))
+          {
+            /* Update and download all */
+            return updatechanneldownloadall(cmdntsa[i+2]);
+          }
+          else
+          {
+            fprintf(stderr,"Error: Unknown subcommand '%s' - see 'help update channel download'\nfor details.\n", cmdntsa[i+4]);
+            return 1;
+          }
+        }
+        else
+        {
+          fprintf(stderr,"Error: Unknown subcommand '%s' - see 'help update channel' for details.\n", cmdntsa[i+3]);
+          return 1;
+        }
+      }
+      //===========================
+    }
+    else
+    {
+      fprintf(stderr,"Error: Unknown subcommand '%s' - see 'help update' for details.\n", cmdntsa[i+1]);
+      return 1;
+    } 
   }
   else if (streq_i(cmdntsa[i], "list"))
   {
@@ -404,7 +472,7 @@ int docmd(char **cmdntsa, int offset)
     }
     else
     {
-      fprintf(stderr,"Error: Unknown subcommand '%s' - see 'help list' for details.\n", cmdntsa[i+2]);
+      fprintf(stderr,"Error: Unknown subcommand '%s' - see 'help list' for details.\n", cmdntsa[i+1]);
       return 1;
     }
   }
@@ -1963,7 +2031,7 @@ int downloadchannellatest(char *arg)
   freeciid(itemciid);
   freeciid(chanciid);
   closedb();
-  if (retcode < 1) return (1+(0-retcode));
+  if (retcode < 1) return (2+(0-retcode));
   return 0;
 }
 
@@ -2000,7 +2068,7 @@ int downloadchannelall(char *arg)
   freeciid(itemciid);
   freeciid(chanciid);
   closedb();
-  if (retcode < 1) return (1+(0-retcode));
+  if (retcode < 1) return (2+(0-retcode));
   return 0;
 }
 
@@ -2034,6 +2102,117 @@ int downloadchannelitem(char *chanarg, char *itemarg)
   freeciid(itemciid);
   freeciid(chanciid);
   closedb();
-  if (retcode < 1) return (1+(0-retcode));
+  if (retcode < 1) return (2+(0-retcode));
+  return 0;
+}
+
+int updatechanneldownloadall(char *arg)
+{
+  /* Return 0 on success.  Updates the channel arg and downloads all items
+     not downloaded (saves time and space). */
+  int dlcode = DLCODE_NOTDOWNLOADED;
+  if (opendb(1) == 0)
+  {
+    fprintf(stderr, "Error: could not open database!\n");
+    closedb();
+    return 1;
+  }
+  ci_identifier *chanciid = argtociid(arg);
+  if (chanciid == NULL)
+  {
+    closedb();
+    return 1;
+  }
+  
+  int retcode = 0;
+  /* Some kind of update routine here */
+  printdownloadstatus(retcode);
+  
+  freeciid(chanciid);
+  closedb();
+  if (retcode < 1) return (2+(0-retcode));
+  return 0;
+}
+
+int updatechanneldownloadnew(char *arg)
+{
+  /* Return 0 on success.  Updates the channel arg and downloads all new 
+     items. */
+  int dlcode = DLCODE_NEW;
+  if (opendb(1) == 0)
+  {
+    fprintf(stderr, "Error: could not open database!\n");
+    closedb();
+    return 1;
+  }
+  ci_identifier *chanciid = argtociid(arg);
+  if (chanciid == NULL)
+  {
+    closedb();
+    return 1;
+  }
+  
+  int retcode = 0;
+  /* Some kind of update routine here */
+  printdownloadstatus(retcode);
+  
+  freeciid(chanciid);
+  closedb();
+  if (retcode < 1) return (2+(0-retcode));
+  return 0;
+}
+
+int updatechanneldownloadlatest(char *arg)
+{
+  /* Return 0 on success.  Updates the channel arg and downloads the latest
+     item */
+  int dlcode = DLCODE_LATEST;
+  if (opendb(1) == 0)
+  {
+    fprintf(stderr, "Error: could not open database!\n");
+    closedb();
+    return 1;
+  }
+  ci_identifier *chanciid = argtociid(arg);
+  if (chanciid == NULL)
+  {
+    closedb();
+    return 1;
+  }
+  
+  int retcode = 0;
+  /* Some kind of update routine here */
+  printdownloadstatus(retcode);
+  
+  freeciid(chanciid);
+  closedb();
+  if (retcode < 1) return (2+(0-retcode));
+  return 0;
+}
+
+int updatechanneldownloadnone(char *arg)
+{
+  /* Return 0 on success.  Updates the channel arg, downloading nothing. */
+  int dlcode = DLCODE_NONE;
+  if (opendb(1) == 0)
+  {
+    fprintf(stderr, "Error: could not open database!\n");
+    closedb();
+    return 1;
+  }
+  ci_identifier *chanciid = argtociid(arg);
+  if (chanciid == NULL)
+  {
+    closedb();
+    return 1;
+  }
+  
+  int retcode = 0;
+  /* Some kind of update routine here */
+  printdownloadstatus(retcode);
+  
+  freeciid(chanciid);
+  closedb();
+  if (retcode < 1) return (2+(0-retcode));
   return 0;
 }

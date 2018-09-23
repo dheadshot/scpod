@@ -67,10 +67,10 @@ int docmd(char **cmdntsa, int offset);
 /*
  * TODO: Commands:
  * ---------------
- * update channel (chanid) download none
- * update channel (chanid) download latest
- * update channel (chanid) download new
- * update channel (chanid) download all
+ * update channel (chanid) download none	(Started these)
+ * update channel (chanid) download latest	"
+ * update channel (chanid) download new		"
+ * update channel (chanid) download all		"
  * play channel (chanid) none
  * play channel (chanid) latest
  * play channel (chanid) all
