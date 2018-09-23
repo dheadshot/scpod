@@ -126,6 +126,9 @@ int dodownload(const char *url, const char *dldir, const char *filename)
   free(dnldr);
   free(dirsep);
   int dlel = 0;
+#ifdef DEBUG
+  printf("CMD=%s\n",fullcmd);
+#endif
   dlel = system(fullcmd);
   printf("Returned value '%d'\n", dlel);
   if (dlel == 0) printf("Download Successful!\n");

@@ -328,21 +328,21 @@ int docmd(char **cmdntsa, int offset)
           {
             fprintf(stderr,"Error: Unknown subcommand '%s' - see 'help update channel download'\nfor details.\n", cmdntsa[i+4]);
             return 1;
-          }
+          } /* Offset 4 Update Channel ___ Download __ */
         }
         else
         {
           fprintf(stderr,"Error: Unknown subcommand '%s' - see 'help update channel' for details.\n", cmdntsa[i+3]);
           return 1;
-        }
-      }
+        } /* Offset 3 Update Channel ___ __ */
+      } /* Offset 2 Update Channel __ */
       
     }
     else
     {
       fprintf(stderr,"Error: Unknown subcommand '%s' - see 'help update' for details.\n", cmdntsa[i+1]);
       return 1;
-    } 
+    } /* Offset 1 Update __ */
   }
   else if (streq_i(cmdntsa[i], "list"))
   {
@@ -1305,7 +1305,7 @@ void downloaddberr(int retcode)
 
 int downloadchannelitemmain(ci_identifier *chanident, ci_identifier *itemident)
 {
-  /* TODO: Finish this! */
+  /* TODO: Finish this!  Is it done?! */
   
   /* Returns:
       1 = Success
@@ -2104,6 +2104,25 @@ int downloadchannelitem(char *chanarg, char *itemarg)
   closedb();
   if (retcode < 1) return (2+(0-retcode));
   return 0;
+}
+
+int updatechannelanddownload(ci_identifier *chanident, int specdl)
+{
+  if (chanident->type == ci_none || (chanident->type == ci_title && chanident->id.title == NULL))
+        return 0;
+  unsigned long long dbchanid = 0, dbitemid = 0;
+  int specdl = 0;
+  if (dbopen(1) == 0) return -2;
+  /* Channel ID */
+  int retcode = getchannelid(chanident, &dbchanid);
+  if (retcode == 0) return 1;
+  if (retcode < 0) return 0;
+#ifdef DEBUG
+  	printf("ChannelID=%llu\n",dbchanid);
+#endif
+  
+  return parseandupdatechannel(chanident, specdl);
+  
 }
 
 int updatechanneldownloadall(char *arg)

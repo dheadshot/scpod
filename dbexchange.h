@@ -59,6 +59,12 @@ unsigned long long getchanidfromurl(char *chanurl);
 int getchanurlfromid(char *chanurlout, unsigned long maxurllen, 
                      unsigned long long chanid); /* Returns 1=success, 0=DB Fail, -1= Cannot find URL/Channel */
 int canupdatechannel(unsigned long long chanid); /* Can the channel be updated yet or do we need to wait for the TTL still?  Returns: 1=Yes, 0=No, -1=DB Fail, -2=Cannot Find Channel */
+int getchanneldlstuff(char *downloaddir, unsigned long downloaddirlen, 
+                       char *title, unsigned long titlelen, 
+                       unsigned long long chanid); /* Returns: 1=success, 0=No Channel, -1=DB Error */
+
+/* -------------- */
+
 static int callback_glio(void *NotUsed, int argc, char **argv, char **azColName);
 static int callback_glie(void *anenc, int argc, char **argv, char **azColName);
 static int callback_cuc(void *achan, int argc, char **argv, char **azColName);

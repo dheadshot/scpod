@@ -5543,20 +5543,205 @@ int parsenewchannel(FILE *chf, char *url, int dlcode)
 
 int parseandupdatechannel(unsigned long long chanid, int dlcode)
 {
+  /* Returns:
+   *  1 = Success
+   *  0 = No Channel
+   * -1 = OoM!
+   * -2 = DB Error!
+   * -3 = Cannot Update - Not Allowed!
+   * -4 = Invalid Settings!
+   * -5 = Download Failed!
+   * -6 = Cannot open file!
+   * -7 = Error Parsing Feed! */
   char churl[2048] = "";
+  int retcode;
   
   if (getchanurlfromid(churl, 2047, chanid) <1) return 0;
   
   /* TODO: Work from here! */
   
-  /*  Plan:  */
-  /* 1: Get Download Directory and Title of channel from DB */
-  /* 2: Download Feed from Churl to <Download Directory>/<Title>.xml */
-  /* 3: Open the Feed and Parse it into the Linked Lists */
-  /* 4: Compare the channel details nodes with the DB and update if required (checkupdatechannel()). */
-  /* 5: Using GUIDs, check if items are new and, if so, mark them 'new' and add them to the DB */
-  /* 6: If DLCode is NEW, download the new items, otherwise call the appropriate download reoutine as used in the download functions. */
-  /* 7: Finish! */
+  /*  Steps Plan:  */
+  /* 1: Check the TTL has passed and we can download */
+  retcode = canupdatechannel(chanid);
+  if (retcode == 0)
+  {
+    fprintf(stderr, "Error: Cannot update the channel yet - the Time To Live has not elapsed!\n");
+    return -3;
+  }
+  if (retcode == -1) return -2;
+  if (retcode == -2) return 0;
+  
+  /* 2: Get Download Directory and Title of channel from DB */
+  
+  char *dldir = (char *) malloc(sizeof(char)*2049);
+  if (dldir == NULL)
+  {
+    fprintf(stderr, "Error: Out of Memory!\n");
+    return -1;
+  }
+  
+  char *title = (char *) malloc(sizeof(char)*257);
+  if (title == NULL)
+  {
+    fprintf(stderr, "Error: Out of Memory!\n");
+    free(dldir);
+    return -1;
+  }
+  
+  retcode = getchanneldlstuff(dldir, 2048, title, 256, chanid);
+  if (retcode == 0)
+  {
+    free(dldir);
+    free(title);
+    return -2;
+  }
+  if (retcode <0)
+  {
+    free(dldir);
+    free(title);
+    return 0;
+  }
+  
+  /* 3: Download Feed from Churl to (cleaned) <Download Directory>/<Title>.xml */
+  
+  char *dirsep = getsettingdata("DIR_SEPARATOR");
+  if (dirsep == NULL)
+  {
+    fprintf(stderr, "Error: Out of Memory!\n");
+    free(dldir);
+    free(title);
+    return -1;
+  }
+  if (dirsep[0] == 0)
+  {
+    fprintf(stderr, "Error: Directory separator not set!\n");
+    free(dirsep);
+    free(dldir);
+    free(title);
+    return -4;
+  }
+  
+  char *cleantitle (char *) malloc(sizeof(char) * (1+strlen(title)));
+  if (cleantitle == NULL)
+  {
+    fprintf(stderr, "Error: Out of Memory!\n");
+    free(dirsep);
+    free(dldir);
+    free(title);
+    return -1;
+  }
+  makevalidfilename(cleantitle, title);
+  free(title);
+  
+  char *fname = (char *) malloc(sizeof(char)*(1+strlen(cleantitle)+strlen(".xml")));
+  if (fname == NULL)
+  {
+    fprintf(stderr, "Error: Out of Memory!\n");
+    free(cleantitle);
+    free(dirsep);
+    free(dldir);
+    return -1;
+  }
+  strcpy(fname, cleantitle);
+  strcat(fname, ".xml");
+  
+  free(cleantitle);
+  
+  retcode = dodownload(churl,dldir,fname);
+  if (retcode != 0)
+  {
+    fprintf(stderr, "Download of Feed Failed!\n");
+    free(fname);
+    free(dirsep);
+    free(dldir);
+    return -5;
+  }
+  
+  /* 4: Open the Feed and Parse it into the Linked Lists */
+  
+  char *pdir = getsettingdata("PODCAST_DIR");
+  if (pdir == NULL)
+  {
+    fprintf(stderr, "Error: Out of Memory!\n");
+    free(fname);
+    free(dirsep);
+    free(dldir);
+    return -1;
+  }
+  if (pdir[0] == 0)
+  {
+    fprintf(stderr, "Error: Directory separator not set!\n");
+    free(pdir);
+    free(fname);
+    free(dirsep);
+    free(dldir);
+    return -4;
+  }
+  
+  char *dlpath = (char *) malloc(sizeof(char)*(1+strlen(pdir)+(strlen(dirsep)*2)+strlen(dldir)+strlen(cleantitle)+strlen(".xml")));
+  if (dlpath == NULL)
+  {
+    fprintf(stderr, "Error: Out of Memory!\n");
+    free(pdir);
+    free(fname);
+    free(dirsep);
+    free(dldir);
+    return -1;
+  }
+  strcpy(dlpath,pdir);
+  strcat(dlpath,dirsep);
+  strcat(dlpath,dldir);
+  strcat(dlpath,dirsep);
+  strcat(dlpath,fname);
+  
+  FILE *chf = fopen(dlpath, "r");
+  if (chf == NULL)
+  {
+    fprintf(stderr, "Error: Could not open downloaded feed!\n");
+    free(pdir);
+    free(fname);
+    free(dirsep);
+    free(dldir);
+    return -6;
+  }
+  
+  retcode = parsersstoll(chf);
+  
+  if (retcode == -1)
+  {
+    fclose(chf);
+    free(pdir);
+    free(fname);
+    free(dirsep);
+    free(dldir);
+    return -7;
+  }
+  
+  fclose(chf);
+  
+  /* 5: Compare the channel details nodes with the DB and update if required (checkupdatechannel() and then categories!). */
+  
+  cpptr = cproot;
+  if (cpptr == NULL)
+  {
+    fprintf(stderr, "No channel found in feed!\n");
+    free(pdir);
+    free(fname);
+    free(dirsep);
+    free(dldir);
+    destroycategories();
+    destroychsannels();
+    destroyitems();
+    return -7;
+  }
+  
+  retcode = checkupdatechannel(cpptr, rssversion);
+  
+  /* TODO: Update categories of channel! */
+  
+  /* 6: Using GUIDs, check if items are new and, if so, mark them 'new' and add them to the DB */
+  /* 7: If DLCode is NEW, download the new items, otherwise call the appropriate download reoutine as used in the download functions. */
+  /* 8: Finish! */
   
 }
 

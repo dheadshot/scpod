@@ -2311,6 +2311,50 @@ int canupdatechannel(unsigned long long chanid)
   
 }
 
+int getchanneldlstuff(char *downloaddir, unsigned long downloaddirlen, 
+                       char *title, unsigned long titlelen, 
+                       unsigned long long chanid)
+{
+  /* Returns 1 on success, 0 on no channel, -1 on DB fail. */
+  char *thesql = "SELECT Directory, Title FROM Channel WHERE Channel_ID = ?;";
+  sqlite3_stmt *stmt;
+  int retcode = sqlite3_prepare_v2(db, thesql, strlen(thesql), &stmt, NULL);
+  if (retcode != SQLITE_OK)
+  {
+    dbwriteerror(rc);
+    sqlite3_finalize(stmt);
+    return -1;
+  }
+  retcode = sqlite3_bind_int64(stmt,1,chanid);
+  if (retcode != SQLITE_OK)
+  {
+    dbwriteerror(rc);
+    sqlite3_finalize(stmt);
+    return -1;
+  }
+  retcode = sqlite3_step(stmt);
+  if (retcode == SQLITE_DONE || retcode == SQLITE_OK)
+  {
+    fprintf(stderr, "Channel %llu does not exist!\n", chanid);
+    sqlite3_finalize(&stmt);
+    return 0;
+  }
+  if (retcode != SQLITE_ROW)
+  {
+    dbwriteerror(rc);
+    sqlite3_finalize(stmt);
+    return -1;
+  }
+  const char *dbdir = sqlite3_column_text(stmt, 0);
+  const char *dbtitle = sqlite3_column_text(stmt, 1);
+  
+  strncpy(downloaddir, dbdir, downloaddirlen);
+  strncpy(title, dbtitle, titlelen);
+  
+  sqlite3_finalize(stmt);
+  return 1;
+}
+
 
 
 /*--------------------------*/
