@@ -186,6 +186,8 @@ int getencfileext(char *fileext, rssenclosure *enc);
 int parsenewchannel(FILE *chf, char *url, int dlcode);
 /* Returns: 1=worked, 0=File reading error, -1=Memory error, -2=Not RSS, 
             -3=DB Error, -4=File System Error, -5=Config Error */
+int parseandupdatechannel(unsigned long long chanid, int dlcode);
+/* TODO: Above is a work in progress! */
 int listchanneldetails(ci_identifier *chanident);
 int listchannelitems(ci_identifier *chanident);
 int listitemdetails(ci_identifier *chanident, ci_identifier *itemident);

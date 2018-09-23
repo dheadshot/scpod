@@ -5541,6 +5541,25 @@ int parsenewchannel(FILE *chf, char *url, int dlcode)
   return 1;
 }
 
+int parseandupdatechannel(unsigned long long chanid, int dlcode)
+{
+  char churl[2048] = "";
+  
+  if (getchanurlfromid(churl, 2047, chanid) <1) return 0;
+  
+  /* TODO: Work from here! */
+  
+  /*  Plan:  */
+  /* 1: Get Download Directory and Title of channel from DB */
+  /* 2: Download Feed from Churl to <Download Directory>/<Title>.xml */
+  /* 3: Open the Feed and Parse it into the Linked Lists */
+  /* 4: Compare the channel details nodes with the DB and update if required (checkupdatechannel()). */
+  /* 5: Using GUIDs, check if items are new and, if so, mark them 'new' and add them to the DB */
+  /* 6: If DLCode is NEW, download the new items, otherwise call the appropriate download reoutine as used in the download functions. */
+  /* 7: Finish! */
+  
+}
+
 int listchanneldetails(ci_identifier *chanident)
 {
   if (chanident->type == ci_none || (chanident->type == ci_title && chanident->id.title == NULL)) return 0;
