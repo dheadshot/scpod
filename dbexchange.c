@@ -1634,6 +1634,51 @@ int prepareitemstatementnotdownloaded()
   return 1;
 }
 
+int addskiphour(unsigned long long dbchanid, int hour)
+{
+  /* Returns 1 on success, 0 on bad hour, -1 on DB Error */
+  if (hour<0 || hour>24) return 0;
+  char *thesql = "INSERT INTO Channel_Skip_Hour (CSHID, Channel_ID, Hour) VALUES (NULL, ?1, ?2);";
+  sqlite3_stmt *stmt;
+  
+  int retcode = sqlite3_prepare_v2(db, thesql, strlen(thesql), &stmt, NULL);
+  if (retcode != SQLITE_OK)
+  {
+    dbwriteerror(retcode);
+    sqlite3_finalize(stmt);
+    return -1;
+  }
+  retcode = sqlite3_bind_int64(stmt,1,dbchanid);
+  if (retcode != SQLITE_OK)
+  {
+    dbwriteerror(retcode);
+    sqlite3_finalize(stmt);
+    return -1;
+  }
+  retcode = sqlite3_bind_int(stmt,2,hour);
+  if (retcode != SQLITE_OK)
+  {
+    dbwriteerror(retcode);
+    sqlite3_finalize(stmt);
+    return -1;
+  }
+  retcode = sqlite3_step(stmt);
+  if (retcode == SQLITE_ROW)
+  {
+    fprintf(stderr, "Internal error adding Skip Hours!\n");
+    sqlite3_finalize(&stmt);
+    return -1;
+  }
+  if (retcode != SQLITE_DONE && retcode != SQLITE_OK)
+  {
+    dbwriteerror(retcode);
+    sqlite3_finalize(stmt);
+    return -1;
+  }
+  sqlite3_finalize(stmt);
+  return 1;
+}
+
 unsigned long long additemdled(itempropnode *anitem, unsigned long long chanid, 
                                char *ofn, char *thefn)
 {
@@ -2277,18 +2322,20 @@ int canupdatechannel(unsigned long long chanid)
 {
   /* Returns 1 if NOW > LastUpdateDate + TTL mins, 0 if not, -1 on DB Error, -2 on No channel */
   char *thesql = "SELECT (strftime('%s','now') - strftime('%s',Last_Refresh_Date, printf('+%ld Minutes', TTL))) >= 0 FROM Channel WHERE Channel_ID = ?;";
+  char *skipdaysql = "SELECT (total(Day_Number == strftime('%w','now')) == 0) FROM Channel_Skip_Day WHERE Channel_ID = ?;";
+  char *skiphoursql = "SELECT (total(Hour == strftime('%H','now')) == 0) FROM Channel_Skip_Hour WHERE Channel_ID = ?;";
   sqlite3_stmt *stmt;
   int retcode = sqlite3_prepare_v2(db, thesql, strlen(thesql), &stmt, NULL);
   if (retcode != SQLITE_OK)
   {
-    dbwriteerror(rc);
+    dbwriteerror(retcode);
     sqlite3_finalize(stmt);
     return -1;
   }
   retcode = sqlite3_bind_int64(stmt,1,chanid);
   if (retcode != SQLITE_OK)
   {
-    dbwriteerror(rc);
+    dbwriteerror(retcode);
     sqlite3_finalize(stmt);
     return -1;
   }
@@ -2301,12 +2348,73 @@ int canupdatechannel(unsigned long long chanid)
   }
   if (retcode != SQLITE_ROW)
   {
-    dbwriteerror(rc);
+    dbwriteerror(retcode);
     sqlite3_finalize(stmt);
     return -1;
   }
   int boolres = sqlite3_column_int(stmt, 0);
   sqlite3_finalize(stmt);
+  
+  retcode = sqlite3_prepare_v2(db, skipdaysql, strlen(skipdaysql), &stmt, NULL);
+  if (retcode != SQLITE_OK)
+  {
+    dbwriteerror(retcode);
+    sqlite3_finalize(stmt);
+    return -1;
+  }
+  retcode = sqlite3_bind_int64(stmt,1,chanid);
+  if (retcode != SQLITE_OK)
+  {
+    dbwriteerror(retcode);
+    sqlite3_finalize(stmt);
+    return -1;
+  }
+  retcode = sqlite3_step(stmt);
+  if (retcode == SQLITE_DONE || retcode == SQLITE_OK)
+  {
+    fprintf(stderr, "Internal error checking Skip Days!\n");
+    sqlite3_finalize(&stmt);
+    return -1;
+  }
+  if (retcode != SQLITE_ROW)
+  {
+    dbwriteerror(retcode);
+    sqlite3_finalize(stmt);
+    return -1;
+  }
+  boolres |= sqlite3_column_int(stmt, 0);
+  sqlite3_finalize(stmt);
+  
+  retcode = sqlite3_prepare_v2(db, skiphoursql, strlen(skiphoursql), &stmt, NULL);
+  if (retcode != SQLITE_OK)
+  {
+    dbwriteerror(retcode);
+    sqlite3_finalize(stmt);
+    return -1;
+  }
+  retcode = sqlite3_bind_int64(stmt,1,chanid);
+  if (retcode != SQLITE_OK)
+  {
+    dbwriteerror(retcode);
+    sqlite3_finalize(stmt);
+    return -1;
+  }
+  retcode = sqlite3_step(stmt);
+  if (retcode == SQLITE_DONE || retcode == SQLITE_OK)
+  {
+    fprintf(stderr, "Internal error checking Skip Hours!\n");
+    sqlite3_finalize(&stmt);
+    return -1;
+  }
+  if (retcode != SQLITE_ROW)
+  {
+    dbwriteerror(retcode);
+    sqlite3_finalize(stmt);
+    return -1;
+  }
+  boolres |= sqlite3_column_int(stmt, 0);
+  sqlite3_finalize(stmt);
+  
   return boolres;
   
 }

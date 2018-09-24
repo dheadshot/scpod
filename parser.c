@@ -5017,6 +5017,17 @@ int parsenewchannel(FILE *chf, char *url, int dlcode)
     strcat(chanpath,chandir);
     /*free(chandir);
     chandir = NULL;*/
+    /* Skip Hours */
+    unsigned long skipi;
+    for (skipi = 0; cpptr->skiphours[i] != -1; skipi++)
+    {
+      if (addskiphour(dbchanid, cpptr->skiphours[i]) < 1)
+      {
+        fprintf(stderr, "Warning: Could not add Skip Hour %d!\n", cpptr->skiphours[i]);
+      }
+    }
+    /* Skip Days */
+    /* TODO: Do the skip days add to db, with a lookup for the day number! */
     /* Channel Categories */
     for (catptr = catroot; catptr != NULL; catptr = catptr->next)
     {
@@ -5714,6 +5725,9 @@ int parseandupdatechannel(unsigned long long chanid, int dlcode)
     free(fname);
     free(dirsep);
     free(dldir);
+    destroycategories();
+    destroychsannels();
+    destroyitems();
     return -7;
   }
   
