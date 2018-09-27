@@ -159,6 +159,7 @@ typedef struct ci_identifier_struct {
 } ci_identifier;
 
 
+int parseday(char *dayname);
 int createcategory(enum categorytype ctype, unsigned long refid, char *domain, 
                    char *category);
 void freeacatn(catnode *acatn);

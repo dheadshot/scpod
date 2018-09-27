@@ -1679,6 +1679,58 @@ int addskiphour(unsigned long long dbchanid, int hour)
   return 1;
 }
 
+int addskipday(unsigned long long dbchanid, int daynum, char *dayname)
+{
+  if (daynum<0 || daynum>6 || dayname==NULL || dayname[0]==0) return 0;
+  char *thesql = "INSERT INTO Channel_Skip_Day (CSHID, Channel_ID, Day_Name, Day_Number) VALUES (NULL, ?1, ?2, ?3);";
+  sqlite3_stmt *stmt;
+  
+  int retcode = sqlite3_prepare_v2(db, thesql, strlen(thesql), &stmt, NULL);
+  if (retcode != SQLITE_OK)
+  {
+    dbwriteerror(retcode);
+    sqlite3_finalize(stmt);
+    return -1;
+  }
+  retcode = sqlite3_bind_int64(stmt,1,dbchanid);
+  if (retcode != SQLITE_OK)
+  {
+    dbwriteerror(retcode);
+    sqlite3_finalize(stmt);
+    return -1;
+  }
+  retcode = sqlite3_bind_text(stmt,2,dayname,strlen(dayname),SQLITE_TRANSIENT);
+  if (retcode != SQLITE_OK)
+  {
+    dbwriteerror(retcode);
+    sqlite3_finalize(stmt);
+    return -1;
+  }
+  retcode = sqlite3_bind_int(stmt,3,daynum);
+  if (retcode != SQLITE_OK)
+  {
+    dbwriteerror(retcode);
+    sqlite3_finalize(stmt);
+    return -1;
+  }
+  retcode = sqlite3_step(stmt);
+  if (retcode == SQLITE_ROW)
+  {
+    fprintf(stderr, "Internal error adding Skip Days!\n");
+    sqlite3_finalize(&stmt);
+    return -1;
+  }
+  if (retcode != SQLITE_DONE && retcode != SQLITE_OK)
+  {
+    dbwriteerror(retcode);
+    sqlite3_finalize(stmt);
+    return -1;
+  }
+  sqlite3_finalize(stmt);
+  return 1;
+  
+}
+
 unsigned long long additemdled(itempropnode *anitem, unsigned long long chanid, 
                                char *ofn, char *thefn)
 {

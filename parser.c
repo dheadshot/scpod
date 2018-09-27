@@ -20,6 +20,25 @@ unsigned long nextchanid = 1;
 char *rssversion = NULL;
 
 
+int parseday(char *dayname)
+{
+  if (startswith_i(dayname, "Sun") return 0;
+  if (startswith_i(dayname, "Mon") return 1;
+  if (startswith_i(dayname, "Tue") return 2;
+  if (startswith_i(dayname, "Wed") return 3;
+  if (startswith_i(dayname, "Thu") return 4;
+  if (startswith_i(dayname, "Fri") return 5;
+  if (startswith_i(dayname, "Sat") return 6;
+  if (startswith_i(dayname, "DiM") return 0;
+  if (startswith_i(dayname, "Lun") return 1;
+  if (startswith_i(dayname, "Mar") return 2;
+  if (startswith_i(dayname, "Mec") return 3;
+  if (startswith_i(dayname, "Jue") return 4;
+  if (startswith_i(dayname, "Ven") return 5;
+  if (startswith_i(dayname, "Sam") return 6;
+  return -1;
+}
+
 int createcategory(enum categorytype ctype, unsigned long refid, char *domain, 
                    char *category)
 {
@@ -5017,17 +5036,30 @@ int parsenewchannel(FILE *chf, char *url, int dlcode)
     strcat(chanpath,chandir);
     /*free(chandir);
     chandir = NULL;*/
+    
+    /* Turns out I *DID* put the skip hours/days in add channel, so the next
+       two routines are redundnt!  However, since thry aren't well done 
+       originally, I may use these instead... */
     /* Skip Hours */
     unsigned long skipi;
-    for (skipi = 0; cpptr->skiphours[i] != -1; skipi++)
+    for (skipi = 0; cpptr->skiphours[skipi] != -1; skipi++)
     {
-      if (addskiphour(dbchanid, cpptr->skiphours[i]) < 1)
+      if (addskiphour(dbchanid, cpptr->skiphours[skipi]) < 1)
       {
-        fprintf(stderr, "Warning: Could not add Skip Hour %d!\n", cpptr->skiphours[i]);
+        fprintf(stderr, "Warning: Could not add Skip Hour %d!\n", cpptr->skiphours[skipi]);
       }
     }
     /* Skip Days */
-    /* TODO: Do the skip days add to db, with a lookup for the day number! */
+    int skipn;
+    for (skipi=0; cpptr->skipdays[skipi] != NULL; skipi++)
+    {
+      skipn = parseday(cpptr->skipdays[skipi]);
+      if (skipn<0 || addskipday(dbchanid,skipn,cpptr->skipdays[skipi])<1)
+      {
+        fprintf(stderr, "Warning: Could not add Skip Day '%s'!\n", cpptr->skipdays[skipi]);
+      }
+      
+    }
     /* Channel Categories */
     for (catptr = catroot; catptr != NULL; catptr = catptr->next)
     {

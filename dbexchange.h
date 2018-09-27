@@ -41,6 +41,7 @@ void finaliseitemcatstatement(); /* Run this after adding all item categories */
 int prepareitemstatementdownloaded(); /* Run this before adding any dl items */
 int prepareitemstatementnotdownloaded(); /* Run this before adding any non-dl items */
 int addskiphour(unsigned long long dbchanid, int hour);  /* Returns 1 on success, 0 on bad hour, -1 on DB Error */
+int addskipday(unsigned long long dbchanid, int daynum, char *dayname);  /* Returns 1 on success, 0 on bad day, -1 on DB Error */
 unsigned long long additemdled(itempropnode *anitem, unsigned long long chanid, 
                                char *ofn, char *thefn); /* Add a Downloaded item */
 unsigned long long additemndled(itempropnode *anitem, unsigned long long chanid, 
