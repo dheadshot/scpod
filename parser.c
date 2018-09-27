@@ -5037,6 +5037,7 @@ int parsenewchannel(FILE *chf, char *url, int dlcode)
     /*free(chandir);
     chandir = NULL;*/
     
+#ifdef SKIPNEW
     /* Turns out I *DID* put the skip hours/days in add channel, so the next
        two routines are redundnt!  However, since thry aren't well done 
        originally, I may use these instead... */
@@ -5060,6 +5061,7 @@ int parsenewchannel(FILE *chf, char *url, int dlcode)
       }
       
     }
+#endif
     /* Channel Categories */
     for (catptr = catroot; catptr != NULL; catptr = catptr->next)
     {

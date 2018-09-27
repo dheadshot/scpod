@@ -794,6 +794,7 @@ unsigned long long addchannel(chanpropnode *achan, char *chanurl, char *rss_vers
   if (passbackull == 0) return 0;
   achan->dbcid = passbackull;
   
+#ifndef SKIPNEW
   /* Insert Skip-Hours */
   int i;
   char shsql[256] = "";
@@ -842,6 +843,7 @@ unsigned long long addchannel(chanpropnode *achan, char *chanurl, char *rss_vers
       }
     }
   }
+#endif
   
   return passbackull;
 }
@@ -2513,6 +2515,144 @@ int getchanneldlstuff(char *downloaddir, unsigned long downloaddirlen,
   
   sqlite3_finalize(stmt);
   return 1;
+}
+
+int updateskips(chanpropnode *cpn, unsigned long long chanid)
+{
+  char hrs[26] = "0000000000000000000000000";
+  char days[8] = "0000000";
+  unsigned long i;
+  long hr;
+  
+  if (cpn->skiphours != NULL)
+  {
+    for (i=0; cpn->skiphours[i] != -1; i++)
+    {
+      hr = cpn->skiphours[i];
+      if (hr >= 0 && hr < 25) hrs[hr] = '1';
+    }
+  }
+  
+  if (cpn->skipdays != NULL)
+  {
+    for (i=0; cpn->skipdays[i] != NULL; i++)
+    {
+      hr = parseday(cpn->skipdays[i]);
+      if (hr >= 0 && hr < 7) days[hr] = '1';
+    }
+  }
+  
+  int retn = 2;
+  
+  char *delhsql = "DELETE FROM Channel_Skip_Hour WHERE Channel_ID = ?1 AND Hour = ?2;";
+  char *selhsql = "SELECT Hour FROM Channel_Skip_Hour WHERE Channel_ID = ?1;";
+  /* Use addskiphour(id, hour) to add! */
+  sqlite3_stmt *stmt;
+  
+  int retcode;
+  
+  if (!streq_(hrs, "0000000000000000000000000"))
+  {
+    retcode = sqlite3_prepare_v2(db, selhsql, strlen(selhsql), &stmt, NULL);
+    if (retcode != SQLITE_OK)
+    {
+      /* Do something */
+    }
+    retcode = sqlite3_bind_int64(stmt, 1, chanid);
+    if (retcode != SQLITE_OK)
+    {
+      /* Do something */
+    }
+    retcode = sqlite3_step(stmt);
+    while (retcode == SQLITE_ROW)
+    {
+      hr = sqlite3_column_int(stmt,0);
+      if (hr >=0 && hr <25)
+      {
+        if (hrs[hr] == '1') hrs[hr] = '_';
+        else if (hrs[hr] == '0') hrs[hr] = '!';
+      }
+    }
+    if (retcode != SQLITE_DONE && retcode != SQLITE_OK)
+    {
+      /* Do something */
+    }
+    retcode = sqlite3_finalize(stmt);
+    if (retcode != SQLITE_OK)
+    {
+      /* Do something */
+    }
+    
+    hr = 0;
+    for (i=0; i<25; i++)
+    {
+      if (hrs[i] == '!') hr++;
+    }
+    if (hr)
+    {
+      retcode = sqlite3_prepare_v2(db, selhsql, strlen(delhsql), &stmt, NULL);
+      if (retcode != SQLITE_OK)
+      {
+        /* Do something */
+      }
+      retcode = sqlite3_bind_int64(stmt, 1, chanid);
+      if (retcode != SQLITE_OK)
+      {
+        /* Do something */
+      }
+      
+      for (i=0; i<25; i++)
+      {
+        if (hrs[i] == '!')
+        {
+          retcode = sqlite3_bind_int(stmt, 2, i);
+          if (retcode != SQLITE_OK)
+          {
+            /* Do something */
+          }
+          retcode = sqlite3_step(stmt);
+          if (retcode == SQLITE_STEP)
+          {
+            /* Should never happen, but do something... */
+          }
+          if (retcode != SQLITE_DONE && retcode != SQLITE_OK)
+          {
+            /* Do Something */
+          }
+          retcode = sqlite3_reset(stmt);
+          if (retcode != SQLITE_OK)
+          {
+            /* Do something */
+          }
+        }
+      } /* END FOR */
+      
+      retcode = sqlite3_finalize(stmt);
+      if (retcode != SQLITE_OK)
+      {
+        /* Do Something */
+      }
+    } /* Done Dels */
+    
+    for (i=0;i<25;i++)
+    {
+      if (hrs[i] == '1')
+      {
+        retcode = addskiphour(chanid, ((int) i));
+        if (retcode < 1)
+        {
+          /* Do something */
+        }
+      }
+    } /* End For */
+  }/* Done Hours */
+  
+  if (!streq_(days, "0000000"))
+  {
+    /* TODO: Update Days! */
+  }
+  
+  return retn;
 }
 
 
