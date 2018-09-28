@@ -2519,6 +2519,7 @@ int getchanneldlstuff(char *downloaddir, unsigned long downloaddirlen,
 
 int updateskips(chanpropnode *cpn, unsigned long long chanid)
 {
+  /* Returns 1 on success, 2 on no updates needed, -1 on Error updating hours, -2 on Error updating days */
   char hrs[26] = "0000000000000000000000000";
   char days[8] = "0000000";
   unsigned long i;
@@ -2547,7 +2548,10 @@ int updateskips(chanpropnode *cpn, unsigned long long chanid)
   char *delhsql = "DELETE FROM Channel_Skip_Hour WHERE Channel_ID = ?1 AND Hour = ?2;";
   char *selhsql = "SELECT Hour FROM Channel_Skip_Hour WHERE Channel_ID = ?1;";
   /* Use addskiphour(id, hour) to add! */
-  sqlite3_stmt *stmt;
+  char *deldsql = "DELETE FROM Channel_Skip_Day WHERE Channel_ID = ?1 AND Day_Number = ?2;";
+  char *seldsql = "SELECT Day_Number FROM Channel_Skip_Hour WHERE Channel_ID = ?1;";
+  /* Use addskipday(id, daynum, dayname) to add! */
+  sqlite3_stmt *stmt = NULL;
   
   int retcode;
   
@@ -2557,11 +2561,17 @@ int updateskips(chanpropnode *cpn, unsigned long long chanid)
     if (retcode != SQLITE_OK)
     {
       /* Do something */
+      dbwriteerror(retcode);
+      sqlite3_finalize(stmt);
+      return -1;
     }
     retcode = sqlite3_bind_int64(stmt, 1, chanid);
     if (retcode != SQLITE_OK)
     {
       /* Do something */
+      dbwriteerror(retcode);
+      sqlite3_finalize(stmt);
+      return -1;
     }
     retcode = sqlite3_step(stmt);
     while (retcode == SQLITE_ROW)
@@ -2576,11 +2586,17 @@ int updateskips(chanpropnode *cpn, unsigned long long chanid)
     if (retcode != SQLITE_DONE && retcode != SQLITE_OK)
     {
       /* Do something */
+      dbwriteerror(retcode);
+      sqlite3_finalize(stmt);
+      return -1;
     }
     retcode = sqlite3_finalize(stmt);
     if (retcode != SQLITE_OK)
     {
       /* Do something */
+      dbwriteerror(retcode);
+      sqlite3_finalize(stmt);
+      return -1;
     }
     
     hr = 0;
@@ -2594,11 +2610,17 @@ int updateskips(chanpropnode *cpn, unsigned long long chanid)
       if (retcode != SQLITE_OK)
       {
         /* Do something */
+        dbwriteerror(retcode);
+        sqlite3_finalize(stmt);
+        return -1;
       }
       retcode = sqlite3_bind_int64(stmt, 1, chanid);
       if (retcode != SQLITE_OK)
       {
         /* Do something */
+        dbwriteerror(retcode);
+        sqlite3_finalize(stmt);
+        return -1;
       }
       
       for (i=0; i<25; i++)
@@ -2609,20 +2631,32 @@ int updateskips(chanpropnode *cpn, unsigned long long chanid)
           if (retcode != SQLITE_OK)
           {
             /* Do something */
+            dbwriteerror(retcode);
+            sqlite3_finalize(stmt);
+            return -1;
           }
           retcode = sqlite3_step(stmt);
           if (retcode == SQLITE_STEP)
           {
             /* Should never happen, but do something... */
+            fprintf(stderr,"Error: Internal error removing incorrect skip-hour.\n");
+            sqlite3_finalize(stmt);
+            return -1;
           }
           if (retcode != SQLITE_DONE && retcode != SQLITE_OK)
           {
             /* Do Something */
+            dbwriteerror(retcode);
+            sqlite3_finalize(stmt);
+            return -1;
           }
           retcode = sqlite3_reset(stmt);
           if (retcode != SQLITE_OK)
           {
             /* Do something */
+            dbwriteerror(retcode);
+            sqlite3_finalize(stmt);
+            return -1;
           }
         }
       } /* END FOR */
@@ -2631,6 +2665,9 @@ int updateskips(chanpropnode *cpn, unsigned long long chanid)
       if (retcode != SQLITE_OK)
       {
         /* Do Something */
+        dbwriteerror(retcode);
+        sqlite3_finalize(stmt);
+        return -1;
       }
     } /* Done Dels */
     
@@ -2642,15 +2679,165 @@ int updateskips(chanpropnode *cpn, unsigned long long chanid)
         if (retcode < 1)
         {
           /* Do something */
+          fprintf(stderr,"Error %d adding new skip-hour to database!\n", retcode);
+          /*sqlite3_finalize(stmt);*/
+          return -1;
         }
       }
-    } /* End For */
+    } /* End For - Done Adds */
+    
+    retn = 1;
   }/* Done Hours */
   
   if (!streq_(days, "0000000"))
   {
     /* TODO: Update Days! */
-  }
+    retcode = sqlite3_prepare_v2(db, seldsql, strlen(seldsql), &stmt, NULL);
+    if (retcode != SQLITE_OK)
+    {
+      /* Do something */
+      dbwriteerror(retcode);
+      sqlite3_finalize(stmt);
+      return -2;
+    }
+    retcode = sqlite3_bind_int64(stmt, 1, chanid);
+    if (retcode != SQLITE_OK)
+    {
+      /* Do something */
+      dbwriteerror(retcode);
+      sqlite3_finalize(stmt);
+      return -2;
+    }
+    retcode = sqlite3_step(stmt);
+    while (retcode == SQLITE_ROW)
+    {
+      hr = sqlite3_column_int(stmt,0);
+      if (hr >= 0 && hr < 7)
+      {
+        if (days[hr] == '1') days[hr] = '_';
+        else if (days[hr] == '0') days[hr] = '!';
+      }
+    }
+    if (retcode != SQLITE_DONE && retcode != SQLITE_OK)
+    {
+      /* Do something */
+      dbwriteerror(retcode);
+      sqlite3_finalize(stmt);
+      return -2;
+    }
+    retcode = sqlite3_finalize(stmt);
+    if (retcode != SQLITE_OK)
+    {
+      /* Do something */
+      dbwriteerror(retcode);
+      sqlite3_finalize(stmt);
+      return -2;
+    }
+    
+    hr = 0;
+    unsigned long j;
+    for (i=0; i<7; i++)
+    {
+      if (days[i] == '!') hr++;
+    }
+    if (hr)
+    {
+      retcode = sqlite3_prepare_v2(db, selhsql, strlen(deldsql), &stmt, NULL);
+      if (retcode != SQLITE_OK)
+      {
+        /* Do something */
+        dbwriteerror(retcode);
+        sqlite3_finalize(stmt);
+        return -2;
+      }
+      retcode = sqlite3_bind_int64(stmt, 1, chanid);
+      if (retcode != SQLITE_OK)
+      {
+        /* Do something */
+        dbwriteerror(retcode);
+        sqlite3_finalize(stmt);
+        return -2;
+      }
+      
+      for (i=0; i<7; i++)
+      {
+        if (hrs[i] == '!')
+        {
+          retcode = sqlite3_bind_int(stmt, 2, i);
+          if (retcode != SQLITE_OK)
+          {
+            /* Do something */
+            dbwriteerror(retcode);
+            sqlite3_finalize(stmt);
+            return -2;
+          }
+          retcode = sqlite3_step(stmt);
+          if (retcode == SQLITE_STEP)
+          {
+            /* Should never happen, but do something... */
+            fprintf(stderr,"Error: Internal error removing incorrect skip-day.\n");
+            sqlite3_finalize(stmt);
+            return -2;
+          }
+          if (retcode != SQLITE_DONE && retcode != SQLITE_OK)
+          {
+            /* Do Something */
+            dbwriteerror(retcode);
+            sqlite3_finalize(stmt);
+            return -2;
+          }
+          retcode = sqlite3_reset(stmt);
+          if (retcode != SQLITE_OK)
+          {
+            /* Do something */
+            dbwriteerror(retcode);
+            sqlite3_finalize(stmt);
+            return -2;
+          }
+        }
+      } /* END FOR */
+      
+      retcode = sqlite3_finalize(stmt);
+      if (retcode != SQLITE_OK)
+      {
+        /* Do Something */
+        dbwriteerror(retcode);
+        sqlite3_finalize(stmt);
+        return -2;
+      }
+    } /* Done Dels */
+    
+    for (i=0;i<7;i++)
+    {
+      if (days[i] == '1')
+      {
+        for (j=0; cpn->skipdays[j] != NULL; j++)
+        {
+          hr = parseday(cpn->skipdays[j]);
+          if (hr == ((int) i)) break;
+        }
+        if (cpn->skipdays[j] != NULL)
+        {
+          retcode = addskipday(chanid, ((int) i), cpn->skipdays[j]);
+        }
+        else
+        {
+          fprintf(stderr, "Warning: Mismatch with skip-day ID %lu!\n", i);
+          retcode = addskipday(chanid, ((int) i), "Unknown");
+        }
+        if (retcode < 1)
+        {
+          /* Do something */
+          fprintf(stderr,"Error %d adding new skip-hour to database!\n", retcode);
+          /*sqlite3_finalize(stmt);*/
+          return -2;
+        }
+        
+      } /* END IF active day */
+    } /* End For - Done Adds */
+    
+    retn = 1;
+  } /* Done Days */
   
   return retn;
 }

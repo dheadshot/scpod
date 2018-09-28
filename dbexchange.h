@@ -64,6 +64,7 @@ int canupdatechannel(unsigned long long chanid); /* Can the channel be updated y
 int getchanneldlstuff(char *downloaddir, unsigned long downloaddirlen, 
                        char *title, unsigned long titlelen, 
                        unsigned long long chanid); /* Returns: 1=success, 0=No Channel, -1=DB Error */
+int updateskips(chanpropnode *cpn, unsigned long long chanid); /* Returns: 1=Success, 2=No updates needed, -1=Error updating hours, -2=Error updating days. */
 
 /* -------------- */
 

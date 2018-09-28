@@ -5784,6 +5784,30 @@ int parseandupdatechannel(unsigned long long chanid, int dlcode)
   }
   
   retcode = checkupdatechannel(cpptr, rssversion);
+  if (retcode < 1)
+  {
+    free(pdir);
+    free(fname);
+    free(dirsep);
+    free(dldir);
+    destroycategories();
+    destroychsannels();
+    destroyitems();
+    return -2; /* Not technically correct as it could be a -1 error, but I can't tell from the retcode. */
+  }
+  
+  retcode = updateskips(cpptr, chanid);
+  if (retcode < 0)
+  {
+    free(pdir);
+    free(fname);
+    free(dirsep);
+    free(dldir);
+    destroycategories();
+    destroychsannels();
+    destroyitems();
+    return -2;
+  }
   
   /* TODO: Update categories of channel! */
   
