@@ -9,6 +9,24 @@
 #define SQLITE_OK_LOAD_PERMANENTLY 256
 #endif /* This fixes a bug... */
 
+#define CATTYPE_DB 'D'
+#define CATTYPE_FEED 'F'
+
+#define CATACTION_ADD '+'
+#define CATACTION_DEL '-'
+#define CATACTION_UNKNOWN '?'
+#define CATACTION_IGNORE '='
+
+typedef struct categoryaction_struct
+{
+  char type;
+  char *category;
+  char *domain;
+  char action;
+  unsigned long long dbid;
+  struct categoryaction_struct *next;
+} catactionnode;
+
 
 sqlite3 *getdb(); /*TODO: Move statements that use this into the dbexchange! */
 int opendb(int dolo); /* Run this before ANY DB functions! */

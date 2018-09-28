@@ -2842,6 +2842,187 @@ int updateskips(chanpropnode *cpn, unsigned long long chanid)
   return retn;
 }
 
+int updatechannelcategories(catnode *catsroot, unsigned long catchanid, 
+                            unsigned long long dbchanid)
+{
+  int rtn = 1;
+  catactionnode *canroot = NULL, *canptr = NULL, *newcan;
+  catnode *cptr = catsroot;
+  for (cptr = catsroot; cptr != NULL; cptr = cptr->next)
+  {
+    if (cptr->type == channel_cat && cptr->chanitemid.chanid == catchanid)
+    {
+      newcan = (catactionnode *) malloc(sizeof(catactionnode));
+      if (newcan == NULL)
+      {
+        /* Free all and return OoM */
+        rtn = -1;
+        goto UCCFreeCansAndReturn;
+      }
+      memset(newcan, 0, sizeof(catactionnode));
+      newcan->type = CATTYPE_FEED;
+      newcan->action = CATACTION_UNKNOWN;
+      if (cptr->domain != NULL)
+      {
+        newcan->domain = (char *) malloc(sizeof(char)*(1+strlen(cpptr->domain)));
+        if (newcan->domain == NULL)
+        {
+          /* Free all and return OoM */
+          rtn = -1;
+          free(newcan);
+          goto UCCFreeCansAndReturn;
+        }
+        strcpy(newcan->domain, cptr->domain);
+      }
+      
+      if (cptr->category != NULL)
+      {
+        newcan->category = (char *) malloc(sizeof(char)*(1+strlen(cpptr->category)));
+        if (newcan->category == NULL)
+        {
+          /* Free all and return OoM */
+          rtn = -1;
+          if (newcan->domain) free(newcan->domain);
+          free(newcan);
+          goto UCCFreeCansAndReturn;
+        }
+        strcpy(newcan->category, cptr->category);
+      }
+      
+      if (canroot)
+      {
+        for (canptr = canroot; canptr->next != NULL; canptr = canptr->next);
+        canptr->next = newcan;
+      }
+      else
+      {
+        canroot = newcan;
+      }
+    }
+  } /* END FOR LOOP */
+  
+  char *selsql = "SELECT CCID, Category, Domain FROM Channel_Category WHERE Channel_ID = ?;";
+  sqlite3_stmt *stmt;
+  int rc = sqlite3_prepare_v2(db, selsql, strlen(selsql), &stmt, NULL);
+  if (rc != SQLITE_OK)
+  {
+    dbwriteerror(retcode);
+    sqlite3_finalize(stmt);
+    rtn = -2;
+    goto UCCFreeCansAndReturn;
+  }
+  
+  rc = sqlite3_bind_int64(stmt, 1, dbchanid);
+  if (rc != SQLITE_OK)
+  {
+    dbwriteerror(retcode);
+    sqlite3_finalize(stmt);
+    rtn = -2;
+    goto UCCFreeCansAndReturn;
+  }
+  
+  unsigned long long dbid;
+  const char *dbcat, *dbdom;
+  rc = sqlite3_step(stmt);
+  while (rc == SQLITE_ROW);
+  {
+    dbid = sqlite3_column_int64(stmt, 1);
+    dbcat = sqlite3_column_text(stmt, 2);
+    dbdom = sqlite3_column_text(stmt, 3);
+    for (canptr = canroot; canptr != NULL; canptr = canptr->next)
+    {
+      if (streq_(canptr->category, dbcat) && streq_(canptr->domain, dbdom))
+      {
+        canptr->dbid = dbid;
+        canptr->action = CATACTION_IGNORE;
+        break;
+      }
+    }
+    if (canptr == NULL)
+    {
+      /* Add it as a Del action */
+      newcan = (catactionnode *) malloc(sizeof(catactionnode));
+      if (newcan == NULL)
+      {
+        /* Free all and return OoM */
+        sqlite3_finalize(stmt);
+        rtn = -1;
+        goto UCCFreeCansAndReturn;
+      }
+      memset(newcan, 0, sizeof(catactionnode));
+      newcan->type = CATTYPE_DB;
+      newcan->action = CATACTION_DEL;
+      newcan->dbid = dbid;
+      if (cptr->domain != NULL)
+      {
+        newcan->domain = (char *) malloc(sizeof(char)*(1+strlen(dbdom)));
+        if (newcan->domain == NULL)
+        {
+          /* Free all and return OoM */
+          sqlite3_finalize(stmt);
+          rtn = -1;
+          free(newcan);
+          goto UCCFreeCansAndReturn;
+        }
+        strcpy(newcan->domain, dbdom);
+      }
+      
+      if (cptr->category != NULL)
+      {
+        newcan->category = (char *) malloc(sizeof(char)*(1+strlen(dbcat)));
+        if (newcan->category == NULL)
+        {
+          /* Free all and return OoM */
+          sqlite3_finalize(stmt);
+          rtn = -1;
+          if (newcan->domain) free(newcan->domain);
+          free(newcan);
+          goto UCCFreeCansAndReturn;
+        }
+        strcpy(newcan->category, dbcat);
+      }
+      
+      if (canroot)
+      {
+        for (canptr = canroot; canptr->next != NULL; canptr = canptr->next);
+        canptr->next = newcan;
+      }
+      else
+      {
+        canroot = newcan;
+      }
+      
+    }
+    
+    rc = sqlite3_step(stmt);
+  }
+  if (rc != SQLITE_OK && rc != SQLITE_DONE)
+  {
+    /* Errors here */
+  }
+  
+  /* Finalize DB select */
+  
+  /* Then, after DB select, convert all Unknown actions to Adds */
+  
+  /* Then add all Adds to DB and delete all Dels from DB */
+  
+  
+  rtn = 1;
+  
+UCCFreeCansAndReturn:
+  while (canroot != NULL)
+  {
+    canptr = canroot->next;
+    if (canroot->domain) free(canroot->domain);
+    if (canroot->category) free(canroot->category);
+    free(canroot);
+    canroot = canptr;
+  }
+  return rtn;
+  
+}
+
 
 
 /*--------------------------*/
