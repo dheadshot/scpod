@@ -5809,9 +5809,23 @@ int parseandupdatechannel(unsigned long long chanid, int dlcode)
     return -2;
   }
   
-  /* TODO: Update categories of channel! */
+  retcode = updatechannelcategories(catroot,cpptr->chanid, chanid);
+  if (retcode < 0)
+  {
+    free(pdir);
+    free(fname);
+    free(dirsep);
+    free(dldir);
+    destroycategories();
+    destroychsannels();
+    destroyitems();
+    return retcode;
+  }
   
   /* 6: Using GUIDs, check if items are new and, if so, mark them 'new' and add them to the DB */
+  
+  
+  
   /* 7: If DLCode is NEW, download the new items, otherwise call the appropriate download reoutine as used in the download functions. */
   /* 8: Finish! */
   

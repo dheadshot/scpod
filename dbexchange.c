@@ -3149,6 +3149,17 @@ UCCFreeCansAndReturn:
   
 }
 
+int additemifmissing(unsigned long long dbchanid, itempropnode *item)
+{
+  /* Returns:
+   *  1 = Added
+   *  2 = Already in DB
+   * -1 = OoM
+   * -2 = DB Error */
+   
+   char *selsql = "SELECT * FROM Item WHERE Channel_ID = ?1 AND Title = ?2 AND Link = ?3 AND Description = ?4 AND Author = ?5 AND Enclosure_URL = ?6 AND Enclosure_Length = ?7 AND Enclosure_Type = ?8 AND GUID = ?9 AND Publication_Date = ?10;";
+   
+}
 
 
 /*--------------------------*/
