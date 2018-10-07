@@ -2995,18 +2995,144 @@ int updatechannelcategories(catnode *catsroot, unsigned long catchanid,
     }
     
     rc = sqlite3_step(stmt);
-  }
+  } /* End While */
   if (rc != SQLITE_OK && rc != SQLITE_DONE)
   {
     /* Errors here */
+    dbwriteerror(retcode);
+    sqlite3_finalize(stmt);
+    rtn = -2;
+    goto UCCFreeCansAndReturn;
   }
   
   /* Finalize DB select */
+  rc = sqlite3_finalize(stmt);
+  if (rc != SQLITE_OK)
+  {
+    /* Errors here */
+    dbwriteerror(retcode);
+    sqlite3_finalize(stmt);
+    rtn = -2;
+    goto UCCFreeCansAndReturn;
+  }
+  
   
   /* Then, after DB select, convert all Unknown actions to Adds */
+  for (canptr = canroot; canptr != NULL; canptr = canptr->next)
+  {
+    if (canptr->action == CATACTION_UNKNOWN)
+    {
+      canptr->action = CATACTION_ADD;
+    }
+  }
   
   /* Then add all Adds to DB and delete all Dels from DB */
   
+  char *delsql = "DELETE FROM Channel_Category WHERE CCID = ?;";
+  char *addsql = "INSERT INTO Channel_Category (CCID, Channel_ID, Category, Domain) VALUES (NULL, ?1, ?2, ?3);";
+  
+  rc = sqlite3_prepare_v2(db, delsql, strlen(delsql), &stmt, NULL);
+  if (rc != SQLITE_OK)
+  {
+    /* Errors here */
+    dbwriteerror(retcode);
+    sqlite3_finalize(stmt);
+    rtn = -2;
+    goto UCCFreeCansAndReturn;
+  }
+  
+  for (canptr = canroot; canptr != NULL; canptr = canptr->next)
+  {
+    if (canptr->action == CATACTION_DEL && canptr->type == CATTYPE_DB)
+    {
+      rc = sqlite3_bind_int64(stmt, 1, catptr->dbid);
+      if (rc != SQLITE_OK) break;
+      rc = sqlite3_step(stmt);
+      if (rc != SQLITE_DONE && rc != SQLITE_OK) break;
+      rc = sqlite_reset(stmt);
+      if (rc != SQLITE_OK) break;
+      
+    }
+  }
+  
+  if (rc == SQLITE_ROW)
+  {
+    fprintf(stderr, "Error: Unexpected database error deleting category \"%s\" (%llu).\n", canptr->category, canptr->dbid);
+    sqlite3_finalize(stmt);
+    rtn = -2;
+    goto UCCFreeCansAndReturn;
+  }
+  else if (rc != SQLITE_OK)
+  {
+    dbwriteerror(retcode);
+    sqlite3_finalize(stmt);
+    rtn = -2;
+    goto UCCFreeCansAndReturn;
+  }
+  
+  rc = sqlite3_finalize(stmt);
+  if (rc != SQLITE_OK)
+  {
+    dbwriteerror(retcode);
+    sqlite3_finalize(stmt);
+    rtn = -2;
+    goto UCCFreeCansAndReturn;
+  }
+  
+  /* Done all deletions, now to do additions. */
+  
+  rc = sqlite3_prepare_v2(db, addsql, strlen(addsql), &stmt, NULL);
+  if (rc != SQLITE_OK)
+  {
+    dbwriteerror(retcode);
+    sqlite3_finalize(stmt);
+    rtn = -2;
+    goto UCCFreeCansAndReturn;
+  }
+  
+  for (canptr = canroot; canptr != NULL; canptr = canptr->next)
+  {
+    if (canptr->action == CATACTION_ADD && canptr->type == CATTYPE_FEED)
+    {
+      rc = sqlite3_bind_int64(stmt, 1, dbchanid);
+      if (rc != SQLITE_OK) break;
+      rc = sqlite3_bind_text(stmt, 2, canptr->category, -1, SQLITE_TRANSIENT);
+      if (rc != SQLITE_OK) break;
+      rc = sqlite3_bind_text(stmt, 3, canptr->domain, -1, SQLITE_TRANSIENT);
+      if (rc != SQLITE_OK) break;
+      rc = sqlite3_step(stmt);
+      if (rc != SQLITE_DONE && rc != SQLITE_OK) break;
+      rc = sqlite_reset(stmt);
+      if (rc != SQLITE_OK) break;
+      
+    }
+  }
+  
+  if (rc == SQLITE_ROW)
+  {
+    fprintf(stderr, "Error: Unexpected database error adding category \"%s\".\n", canptr->category);
+    sqlite3_finalize(stmt);
+    rtn = -2;
+    goto UCCFreeCansAndReturn;
+  }
+  else if (rc != SQLITE_OK)
+  {
+    dbwriteerror(retcode);
+    sqlite3_finalize(stmt);
+    rtn = -2;
+    goto UCCFreeCansAndReturn;
+  }
+  
+  rc = sqlite3_finalize(stmt);
+  if (rc != SQLITE_OK)
+  {
+    dbwriteerror(retcode);
+    sqlite3_finalize(stmt);
+    rtn = -2;
+    goto UCCFreeCansAndReturn;
+  }
+  
+  /* Done! */
   
   rtn = 1;
   
