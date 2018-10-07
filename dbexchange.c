@@ -3156,9 +3156,127 @@ int additemifmissing(unsigned long long dbchanid, itempropnode *item)
    *  2 = Already in DB
    * -1 = OoM
    * -2 = DB Error */
-   
-   char *selsql = "SELECT * FROM Item WHERE Channel_ID = ?1 AND Title = ?2 AND Link = ?3 AND Description = ?4 AND Author = ?5 AND Enclosure_URL = ?6 AND Enclosure_Length = ?7 AND Enclosure_Type = ?8 AND GUID = ?9 AND Publication_Date = ?10;";
-   
+  
+  char *selsql = "SELECT * FROM Item WHERE Channel_ID = ?1 AND Title = ?2 AND Link = ?3 AND Description = ?4 AND Author = ?5 AND Enclosure_URL = ?6 AND Enclosure_Length = ?7 AND Enclosure_Type = ?8 AND GUID = ?9 AND Publication_Date = ?10;";
+  
+  char adate[255] = "";
+  
+  sqlite3_stmt *stmt;
+  
+  int rc = sqlite3_prepare_v2(db, selsql, strlen(selsql), &stmt, NULL);
+  if (rc != SQLITE_OK)
+  {
+    dbwriteerror(retcode);
+    sqlite3_finalize(stmt);
+    return -2;
+  }
+  
+  rc = sqlite3_bind_int64(stmt, 1, dbchanid);
+  if (rc != SQLITE_OK)
+  {
+    dbwriteerror(retcode);
+    sqlite3_finalize(stmt);
+    return -2;
+  }
+  
+  rc = sqlite3_bind_text(stmt, 2, item->title, strLen(item->title)*sizeof(char), SQLITE_TRANSIENT);
+  if (rc != SQLITE_OK)
+  {
+    dbwriteerror(retcode);
+    sqlite3_finalize(stmt);
+    return -2;
+  }
+  
+  rc = sqlite3_bind_text(stmt, 3, item->link, strLen(item->link)*sizeof(char), SQLITE_TRANSIENT);
+  if (rc != SQLITE_OK)
+  {
+    dbwriteerror(retcode);
+    sqlite3_finalize(stmt);
+    return -2;
+  }
+  
+  rc = sqlite3_bind_text(stmt, 4, item->description, strLen(item->description)*sizeof(char), SQLITE_TRANSIENT);
+  if (rc != SQLITE_OK)
+  {
+    dbwriteerror(retcode);
+    sqlite3_finalize(stmt);
+    return -2;
+  }
+  
+  rc = sqlite3_bind_text(stmt, 5, item->author, strLen(item->author)*sizeof(char), SQLITE_TRANSIENT);
+  if (rc != SQLITE_OK)
+  {
+    dbwriteerror(retcode);
+    sqlite3_finalize(stmt);
+    return -2;
+  }
+  
+  rc = sqlite3_bind_text(stmt, 6, item->enclosure.url, strLen(item->enclosure.url)*sizeof(char), SQLITE_TRANSIENT);
+  if (rc != SQLITE_OK)
+  {
+    dbwriteerror(retcode);
+    sqlite3_finalize(stmt);
+    return -2;
+  }
+  
+  rc = sqlite3_bind_int64(stmt, 7, item->enclosure.length);
+  if (rc != SQLITE_OK)
+  {
+    dbwriteerror(retcode);
+    sqlite3_finalize(stmt);
+    return -2;
+  }
+  
+  rc = sqlite3_bind_text(stmt, 8, item->enclosure.type, strLen(item->enclosure.type)*sizeof(char), SQLITE_TRANSIENT);
+  if (rc != SQLITE_OK)
+  {
+    dbwriteerror(retcode);
+    sqlite3_finalize(stmt);
+    return -2;
+  }
+  
+  rc = sqlite3_bind_text(stmt, 9, item->guid.guid, strLen(item->guid.guid)*sizeof(char), SQLITE_TRANSIENT);
+  if (rc != SQLITE_OK)
+  {
+    dbwriteerror(retcode);
+    sqlite3_finalize(stmt);
+    return -2;
+  }
+  
+  rssdatetoisodate(adate,&(item->pubdate));
+  rc = sqlite3_bind_text(stmt, 10, adate, strLen(adate)*sizeof(char), SQLITE_TRANSIENT);
+  if (rc != SQLITE_OK)
+  {
+    dbwriteerror(retcode);
+    sqlite3_finalize(stmt);
+    return -2;
+  }
+  
+  /* No real need to check source etc... */
+  
+  rc = sqlite3_step(stmt);
+  int rtn = 1;
+  if (rc == SQLITE_ROW) rtn = 2;
+  else if (rc != SQLITE_OK && rc != SQLITE_DONE)
+  {
+    dbwriteerror(retcode);
+    sqlite3_finalize(stmt);
+    return -2;
+  }
+  
+  rc = sqlite3_finalize(stmt);
+  if (rc != SQLITE_OK && rc != SQLITE_DONE)
+  {
+    dbwriteerror(retcode);
+    sqlite3_finalize(stmt);
+    return -2;
+  }
+  
+  if (rtn == 2) return 2;
+  
+  /* Add the new item to the database! */
+  
+  
 }
 
 
