@@ -3149,7 +3149,7 @@ UCCFreeCansAndReturn:
   
 }
 
-int additemifmissing(unsigned long long dbchanid, itempropnode *item)
+int additemifmissing(unsigned long long dbchanid, itempropnode *item, char *ofn)
 {
   /* Returns:
    *  1 = Added
@@ -3161,7 +3161,7 @@ int additemifmissing(unsigned long long dbchanid, itempropnode *item)
   
   char adate[255] = "";
   
-  sqlite3_stmt *stmt;
+  sqlite3_stmt *stmt = NULL;
   
   int rc = sqlite3_prepare_v2(db, selsql, strlen(selsql), &stmt, NULL);
   if (rc != SQLITE_OK)
@@ -3178,6 +3178,7 @@ int additemifmissing(unsigned long long dbchanid, itempropnode *item)
     sqlite3_finalize(stmt);
     return -2;
   }
+  
   
   rc = sqlite3_bind_text(stmt, 2, item->title, strLen(item->title)*sizeof(char), SQLITE_TRANSIENT);
   if (rc != SQLITE_OK)
@@ -3265,7 +3266,7 @@ int additemifmissing(unsigned long long dbchanid, itempropnode *item)
   }
   
   rc = sqlite3_finalize(stmt);
-  if (rc != SQLITE_OK && rc != SQLITE_DONE)
+  if (rc != SQLITE_OK)
   {
     dbwriteerror(retcode);
     sqlite3_finalize(stmt);
@@ -3275,7 +3276,149 @@ int additemifmissing(unsigned long long dbchanid, itempropnode *item)
   if (rtn == 2) return 2;
   
   /* Add the new item to the database! */
+  char *addsql = "INSERT INTO Item (Item_ID, Channel_ID, Title, Link, Description, Author, Enclosure_URL, Enclosure_Length, Enclosure_Type, GUID, GUID_Is_Permalink, Publication_Date, Source_URL, Source_Name, Downloaded, Downloaded_Date, Original_Filename, Filename, Play_Count) VALUES (NULL, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, 0, NULL, ?, NULL, 0);";
+  rc = sqlite3_prepare_v2(db, addsql, strlen(addsql)+1, &stmt, NULL);
+  if (rc != SQLITE_OK)
+  {
+    dbwriteerror(retcode);
+    sqlite3_finalize(stmt);
+    return -2;
+  }
   
+  /*INSERT INTO Item (Item_ID, Channel_ID, Title, Link, 
+  Description, Author, Enclosure_URL, Enclosure_Length, 
+  Enclosure_Type, GUID, GUID_Is_Permalink, Publication_Date, 
+  Source_URL, Source_Name, Downloaded, Downloaded_Date, 
+  Original_Filename, Filename, Play_Count) VALUES 
+  (NULL, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, 0, NULL, ?, 
+  NULL, 0);";*/
+  
+  rc = sqlite3_bind_int64(stmt, 1, dbchanid);
+  if (rc != SQLITE_OK)
+  {
+    dbwriteerror(retcode);
+    sqlite3_finalize(stmt);
+    return -2;
+  }
+  
+  rc = sqlite3_bind_text(stmt, 2, item->title, strLen(item->title)*sizeof(char), SQLITE_TRANSIENT);
+  if (rc != SQLITE_OK)
+  {
+    dbwriteerror(retcode);
+    sqlite3_finalize(stmt);
+    return -2;
+  }
+  
+  rc = sqlite3_bind_text(stmt, 3, item->link, strLen(item->link)*sizeof(char), SQLITE_TRANSIENT);
+  if (rc != SQLITE_OK)
+  {
+    dbwriteerror(retcode);
+    sqlite3_finalize(stmt);
+    return -2;
+  }
+  
+  rc = sqlite3_bind_text(stmt, 4, item->description, strLen(item->description)*sizeof(char), SQLITE_TRANSIENT);
+  if (rc != SQLITE_OK)
+  {
+    dbwriteerror(retcode);
+    sqlite3_finalize(stmt);
+    return -2;
+  }
+  
+  rc = sqlite3_bind_text(stmt, 5, item->author, strLen(item->author)*sizeof(char), SQLITE_TRANSIENT);
+  if (rc != SQLITE_OK)
+  {
+    dbwriteerror(retcode);
+    sqlite3_finalize(stmt);
+    return -2;
+  }
+  
+  rc = sqlite3_bind_text(stmt, 6, item->enclosure.url, strLen(item->enclosure.url)*sizeof(char), SQLITE_TRANSIENT);
+  if (rc != SQLITE_OK)
+  {
+    dbwriteerror(retcode);
+    sqlite3_finalize(stmt);
+    return -2;
+  }
+  
+  rc = sqlite3_bind_int64(stmt, 7, item->enclosure.length);
+  if (rc != SQLITE_OK)
+  {
+    dbwriteerror(retcode);
+    sqlite3_finalize(stmt);
+    return -2;
+  }
+  
+  rc = sqlite3_bind_text(stmt, 8, item->enclosure.type, strLen(item->enclosure.type)*sizeof(char), SQLITE_TRANSIENT);
+  if (rc != SQLITE_OK)
+  {
+    dbwriteerror(retcode);
+    sqlite3_finalize(stmt);
+    return -2;
+  }
+  
+  rc = sqlite3_bind_text(stmt, 9, item->guid.guid, strLen(item->guid.guid)*sizeof(char), SQLITE_TRANSIENT);
+  if (rc != SQLITE_OK)
+  {
+    dbwriteerror(retcode);
+    sqlite3_finalize(stmt);
+    return -2;
+  }
+  
+  rc = sqlite3_bind_int(stmt, 10, item->guid.ispermalink);
+  if (rc != SQLITE_OK)
+  {
+    dbwriteerror(retcode);
+    sqlite3_finalize(stmt);
+    return -2;
+  }
+  
+  rc = sqlite3_bind_text(stmt, 11, adate, strLen(adate)*sizeof(char), SQLITE_TRANSIENT);
+  if (rc != SQLITE_OK)
+  {
+    dbwriteerror(retcode);
+    sqlite3_finalize(stmt);
+    return -2;
+  }
+  
+  rc = sqlite3_bind_text(stmt, 12, item->source.url, strLen(item->source.url)*sizeof(char), SQLITE_TRANSIENT);
+  if (rc != SQLITE_OK)
+  {
+    dbwriteerror(retcode);
+    sqlite3_finalize(stmt);
+    return -2;
+  }
+  
+  rc = sqlite3_bind_text(stmt, 13, item->source.name, strLen(item->source.name)*sizeof(char), SQLITE_TRANSIENT);
+  if (rc != SQLITE_OK)
+  {
+    dbwriteerror(retcode);
+    sqlite3_finalize(stmt);
+    return -2;
+  }
+  
+  rc = sqlite3_bind_text(stmt, 14, ofn, strLen(fn)*sizeof(char), SQLITE_TRANSIENT);
+  if (rc != SQLITE_OK)
+  {
+    dbwriteerror(retcode);
+    sqlite3_finalize(stmt);
+    return -2;
+  }
+  
+  rc = sqlite3_step(stmt);
+  if (rc == SQLITE_ROW)
+  {
+    
+  }
+  else if (rc != SQLITE_OK && rc != SQLITE_DONE)
+  {
+    
+    dbwriteerror(retcode);
+    sqlite3_finalize(stmt);
+    return -2;
+  }
+  
+  //=========================
   
 }
 
