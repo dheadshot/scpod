@@ -2145,7 +2145,8 @@ int updatechanneldownloadall(char *arg)
   
   int retcode = 0;
   /* Some kind of update routine here */
-  printdownloadstatus(retcode);
+  retcode = updatechannelanddownload(chanciid,dlcode);
+  /*printdownloadstatus(retcode);*/
   
   freeciid(chanciid);
   closedb();
@@ -2173,7 +2174,8 @@ int updatechanneldownloadnew(char *arg)
   
   int retcode = 0;
   /* Some kind of update routine here */
-  printdownloadstatus(retcode);
+  retcode = updatechannelanddownload(chanciid,dlcode);
+  /*printdownloadstatus(retcode);*/
   
   freeciid(chanciid);
   closedb();
@@ -2201,7 +2203,8 @@ int updatechanneldownloadlatest(char *arg)
   
   int retcode = 0;
   /* Some kind of update routine here */
-  printdownloadstatus(retcode);
+  retcode = updatechannelanddownload(chanciid,dlcode);
+  /*printdownloadstatus(retcode);*/
   
   freeciid(chanciid);
   closedb();
@@ -2228,7 +2231,8 @@ int updatechanneldownloadnone(char *arg)
   
   int retcode = 0;
   /* Some kind of update routine here */
-  printdownloadstatus(retcode);
+  retcode = updatechannelanddownload(chanciid,dlcode);
+  /*printdownloadstatus(retcode);*/
   
   freeciid(chanciid);
   closedb();
