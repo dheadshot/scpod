@@ -5,6 +5,7 @@
 #include "sfuncs.h"
 #include "dbexchange.h"
 #include "extprgfuncs.h"
+#include "main.h"
 
 #include "parser.h"
 
@@ -5760,7 +5761,7 @@ int parseandupdatechannel(unsigned long long chanid, int dlcode)
     free(dirsep);
     free(dldir);
     destroycategories();
-    destroychsannels();
+    destroychannels();
     destroyitems();
     return -7;
   }
@@ -5778,7 +5779,7 @@ int parseandupdatechannel(unsigned long long chanid, int dlcode)
     free(dirsep);
     free(dldir);
     destroycategories();
-    destroychsannels();
+    destroychannels();
     destroyitems();
     return -7;
   }
@@ -5791,7 +5792,7 @@ int parseandupdatechannel(unsigned long long chanid, int dlcode)
     free(dirsep);
     free(dldir);
     destroycategories();
-    destroychsannels();
+    destroychannels();
     destroyitems();
     return -2; /* Not technically correct as it could be a -1 error, but I can't tell from the retcode. */
   }
@@ -5804,7 +5805,7 @@ int parseandupdatechannel(unsigned long long chanid, int dlcode)
     free(dirsep);
     free(dldir);
     destroycategories();
-    destroychsannels();
+    destroychannels();
     destroyitems();
     return -2;
   }
@@ -5817,18 +5818,164 @@ int parseandupdatechannel(unsigned long long chanid, int dlcode)
     free(dirsep);
     free(dldir);
     destroycategories();
-    destroychsannels();
+    destroychannels();
     destroyitems();
     return retcode;
   }
   
   /* 6: Using GUIDs, check if items are new and, if so, mark them 'new' and add them to the DB */
   
+  for (ipptr = iproot; ipptr != NULL; ipptr = ipptr->next)
+  {
+    if (ipptr->chanid != cpptr->chanid) continue;
+    char *theofn = (char *) malloc(sizeof(char)*(1+strlen(ipptr->enclosure.url)));
+    if (theofn == NULL)
+    {
+      fprintf(stderr, "Error: Out of Memory!\n");
+      free(pdir);
+      free(fname);
+      free(dirsep);
+      free(dldir);
+      destroycategories();
+      destroychannels();
+      destroyitems();
+      return -1;
+    }
+    /*
+    char *theofext = (char *) malloc(sizeof(char)*(1+strlen(ipptr->enclosure.url)));
+    if (theofext == NULL)
+    {
+      fprintf(stderr, "Error: Out of Memory!\n");
+      free(theofn);
+      free(pdir);
+      free(fname);
+      free(dirsep);
+      free(dldir);
+      destroycategories();
+      destroychannels();
+      destroyitems();
+      return -1;
+    }*/
+    
+    if (getencfilename(theofn,&(ipptr->enclosure)) == 2)
+    {
+      fprintf(stderr, "Warning: assuming filename is '%s'.\n", theofn);
+    }
+    
+    /*retcode = getencfileext(theofext, &(ipptr->enclosure));
+    if (!retcode)
+    {
+      fprintf(stderr, "Error: Out of Memory!\n");
+      free(theofext);
+      free(theofn);
+      free(pdir);
+      free(fname);
+      free(dirsep);
+      free(dldir);
+      destroycategories();
+      destroychannels();
+      destroyitems();
+      return -1;
+    }
+    else if (retcode == -1) theofext[0] = 0;
+    else if (retcode == 2) fprintf(stderr, "Warning: Assumed file extension to be '%s'.\n", theofext);
+    */
+    
+    retcode = additemifmissing(chanid, ipptr, theofn);
+    if (retcode<0)
+    {
+      free(theofn);
+      free(pdir);
+      free(fname);
+      free(dirsep);
+      free(dldir);
+      destroycategories();
+      destroychannels();
+      destroyitems();
+      return -1;
+    }
+    else if (retcode == 1) ipptr->isnew = 1;
+    else ipptr->isnew = 0;
+    
+    free(theofn);
+    
+  }
+  
+  /* 7: If DLCode is NEW, download the new items, otherwise call the appropriate download routine as used in the download functions. */
+  
+  int dlskips = 0;
+  ci_identifier dummychan, dummyitem;
+  dummychan.type = ci_dbid;
+  dummychan.id.id = chanid;
+  
+  switch (dlcode)
+  {
+    case DLCODE_NEW:
+    {
+      for (ipptr = iproot; ipptr != NULL; ipptr = ipptr->next)
+      {
+        if (ipptr->chanid != cpptr->chanid) continue;
+        
+        dummyitem.type = ci_dbid;
+        dummyitem.id.id = ipptr->dbiid;
+        retcode = downloadchannelitemmain(&dummychan, &dummyitem); /* Spaghetti-code away! */
+        if (retcode < 1)
+        {
+          printdownloadstatus(retcode);
+          free(pdir);
+          free(fname);
+          free(dirsep);
+          free(dldir);
+          destroycategories();
+          destroychannels();
+          destroyitems();
+          return -5;
+        }
+        if (retcode == 2) dlskips++;
+      }
+      if (dlskips)
+      {
+        fprintf(stderr, "Warning: %d items skipped.\n", dlskips);
+        printdownloadstatus(2);
+      }
+      else printdownloadstatus(1);
+    }
+    break;
+    
+    case DLCODE_NONE:
+      /* Do nothing here */
+    break;
+    
+    default:
+      dummyid.type = ci_meta;
+      dummyid.id.dlcode = dlcode;
+      retcode = downloadchannelitemmain(&dummychan, &dummyitem); /* Spaghetti-code away! */
+      printdownloadstatus(retcode);
+      if (retcode < 1)
+      {
+        free(pdir);
+        free(fname);
+        free(dirsep);
+        free(dldir);
+        destroycategories();
+        destroychannels();
+        destroyitems();
+        return -5;
+      }
+    break;
+  }
   
   
-  /* 7: If DLCode is NEW, download the new items, otherwise call the appropriate download reoutine as used in the download functions. */
   /* 8: Finish! */
   
+  free(pdir);
+  free(fname);
+  free(dirsep);
+  free(dldir);
+  destroycategories();
+  destroychannels();
+  destroyitems();
+  return 1;
 }
 
 int listchanneldetails(ci_identifier *chanident)

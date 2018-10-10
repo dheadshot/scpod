@@ -3408,7 +3408,9 @@ int additemifmissing(unsigned long long dbchanid, itempropnode *item, char *ofn)
   rc = sqlite3_step(stmt);
   if (rc == SQLITE_ROW)
   {
-    
+    fprintf(stderr, "Error: Unexpected database error adding item \"%s\".\n", item->title);
+    sqlite3_finalize(stmt);
+    return -2;
   }
   else if (rc != SQLITE_OK && rc != SQLITE_DONE)
   {
@@ -3418,8 +3420,31 @@ int additemifmissing(unsigned long long dbchanid, itempropnode *item, char *ofn)
     return -2;
   }
   
-  //=========================
+  rc = sqlite3_finalize(stmt);
+  if (rc != SQLITE_OK)
+  {
+    dbwriteerror(retcode);
+    sqlite3_finalize(stmt);
+    return -2;
+  }
   
+  char *giidsql = "SELECT Item_ID FROM Item WHERE ROWID=last_insert_rowid();";
+  char *anerrmsg;
+  passbackull = 0;
+  rc = sqlite3_exec(db,giidsql,callback_giid,0,&anerrmsg);
+  if (rc != SQLITE_OK && rc != SQLITE_DONE && rc != SQLITE_ROW)
+  {
+    dbwriteerror(rc);
+    fprintf(stderr, "(Returned Error: %s)\n", anerrmsg);
+    sqlite3_free(anerrmsg);
+    return -2;
+  }
+  
+  if (passbackull == 0) return -2;
+  item->dbiid = passbackull;
+  
+  
+  return 1;
 }
 
 

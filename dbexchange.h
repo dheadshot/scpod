@@ -85,6 +85,7 @@ int getchanneldlstuff(char *downloaddir, unsigned long downloaddirlen,
 int updateskips(chanpropnode *cpn, unsigned long long chanid); /* Returns: 1=Success, 2=No updates needed, -1=Error updating hours, -2=Error updating days. */
 int updatechannelcategories(catnode *catsroot, unsigned long catchanid, 
                             unsigned long long dbchanid); /* Returns: 1=success, -1=Out of Memory, -2=DB Error */
+int additemifmissing(unsigned long long dbchanid, itempropnode *item, char *ofn);
 
 /* -------------- */
 
