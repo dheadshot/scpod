@@ -5,7 +5,7 @@
 #include "sfuncs.h"
 
 
-void strtoupper(char *outstr, char *instr)
+void strtoupper(char *outstr, const char *instr)
 {
   long i;
   for (i=0;instr[i]!=0;i++)
@@ -15,7 +15,7 @@ void strtoupper(char *outstr, char *instr)
   outstr[i] = 0;
 }
 
-int streq_(char *a, char *b)
+int streq_(const char *a, const char *b)
 {
   unsigned long al, bl;
   if (a == NULL || b == NULL) return 0;
@@ -26,7 +26,7 @@ int streq_(char *a, char *b)
   return 0;
 }
 
-int streq_i(char *a, char *b)
+int streq_i(const char *a, const char *b)
 {
   char *ai, *bi;
   if (a==NULL || b==NULL) return 0;

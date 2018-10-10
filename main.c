@@ -982,7 +982,7 @@ int dosubscribe(char *url, int dlcode)
 {
   if (getchanidfromurl(url) != 0)
   {
-    fprintf("Already subscribed to channel!\n");
+    fprintf(stderr, "Already subscribed to channel!\n");
     return 8;
   }
   if (dodownload(url, ".", "new_feed.xml") == 0)
@@ -2111,8 +2111,7 @@ int updatechannelanddownload(ci_identifier *chanident, int specdl)
   if (chanident->type == ci_none || (chanident->type == ci_title && chanident->id.title == NULL))
         return 0;
   unsigned long long dbchanid = 0, dbitemid = 0;
-  int specdl = 0;
-  if (dbopen(1) == 0) return -2;
+  if (opendb(1) == 0) return -2;
   /* Channel ID */
   int retcode = getchannelid(chanident, &dbchanid);
   if (retcode == 0) return 1;
@@ -2121,7 +2120,7 @@ int updatechannelanddownload(ci_identifier *chanident, int specdl)
   	printf("ChannelID=%llu\n",dbchanid);
 #endif
   
-  return parseandupdatechannel(chanident, specdl);
+  return parseandupdatechannel(dbchanid, specdl);
   
 }
 

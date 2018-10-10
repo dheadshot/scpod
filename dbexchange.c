@@ -1668,7 +1668,7 @@ int addskiphour(unsigned long long dbchanid, int hour)
   if (retcode == SQLITE_ROW)
   {
     fprintf(stderr, "Internal error adding Skip Hours!\n");
-    sqlite3_finalize(&stmt);
+    sqlite3_finalize(stmt);
     return -1;
   }
   if (retcode != SQLITE_DONE && retcode != SQLITE_OK)
@@ -1719,7 +1719,7 @@ int addskipday(unsigned long long dbchanid, int daynum, char *dayname)
   if (retcode == SQLITE_ROW)
   {
     fprintf(stderr, "Internal error adding Skip Days!\n");
-    sqlite3_finalize(&stmt);
+    sqlite3_finalize(stmt);
     return -1;
   }
   if (retcode != SQLITE_DONE && retcode != SQLITE_OK)
@@ -2342,14 +2342,14 @@ int getchanurlfromid(char *chanurlout, unsigned long maxurllen,
   int retcode = sqlite3_prepare_v2(db, thesql, strlen(thesql), &stmt, NULL);
   if (retcode != SQLITE_OK)
   {
-    dbwriteerror(rc);
+    dbwriteerror(retcode);
     sqlite3_finalize(stmt);
     return 0;
   }
   retcode = sqlite3_bind_int64(stmt,1,chanid);
   if (retcode != SQLITE_OK)
   {
-    dbwriteerror(rc);
+    dbwriteerror(retcode);
     sqlite3_finalize(stmt);
     return 0;
   }
@@ -2357,12 +2357,12 @@ int getchanurlfromid(char *chanurlout, unsigned long maxurllen,
   if (retcode == SQLITE_DONE || retcode == SQLITE_OK)
   {
     fprintf(stderr, "Channel %llu does not exist or has no URL associated with it!\n", chanid);
-    sqlite3_finalize(&stmt);
+    sqlite3_finalize(stmt);
     return -1;
   }
   if (retcode != SQLITE_ROW)
   {
-    dbwriteerror(rc);
+    dbwriteerror(retcode);
     sqlite3_finalize(stmt);
     return 0;
   }
@@ -2397,7 +2397,7 @@ int canupdatechannel(unsigned long long chanid)
   if (retcode == SQLITE_DONE || retcode == SQLITE_OK)
   {
     fprintf(stderr, "Channel %llu does not exist!\n", chanid);
-    sqlite3_finalize(&stmt);
+    sqlite3_finalize(stmt);
     return -2;
   }
   if (retcode != SQLITE_ROW)
@@ -2427,7 +2427,7 @@ int canupdatechannel(unsigned long long chanid)
   if (retcode == SQLITE_DONE || retcode == SQLITE_OK)
   {
     fprintf(stderr, "Internal error checking Skip Days!\n");
-    sqlite3_finalize(&stmt);
+    sqlite3_finalize(stmt);
     return -1;
   }
   if (retcode != SQLITE_ROW)
@@ -2457,7 +2457,7 @@ int canupdatechannel(unsigned long long chanid)
   if (retcode == SQLITE_DONE || retcode == SQLITE_OK)
   {
     fprintf(stderr, "Internal error checking Skip Hours!\n");
-    sqlite3_finalize(&stmt);
+    sqlite3_finalize(stmt);
     return -1;
   }
   if (retcode != SQLITE_ROW)
@@ -2483,14 +2483,14 @@ int getchanneldlstuff(char *downloaddir, unsigned long downloaddirlen,
   int retcode = sqlite3_prepare_v2(db, thesql, strlen(thesql), &stmt, NULL);
   if (retcode != SQLITE_OK)
   {
-    dbwriteerror(rc);
+    dbwriteerror(retcode);
     sqlite3_finalize(stmt);
     return -1;
   }
   retcode = sqlite3_bind_int64(stmt,1,chanid);
   if (retcode != SQLITE_OK)
   {
-    dbwriteerror(rc);
+    dbwriteerror(retcode);
     sqlite3_finalize(stmt);
     return -1;
   }
@@ -2498,12 +2498,12 @@ int getchanneldlstuff(char *downloaddir, unsigned long downloaddirlen,
   if (retcode == SQLITE_DONE || retcode == SQLITE_OK)
   {
     fprintf(stderr, "Channel %llu does not exist!\n", chanid);
-    sqlite3_finalize(&stmt);
+    sqlite3_finalize(stmt);
     return 0;
   }
   if (retcode != SQLITE_ROW)
   {
-    dbwriteerror(rc);
+    dbwriteerror(retcode);
     sqlite3_finalize(stmt);
     return -1;
   }
@@ -2636,7 +2636,7 @@ int updateskips(chanpropnode *cpn, unsigned long long chanid)
             return -1;
           }
           retcode = sqlite3_step(stmt);
-          if (retcode == SQLITE_STEP)
+          if (retcode == SQLITE_ROW)
           {
             /* Should never happen, but do something... */
             fprintf(stderr,"Error: Internal error removing incorrect skip-hour.\n");
@@ -2772,7 +2772,7 @@ int updateskips(chanpropnode *cpn, unsigned long long chanid)
             return -2;
           }
           retcode = sqlite3_step(stmt);
-          if (retcode == SQLITE_STEP)
+          if (retcode == SQLITE_ROW)
           {
             /* Should never happen, but do something... */
             fprintf(stderr,"Error: Internal error removing incorrect skip-day.\n");
@@ -2850,7 +2850,7 @@ int updatechannelcategories(catnode *catsroot, unsigned long catchanid,
   catnode *cptr = catsroot;
   for (cptr = catsroot; cptr != NULL; cptr = cptr->next)
   {
-    if (cptr->type == channel_cat && cptr->chanitemid.chanid == catchanid)
+    if (cptr->type == channel_cat && cptr->id.chanid == catchanid)
     {
       newcan = (catactionnode *) malloc(sizeof(catactionnode));
       if (newcan == NULL)
@@ -2864,7 +2864,7 @@ int updatechannelcategories(catnode *catsroot, unsigned long catchanid,
       newcan->action = CATACTION_UNKNOWN;
       if (cptr->domain != NULL)
       {
-        newcan->domain = (char *) malloc(sizeof(char)*(1+strlen(cpptr->domain)));
+        newcan->domain = (char *) malloc(sizeof(char)*(1+strlen(cptr->domain)));
         if (newcan->domain == NULL)
         {
           /* Free all and return OoM */
@@ -2877,7 +2877,7 @@ int updatechannelcategories(catnode *catsroot, unsigned long catchanid,
       
       if (cptr->category != NULL)
       {
-        newcan->category = (char *) malloc(sizeof(char)*(1+strlen(cpptr->category)));
+        newcan->category = (char *) malloc(sizeof(char)*(1+strlen(cptr->category)));
         if (newcan->category == NULL)
         {
           /* Free all and return OoM */
@@ -2906,7 +2906,7 @@ int updatechannelcategories(catnode *catsroot, unsigned long catchanid,
   int rc = sqlite3_prepare_v2(db, selsql, strlen(selsql), &stmt, NULL);
   if (rc != SQLITE_OK)
   {
-    dbwriteerror(retcode);
+    dbwriteerror(rc);
     sqlite3_finalize(stmt);
     rtn = -2;
     goto UCCFreeCansAndReturn;
@@ -2915,7 +2915,7 @@ int updatechannelcategories(catnode *catsroot, unsigned long catchanid,
   rc = sqlite3_bind_int64(stmt, 1, dbchanid);
   if (rc != SQLITE_OK)
   {
-    dbwriteerror(retcode);
+    dbwriteerror(rc);
     sqlite3_finalize(stmt);
     rtn = -2;
     goto UCCFreeCansAndReturn;
@@ -2999,7 +2999,7 @@ int updatechannelcategories(catnode *catsroot, unsigned long catchanid,
   if (rc != SQLITE_OK && rc != SQLITE_DONE)
   {
     /* Errors here */
-    dbwriteerror(retcode);
+    dbwriteerror(rc);
     sqlite3_finalize(stmt);
     rtn = -2;
     goto UCCFreeCansAndReturn;
@@ -3010,7 +3010,7 @@ int updatechannelcategories(catnode *catsroot, unsigned long catchanid,
   if (rc != SQLITE_OK)
   {
     /* Errors here */
-    dbwriteerror(retcode);
+    dbwriteerror(rc);
     sqlite3_finalize(stmt);
     rtn = -2;
     goto UCCFreeCansAndReturn;
@@ -3035,7 +3035,7 @@ int updatechannelcategories(catnode *catsroot, unsigned long catchanid,
   if (rc != SQLITE_OK)
   {
     /* Errors here */
-    dbwriteerror(retcode);
+    dbwriteerror(rc);
     sqlite3_finalize(stmt);
     rtn = -2;
     goto UCCFreeCansAndReturn;
@@ -3045,11 +3045,11 @@ int updatechannelcategories(catnode *catsroot, unsigned long catchanid,
   {
     if (canptr->action == CATACTION_DEL && canptr->type == CATTYPE_DB)
     {
-      rc = sqlite3_bind_int64(stmt, 1, catptr->dbid);
+      rc = sqlite3_bind_int64(stmt, 1, canptr->dbid);
       if (rc != SQLITE_OK) break;
       rc = sqlite3_step(stmt);
       if (rc != SQLITE_DONE && rc != SQLITE_OK) break;
-      rc = sqlite_reset(stmt);
+      rc = sqlite3_reset(stmt);
       if (rc != SQLITE_OK) break;
       
     }
@@ -3064,7 +3064,7 @@ int updatechannelcategories(catnode *catsroot, unsigned long catchanid,
   }
   else if (rc != SQLITE_OK)
   {
-    dbwriteerror(retcode);
+    dbwriteerror(rc);
     sqlite3_finalize(stmt);
     rtn = -2;
     goto UCCFreeCansAndReturn;
@@ -3073,7 +3073,7 @@ int updatechannelcategories(catnode *catsroot, unsigned long catchanid,
   rc = sqlite3_finalize(stmt);
   if (rc != SQLITE_OK)
   {
-    dbwriteerror(retcode);
+    dbwriteerror(rc);
     sqlite3_finalize(stmt);
     rtn = -2;
     goto UCCFreeCansAndReturn;
@@ -3084,7 +3084,7 @@ int updatechannelcategories(catnode *catsroot, unsigned long catchanid,
   rc = sqlite3_prepare_v2(db, addsql, strlen(addsql), &stmt, NULL);
   if (rc != SQLITE_OK)
   {
-    dbwriteerror(retcode);
+    dbwriteerror(rc);
     sqlite3_finalize(stmt);
     rtn = -2;
     goto UCCFreeCansAndReturn;
@@ -3102,7 +3102,7 @@ int updatechannelcategories(catnode *catsroot, unsigned long catchanid,
       if (rc != SQLITE_OK) break;
       rc = sqlite3_step(stmt);
       if (rc != SQLITE_DONE && rc != SQLITE_OK) break;
-      rc = sqlite_reset(stmt);
+      rc = sqlite3_reset(stmt);
       if (rc != SQLITE_OK) break;
       
     }
@@ -3117,7 +3117,7 @@ int updatechannelcategories(catnode *catsroot, unsigned long catchanid,
   }
   else if (rc != SQLITE_OK)
   {
-    dbwriteerror(retcode);
+    dbwriteerror(rc);
     sqlite3_finalize(stmt);
     rtn = -2;
     goto UCCFreeCansAndReturn;
@@ -3126,7 +3126,7 @@ int updatechannelcategories(catnode *catsroot, unsigned long catchanid,
   rc = sqlite3_finalize(stmt);
   if (rc != SQLITE_OK)
   {
-    dbwriteerror(retcode);
+    dbwriteerror(rc);
     sqlite3_finalize(stmt);
     rtn = -2;
     goto UCCFreeCansAndReturn;
@@ -3166,7 +3166,7 @@ int additemifmissing(unsigned long long dbchanid, itempropnode *item, char *ofn)
   int rc = sqlite3_prepare_v2(db, selsql, strlen(selsql), &stmt, NULL);
   if (rc != SQLITE_OK)
   {
-    dbwriteerror(retcode);
+    dbwriteerror(rc);
     sqlite3_finalize(stmt);
     return -2;
   }
@@ -3174,7 +3174,7 @@ int additemifmissing(unsigned long long dbchanid, itempropnode *item, char *ofn)
   rc = sqlite3_bind_int64(stmt, 1, dbchanid);
   if (rc != SQLITE_OK)
   {
-    dbwriteerror(retcode);
+    dbwriteerror(rc);
     sqlite3_finalize(stmt);
     return -2;
   }
@@ -3183,7 +3183,7 @@ int additemifmissing(unsigned long long dbchanid, itempropnode *item, char *ofn)
   rc = sqlite3_bind_text(stmt, 2, item->title, strLen(item->title)*sizeof(char), SQLITE_TRANSIENT);
   if (rc != SQLITE_OK)
   {
-    dbwriteerror(retcode);
+    dbwriteerror(rc);
     sqlite3_finalize(stmt);
     return -2;
   }
@@ -3191,7 +3191,7 @@ int additemifmissing(unsigned long long dbchanid, itempropnode *item, char *ofn)
   rc = sqlite3_bind_text(stmt, 3, item->link, strLen(item->link)*sizeof(char), SQLITE_TRANSIENT);
   if (rc != SQLITE_OK)
   {
-    dbwriteerror(retcode);
+    dbwriteerror(rc);
     sqlite3_finalize(stmt);
     return -2;
   }
@@ -3199,7 +3199,7 @@ int additemifmissing(unsigned long long dbchanid, itempropnode *item, char *ofn)
   rc = sqlite3_bind_text(stmt, 4, item->description, strLen(item->description)*sizeof(char), SQLITE_TRANSIENT);
   if (rc != SQLITE_OK)
   {
-    dbwriteerror(retcode);
+    dbwriteerror(rc);
     sqlite3_finalize(stmt);
     return -2;
   }
@@ -3207,7 +3207,7 @@ int additemifmissing(unsigned long long dbchanid, itempropnode *item, char *ofn)
   rc = sqlite3_bind_text(stmt, 5, item->author, strLen(item->author)*sizeof(char), SQLITE_TRANSIENT);
   if (rc != SQLITE_OK)
   {
-    dbwriteerror(retcode);
+    dbwriteerror(rc);
     sqlite3_finalize(stmt);
     return -2;
   }
@@ -3215,7 +3215,7 @@ int additemifmissing(unsigned long long dbchanid, itempropnode *item, char *ofn)
   rc = sqlite3_bind_text(stmt, 6, item->enclosure.url, strLen(item->enclosure.url)*sizeof(char), SQLITE_TRANSIENT);
   if (rc != SQLITE_OK)
   {
-    dbwriteerror(retcode);
+    dbwriteerror(rc);
     sqlite3_finalize(stmt);
     return -2;
   }
@@ -3223,7 +3223,7 @@ int additemifmissing(unsigned long long dbchanid, itempropnode *item, char *ofn)
   rc = sqlite3_bind_int64(stmt, 7, item->enclosure.length);
   if (rc != SQLITE_OK)
   {
-    dbwriteerror(retcode);
+    dbwriteerror(rc);
     sqlite3_finalize(stmt);
     return -2;
   }
@@ -3231,7 +3231,7 @@ int additemifmissing(unsigned long long dbchanid, itempropnode *item, char *ofn)
   rc = sqlite3_bind_text(stmt, 8, item->enclosure.type, strLen(item->enclosure.type)*sizeof(char), SQLITE_TRANSIENT);
   if (rc != SQLITE_OK)
   {
-    dbwriteerror(retcode);
+    dbwriteerror(rc);
     sqlite3_finalize(stmt);
     return -2;
   }
@@ -3239,7 +3239,7 @@ int additemifmissing(unsigned long long dbchanid, itempropnode *item, char *ofn)
   rc = sqlite3_bind_text(stmt, 9, item->guid.guid, strLen(item->guid.guid)*sizeof(char), SQLITE_TRANSIENT);
   if (rc != SQLITE_OK)
   {
-    dbwriteerror(retcode);
+    dbwriteerror(rc);
     sqlite3_finalize(stmt);
     return -2;
   }
@@ -3248,7 +3248,7 @@ int additemifmissing(unsigned long long dbchanid, itempropnode *item, char *ofn)
   rc = sqlite3_bind_text(stmt, 10, adate, strLen(adate)*sizeof(char), SQLITE_TRANSIENT);
   if (rc != SQLITE_OK)
   {
-    dbwriteerror(retcode);
+    dbwriteerror(rc);
     sqlite3_finalize(stmt);
     return -2;
   }
@@ -3260,7 +3260,7 @@ int additemifmissing(unsigned long long dbchanid, itempropnode *item, char *ofn)
   if (rc == SQLITE_ROW) rtn = 2;
   else if (rc != SQLITE_OK && rc != SQLITE_DONE)
   {
-    dbwriteerror(retcode);
+    dbwriteerror(rc);
     sqlite3_finalize(stmt);
     return -2;
   }
@@ -3268,7 +3268,7 @@ int additemifmissing(unsigned long long dbchanid, itempropnode *item, char *ofn)
   rc = sqlite3_finalize(stmt);
   if (rc != SQLITE_OK)
   {
-    dbwriteerror(retcode);
+    dbwriteerror(rc);
     sqlite3_finalize(stmt);
     return -2;
   }
@@ -3280,7 +3280,7 @@ int additemifmissing(unsigned long long dbchanid, itempropnode *item, char *ofn)
   rc = sqlite3_prepare_v2(db, addsql, strlen(addsql)+1, &stmt, NULL);
   if (rc != SQLITE_OK)
   {
-    dbwriteerror(retcode);
+    dbwriteerror(rc);
     sqlite3_finalize(stmt);
     return -2;
   }
@@ -3296,7 +3296,7 @@ int additemifmissing(unsigned long long dbchanid, itempropnode *item, char *ofn)
   rc = sqlite3_bind_int64(stmt, 1, dbchanid);
   if (rc != SQLITE_OK)
   {
-    dbwriteerror(retcode);
+    dbwriteerror(rc);
     sqlite3_finalize(stmt);
     return -2;
   }
@@ -3304,7 +3304,7 @@ int additemifmissing(unsigned long long dbchanid, itempropnode *item, char *ofn)
   rc = sqlite3_bind_text(stmt, 2, item->title, strLen(item->title)*sizeof(char), SQLITE_TRANSIENT);
   if (rc != SQLITE_OK)
   {
-    dbwriteerror(retcode);
+    dbwriteerror(rc);
     sqlite3_finalize(stmt);
     return -2;
   }
@@ -3312,7 +3312,7 @@ int additemifmissing(unsigned long long dbchanid, itempropnode *item, char *ofn)
   rc = sqlite3_bind_text(stmt, 3, item->link, strLen(item->link)*sizeof(char), SQLITE_TRANSIENT);
   if (rc != SQLITE_OK)
   {
-    dbwriteerror(retcode);
+    dbwriteerror(rc);
     sqlite3_finalize(stmt);
     return -2;
   }
@@ -3320,7 +3320,7 @@ int additemifmissing(unsigned long long dbchanid, itempropnode *item, char *ofn)
   rc = sqlite3_bind_text(stmt, 4, item->description, strLen(item->description)*sizeof(char), SQLITE_TRANSIENT);
   if (rc != SQLITE_OK)
   {
-    dbwriteerror(retcode);
+    dbwriteerror(rc);
     sqlite3_finalize(stmt);
     return -2;
   }
@@ -3328,7 +3328,7 @@ int additemifmissing(unsigned long long dbchanid, itempropnode *item, char *ofn)
   rc = sqlite3_bind_text(stmt, 5, item->author, strLen(item->author)*sizeof(char), SQLITE_TRANSIENT);
   if (rc != SQLITE_OK)
   {
-    dbwriteerror(retcode);
+    dbwriteerror(rc);
     sqlite3_finalize(stmt);
     return -2;
   }
@@ -3336,7 +3336,7 @@ int additemifmissing(unsigned long long dbchanid, itempropnode *item, char *ofn)
   rc = sqlite3_bind_text(stmt, 6, item->enclosure.url, strLen(item->enclosure.url)*sizeof(char), SQLITE_TRANSIENT);
   if (rc != SQLITE_OK)
   {
-    dbwriteerror(retcode);
+    dbwriteerror(rc);
     sqlite3_finalize(stmt);
     return -2;
   }
@@ -3344,7 +3344,7 @@ int additemifmissing(unsigned long long dbchanid, itempropnode *item, char *ofn)
   rc = sqlite3_bind_int64(stmt, 7, item->enclosure.length);
   if (rc != SQLITE_OK)
   {
-    dbwriteerror(retcode);
+    dbwriteerror(rc);
     sqlite3_finalize(stmt);
     return -2;
   }
@@ -3352,7 +3352,7 @@ int additemifmissing(unsigned long long dbchanid, itempropnode *item, char *ofn)
   rc = sqlite3_bind_text(stmt, 8, item->enclosure.type, strLen(item->enclosure.type)*sizeof(char), SQLITE_TRANSIENT);
   if (rc != SQLITE_OK)
   {
-    dbwriteerror(retcode);
+    dbwriteerror(rc);
     sqlite3_finalize(stmt);
     return -2;
   }
@@ -3360,7 +3360,7 @@ int additemifmissing(unsigned long long dbchanid, itempropnode *item, char *ofn)
   rc = sqlite3_bind_text(stmt, 9, item->guid.guid, strLen(item->guid.guid)*sizeof(char), SQLITE_TRANSIENT);
   if (rc != SQLITE_OK)
   {
-    dbwriteerror(retcode);
+    dbwriteerror(rc);
     sqlite3_finalize(stmt);
     return -2;
   }
@@ -3368,7 +3368,7 @@ int additemifmissing(unsigned long long dbchanid, itempropnode *item, char *ofn)
   rc = sqlite3_bind_int(stmt, 10, item->guid.ispermalink);
   if (rc != SQLITE_OK)
   {
-    dbwriteerror(retcode);
+    dbwriteerror(rc);
     sqlite3_finalize(stmt);
     return -2;
   }
@@ -3376,7 +3376,7 @@ int additemifmissing(unsigned long long dbchanid, itempropnode *item, char *ofn)
   rc = sqlite3_bind_text(stmt, 11, adate, strLen(adate)*sizeof(char), SQLITE_TRANSIENT);
   if (rc != SQLITE_OK)
   {
-    dbwriteerror(retcode);
+    dbwriteerror(rc);
     sqlite3_finalize(stmt);
     return -2;
   }
@@ -3384,7 +3384,7 @@ int additemifmissing(unsigned long long dbchanid, itempropnode *item, char *ofn)
   rc = sqlite3_bind_text(stmt, 12, item->source.url, strLen(item->source.url)*sizeof(char), SQLITE_TRANSIENT);
   if (rc != SQLITE_OK)
   {
-    dbwriteerror(retcode);
+    dbwriteerror(rc);
     sqlite3_finalize(stmt);
     return -2;
   }
@@ -3392,15 +3392,15 @@ int additemifmissing(unsigned long long dbchanid, itempropnode *item, char *ofn)
   rc = sqlite3_bind_text(stmt, 13, item->source.name, strLen(item->source.name)*sizeof(char), SQLITE_TRANSIENT);
   if (rc != SQLITE_OK)
   {
-    dbwriteerror(retcode);
+    dbwriteerror(rc);
     sqlite3_finalize(stmt);
     return -2;
   }
   
-  rc = sqlite3_bind_text(stmt, 14, ofn, strLen(fn)*sizeof(char), SQLITE_TRANSIENT);
+  rc = sqlite3_bind_text(stmt, 14, ofn, strLen(ofn)*sizeof(char), SQLITE_TRANSIENT);
   if (rc != SQLITE_OK)
   {
-    dbwriteerror(retcode);
+    dbwriteerror(rc);
     sqlite3_finalize(stmt);
     return -2;
   }
@@ -3415,7 +3415,7 @@ int additemifmissing(unsigned long long dbchanid, itempropnode *item, char *ofn)
   else if (rc != SQLITE_OK && rc != SQLITE_DONE)
   {
     
-    dbwriteerror(retcode);
+    dbwriteerror(rc);
     sqlite3_finalize(stmt);
     return -2;
   }
@@ -3423,7 +3423,7 @@ int additemifmissing(unsigned long long dbchanid, itempropnode *item, char *ofn)
   rc = sqlite3_finalize(stmt);
   if (rc != SQLITE_OK)
   {
-    dbwriteerror(retcode);
+    dbwriteerror(rc);
     sqlite3_finalize(stmt);
     return -2;
   }

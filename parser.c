@@ -23,20 +23,20 @@ char *rssversion = NULL;
 
 int parseday(char *dayname)
 {
-  if (startswith_i(dayname, "Sun") return 0;
-  if (startswith_i(dayname, "Mon") return 1;
-  if (startswith_i(dayname, "Tue") return 2;
-  if (startswith_i(dayname, "Wed") return 3;
-  if (startswith_i(dayname, "Thu") return 4;
-  if (startswith_i(dayname, "Fri") return 5;
-  if (startswith_i(dayname, "Sat") return 6;
-  if (startswith_i(dayname, "DiM") return 0;
-  if (startswith_i(dayname, "Lun") return 1;
-  if (startswith_i(dayname, "Mar") return 2;
-  if (startswith_i(dayname, "Mec") return 3;
-  if (startswith_i(dayname, "Jue") return 4;
-  if (startswith_i(dayname, "Ven") return 5;
-  if (startswith_i(dayname, "Sam") return 6;
+  if (startswith_i(dayname, "Sun")) return 0;
+  if (startswith_i(dayname, "Mon")) return 1;
+  if (startswith_i(dayname, "Tue")) return 2;
+  if (startswith_i(dayname, "Wed")) return 3;
+  if (startswith_i(dayname, "Thu")) return 4;
+  if (startswith_i(dayname, "Fri")) return 5;
+  if (startswith_i(dayname, "Sat")) return 6;
+  if (startswith_i(dayname, "DiM")) return 0;
+  if (startswith_i(dayname, "Lun")) return 1;
+  if (startswith_i(dayname, "Mar")) return 2;
+  if (startswith_i(dayname, "Mec")) return 3;
+  if (startswith_i(dayname, "Jue")) return 4;
+  if (startswith_i(dayname, "Ven")) return 5;
+  if (startswith_i(dayname, "Sam")) return 6;
   return -1;
 }
 
@@ -5667,7 +5667,7 @@ int parseandupdatechannel(unsigned long long chanid, int dlcode)
     return -4;
   }
   
-  char *cleantitle (char *) malloc(sizeof(char) * (1+strlen(title)));
+  char *cleantitle = (char *) malloc(sizeof(char) * (1+strlen(title)));
   if (cleantitle == NULL)
   {
     fprintf(stderr, "Error: Out of Memory!\n");
@@ -5947,8 +5947,8 @@ int parseandupdatechannel(unsigned long long chanid, int dlcode)
     break;
     
     default:
-      dummyid.type = ci_meta;
-      dummyid.id.dlcode = dlcode;
+      dummyitem.type = ci_meta;
+      dummyitem.id.dlcode = dlcode;
       retcode = downloadchannelitemmain(&dummychan, &dummyitem); /* Spaghetti-code away! */
       printdownloadstatus(retcode);
       if (retcode < 1)

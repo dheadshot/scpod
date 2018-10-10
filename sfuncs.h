@@ -1,9 +1,9 @@
 #ifndef __INC_SFUNCS_H__
 #define __INC_SFUNCS_H__
 
-void strtoupper(char *outstr, char *instr); /* Uppercase */
-int streq_(char *a, char *b);  /* Strings equal */
-int streq_i(char *a, char *b); /* Case insensitive strings equal */
+void strtoupper(char *outstr, const char *instr); /* Uppercase */
+int streq_(const char *a, const char *b);  /* Strings equal */
+int streq_i(const char *a, const char *b); /* Case insensitive strings equal */
 int startsame_(char *a, char *b); 
 int startsame_i(char *a, char *b);
 int startswith_(char *a, char *with); 
