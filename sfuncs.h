@@ -1,6 +1,12 @@
 #ifndef __INC_SFUNCS_H__
 #define __INC_SFUNCS_H__
 
+#ifdef DEBUG
+#define debwflag(num) fprintf(stderr, "---Debug flag: %d---\n", num)
+#else
+#define debwflag(num) /* num */
+#endif
+
 void strtoupper(char *outstr, const char *instr); /* Uppercase */
 int streq_(const char *a, const char *b);  /* Strings equal */
 int streq_i(const char *a, const char *b); /* Case insensitive strings equal */
