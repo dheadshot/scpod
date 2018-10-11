@@ -1,0 +1,6 @@
+Overlaps found in parser:
+	-	Channel Title
+	-	Channel Generator
+	-	Item Description
+
+Possibly caused by overflow on item (ttato S1E2)?!

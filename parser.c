@@ -754,7 +754,7 @@ int parsersstoll(FILE *rf)
             inelename = 0;
             ineletag = 0;
             ceni = 0;
-            cedi = strlen(curelementdata);
+            cedi = strlen(curelementdata); /* !? Might need +1 added?! <--- */
           }
         }
         else if (ineletag && inattname && cani<MAX_ATTN)
@@ -5694,7 +5694,7 @@ int parseandupdatechannel(unsigned long long chanid, int dlcode)
   free(cleantitle);
   
   retcode = dodownload(churl,dldir,fname);
-  if (retcode != 0)
+  if (retcode <= 0)
   {
     fprintf(stderr, "Download of Feed Failed!\n");
     free(fname);
@@ -5704,6 +5704,8 @@ int parseandupdatechannel(unsigned long long chanid, int dlcode)
   }
   
   /* 4: Open the Feed and Parse it into the Linked Lists (flag 14x) */
+  
+  debwflag(140);
   
   char *pdir = getsettingdata("PODCAST_DIR");
   if (pdir == NULL)
@@ -5724,7 +5726,7 @@ int parseandupdatechannel(unsigned long long chanid, int dlcode)
     return -4;
   }
   
-  char *dlpath = (char *) malloc(sizeof(char)*(1+strlen(pdir)+(strlen(dirsep)*2)+strlen(dldir)+strlen(cleantitle)+strlen(".xml")));
+  char *dlpath = (char *) malloc(sizeof(char)*(1+strlen(pdir)+(strlen(dirsep)*2)+strlen(dldir)+strlen(fname)));
   if (dlpath == NULL)
   {
     fprintf(stderr, "Error: Out of Memory!\n");
@@ -5783,6 +5785,8 @@ int parseandupdatechannel(unsigned long long chanid, int dlcode)
     destroyitems();
     return -7;
   }
+  
+  cpptr->dbcid = chanid;
   
   retcode = checkupdatechannel(cpptr, rssversion);
   if (retcode < 1)

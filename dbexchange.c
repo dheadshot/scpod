@@ -883,8 +883,11 @@ int checkupdatechannel(chanpropnode *achan, char *rss_version)
   {
     fprintf(stderr, "Warning: Could not determine where channel update is needed - not updating\n         channel!\n");
     return 0;
-  }
+  } //[==============
   
+#ifdef DEBUG
+  printf("Passback value is '%s'\n",passbackstr);
+#endif
   /* If nothing needs updating, return. */
   if (startsame_(passbackstr, "0000000000000000000") != 0) return 1;
   
@@ -1500,8 +1503,12 @@ int checkupdatechannel(chanpropnode *achan, char *rss_version)
     free(tmpstr);
     return 0;
   }
+  udsql[0] = 0;
   
-  sprintf(udsql, "UPDATE Channel SET Last_Refresh_Date = datetime('now') WHERE Channel_ID = %llu;", achan->dbciid);
+  sprintf(udsql, "UPDATE Channel SET Last_Refresh_Date = datetime('now') WHERE Channel_ID = %llu;", achan->dbcid);
+#ifdef DEBUG
+  printf("udsql='%s'\n",udsql);
+#endif
   rc = sqlite3_exec(db, udsql, NULL, 0, &anerrmsg);
   if (rc != SQLITE_OK && rc != SQLITE_DONE && rc != SQLITE_ROW)
   {
@@ -3635,6 +3642,10 @@ static int callback_cuc(void *achan, int argc, char **argv, char **azColName)
   /* If any field is different, pass back a 1 in the position of it! */
   int i;
   char rettxt[] = "0000000000000000000000", pubdate[256] = "", lbdate[256] = "";
+  if (strLen(passbackstr) == strlen(rettxt))
+  {
+    strcpy(rettxt, passbackstr);
+  }
   if (((chanpropnode *) achan)->pubdate.fulldate != NULL)
     rssdatetoisodate(pubdate,&(((chanpropnode *) achan)->pubdate));
   else
@@ -3743,7 +3754,10 @@ static int callback_cuc(void *achan, int argc, char **argv, char **azColName)
     }
     
   }
-  writetopassbackstr(rettxt);
+  if (writetopassbackstr(rettxt)<1) fprintf(stderr, "Error writing back data from database!\n");
+#ifdef DEBUG
+  	printf("rettxt='%s'\n",rettxt);
+#endif
   return 0;
   
 }
@@ -4270,6 +4284,7 @@ int writetopassbackstr(char *astr)
   passbackstr = (char *) malloc(sizeof(char)*(1+strlen(astr)));
   if (passbackstr == NULL) return 0;
   strcpy(passbackstr,astr);
+  return 1;
 }
 
 int dbwriteerror(int errorcode)
