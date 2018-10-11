@@ -1416,6 +1416,7 @@ int downloadchannelitemmain(ci_identifier *chanident, ci_identifier *itemident)
 #ifdef DEBUG
   	fprintf(stderr,"(Prepare)\n");
 #endif
+    debwflag(261);
     sqlite3_finalize(countstmt);
     free(sqlendtxt);
     free(sqlcounttxt);
@@ -1434,6 +1435,7 @@ int downloadchannelitemmain(ci_identifier *chanident, ci_identifier *itemident)
 #ifdef DEBUG
   	fprintf(stderr,"(Bind Channel)\n");
 #endif
+      debwflag(262);
       sqlite3_finalize(countstmt);
       free(sqlendtxt);
       free(sqlcounttxt);
@@ -1452,6 +1454,7 @@ int downloadchannelitemmain(ci_identifier *chanident, ci_identifier *itemident)
 #ifdef DEBUG
   	fprintf(stderr,"(Bind item)\n");
 #endif
+      debwflag(263);
       sqlite3_finalize(countstmt);
       free(sqlendtxt);
       free(sqlcounttxt);
@@ -1485,6 +1488,7 @@ int downloadchannelitemmain(ci_identifier *chanident, ci_identifier *itemident)
 #ifdef DEBUG
   	fprintf(stderr,"(Step)\n");
 #endif
+      debwflag(264);
       sqlite3_finalize(countstmt);
       free(sqlendtxt);
       free(sqlcounttxt);
@@ -1500,6 +1504,7 @@ int downloadchannelitemmain(ci_identifier *chanident, ci_identifier *itemident)
 #ifdef DEBUG
   	fprintf(stderr,"(Finalise)\n");
 #endif
+      debwflag(265);
       free(sqlendtxt);
       free(sqlcounttxt);
       return -2;
@@ -1603,6 +1608,7 @@ int downloadchannelitemmain(ci_identifier *chanident, ci_identifier *itemident)
 #ifdef DEBUG
   	fprintf(stderr,"(Prepare)\n");
 #endif
+    debwflag(268);
     sqlite3_finalize(selstmt);
     free(poddir);
     free(dirsep);
@@ -1624,6 +1630,7 @@ int downloadchannelitemmain(ci_identifier *chanident, ci_identifier *itemident)
 #ifdef DEBUG
   	fprintf(stderr,"(Bind Channel)\n");
 #endif
+      debwflag(269);
       sqlite3_finalize(selstmt);
       free(poddir);
       free(dirsep);
@@ -1645,6 +1652,7 @@ int downloadchannelitemmain(ci_identifier *chanident, ci_identifier *itemident)
 #ifdef DEBUG
   	fprintf(stderr,"(Bind Item)\n");
 #endif
+      debwflag(270);
       sqlite3_finalize(selstmt);
       free(poddir);
       free(dirsep);
@@ -1849,6 +1857,7 @@ int downloadchannelitemmain(ci_identifier *chanident, ci_identifier *itemident)
   {
       fprintf(stderr, "Error: Failed during the download of items");
       downloaddberr(retcode);
+      debwflag(271);
       sqlite3_finalize(selstmt);
       free(poddir);
       free(dirsep);
@@ -1867,6 +1876,7 @@ int downloadchannelitemmain(ci_identifier *chanident, ci_identifier *itemident)
   {
       fprintf(stderr, "Error: Failed during the finalisation of the download of items");
       downloaddberr(retcode);
+      debwflag(272);
       free(poddir);
       free(dirsep);
       free(sqlendtxt);
@@ -1895,6 +1905,7 @@ int downloadchannelitemmain(ci_identifier *chanident, ci_identifier *itemident)
     /* Do something here */
     fprintf(stderr, "Error: Could not update database");
     downloaddberr(retcode);
+    debwflag(273);
     sqlite3_finalize(updstmt);
     free(poddir);
     free(dirsep);
@@ -1932,6 +1943,7 @@ int downloadchannelitemmain(ci_identifier *chanident, ci_identifier *itemident)
     /* Do something here */
     fprintf(stderr, "Error: Could not update database");
     downloaddberr(retcode);
+    debwflag(274);
     sqlite3_finalize(updstmt);
     free(poddir);
     free(dirsep);
@@ -1948,6 +1960,7 @@ int downloadchannelitemmain(ci_identifier *chanident, ci_identifier *itemident)
     /* Do something here */
     fprintf(stderr, "Warning: Failed to free Database Update data");
     downloaddberr(retcode);
+    debwflag(275);
     sqlite3_finalize(updstmt);
   }
   

@@ -117,6 +117,8 @@ char *getsettingdata(char *setting)
     dbwriteerror(rc);
     debwflag(131);
     debwflag(141);
+    debwflag(266);
+    debwflag(267);
     fprintf(stderr, "(Returned Error: %s)\n", anerrmsg);
     sqlite3_free(anerrmsg);
     return NULL;
@@ -1491,6 +1493,27 @@ int checkupdatechannel(chanpropnode *achan, char *rss_version)
     free(udsql);
   }
   
+  udsql = (char *) malloc(sizeof(char)*257);
+  if (udsql == NULL)
+  {
+    fprintf(stderr, "Error: Out of Memory!\n");
+    free(tmpstr);
+    return 0;
+  }
+  
+  sprintf(udsql, "UPDATE Channel SET Last_Refresh_Date = datetime('now') WHERE Channel_ID = %llu;", achan->dbciid);
+  rc = sqlite3_exec(db, udsql, NULL, 0, &anerrmsg);
+  if (rc != SQLITE_OK && rc != SQLITE_DONE && rc != SQLITE_ROW)
+  {
+    dbwriteerror(rc);
+    debwflag(9172);
+    fprintf(stderr, "(Returned Error: %s)\n", anerrmsg);
+    free(udsql);
+    sqlite3_free(anerrmsg);
+    return 0;
+  }
+  free(udsql);
+  
   /* All updated! */
   return 1;
 }
@@ -1672,6 +1695,7 @@ int addskiphour(unsigned long long dbchanid, int hour)
   if (retcode != SQLITE_OK)
   {
     dbwriteerror(retcode);
+    debwflag(182);
     sqlite3_finalize(stmt);
     return -1;
   }
@@ -1679,6 +1703,7 @@ int addskiphour(unsigned long long dbchanid, int hour)
   if (retcode != SQLITE_OK)
   {
     dbwriteerror(retcode);
+    debwflag(183);
     sqlite3_finalize(stmt);
     return -1;
   }
@@ -1686,6 +1711,7 @@ int addskiphour(unsigned long long dbchanid, int hour)
   if (retcode != SQLITE_OK)
   {
     dbwriteerror(retcode);
+    debwflag(184);
     sqlite3_finalize(stmt);
     return -1;
   }
@@ -1699,6 +1725,7 @@ int addskiphour(unsigned long long dbchanid, int hour)
   if (retcode != SQLITE_DONE && retcode != SQLITE_OK)
   {
     dbwriteerror(retcode);
+    debwflag(185);
     sqlite3_finalize(stmt);
     return -1;
   }
@@ -1716,6 +1743,7 @@ int addskipday(unsigned long long dbchanid, int daynum, char *dayname)
   if (retcode != SQLITE_OK)
   {
     dbwriteerror(retcode);
+    debwflag(196);
     sqlite3_finalize(stmt);
     return -1;
   }
@@ -1723,6 +1751,7 @@ int addskipday(unsigned long long dbchanid, int daynum, char *dayname)
   if (retcode != SQLITE_OK)
   {
     dbwriteerror(retcode);
+    debwflag(197);
     sqlite3_finalize(stmt);
     return -1;
   }
@@ -1730,6 +1759,7 @@ int addskipday(unsigned long long dbchanid, int daynum, char *dayname)
   if (retcode != SQLITE_OK)
   {
     dbwriteerror(retcode);
+    debwflag(198);
     sqlite3_finalize(stmt);
     return -1;
   }
@@ -1737,6 +1767,7 @@ int addskipday(unsigned long long dbchanid, int daynum, char *dayname)
   if (retcode != SQLITE_OK)
   {
     dbwriteerror(retcode);
+    debwflag(199);
     sqlite3_finalize(stmt);
     return -1;
   }
@@ -1750,6 +1781,7 @@ int addskipday(unsigned long long dbchanid, int daynum, char *dayname)
   if (retcode != SQLITE_DONE && retcode != SQLITE_OK)
   {
     dbwriteerror(retcode);
+    debwflag(200);
     sqlite3_finalize(stmt);
     return -1;
   }
@@ -2362,7 +2394,7 @@ int getchanurlfromid(char *chanurlout, unsigned long maxurllen,
    * -1 = Cannot find URL for Channel ID
    */
   
-  char *thesql = "SELECT Channel_URL WHERE Channel_ID = ?;";
+  char *thesql = "SELECT Channel_URL FROM Channel WHERE Channel_ID = ?;";
   sqlite3_stmt *stmt;
   int retcode = sqlite3_prepare_v2(db, thesql, strlen(thesql), &stmt, NULL);
   if (retcode != SQLITE_OK)
@@ -2602,6 +2634,7 @@ int updateskips(chanpropnode *cpn, unsigned long long chanid)
     {
       /* Do something */
       dbwriteerror(retcode);
+      debwflag(172);
       sqlite3_finalize(stmt);
       return -1;
     }
@@ -2610,6 +2643,7 @@ int updateskips(chanpropnode *cpn, unsigned long long chanid)
     {
       /* Do something */
       dbwriteerror(retcode);
+      debwflag(173);
       sqlite3_finalize(stmt);
       return -1;
     }
@@ -2627,6 +2661,7 @@ int updateskips(chanpropnode *cpn, unsigned long long chanid)
     {
       /* Do something */
       dbwriteerror(retcode);
+      debwflag(174);
       sqlite3_finalize(stmt);
       return -1;
     }
@@ -2635,6 +2670,7 @@ int updateskips(chanpropnode *cpn, unsigned long long chanid)
     {
       /* Do something */
       dbwriteerror(retcode);
+      debwflag(175);
       sqlite3_finalize(stmt);
       return -1;
     }
@@ -2651,6 +2687,7 @@ int updateskips(chanpropnode *cpn, unsigned long long chanid)
       {
         /* Do something */
         dbwriteerror(retcode);
+        debwflag(176);
         sqlite3_finalize(stmt);
         return -1;
       }
@@ -2659,6 +2696,7 @@ int updateskips(chanpropnode *cpn, unsigned long long chanid)
       {
         /* Do something */
         dbwriteerror(retcode);
+        debwflag(177);
         sqlite3_finalize(stmt);
         return -1;
       }
@@ -2672,6 +2710,7 @@ int updateskips(chanpropnode *cpn, unsigned long long chanid)
           {
             /* Do something */
             dbwriteerror(retcode);
+            debwflag(178);
             sqlite3_finalize(stmt);
             return -1;
           }
@@ -2687,6 +2726,7 @@ int updateskips(chanpropnode *cpn, unsigned long long chanid)
           {
             /* Do Something */
             dbwriteerror(retcode);
+            debwflag(179);
             sqlite3_finalize(stmt);
             return -1;
           }
@@ -2695,6 +2735,7 @@ int updateskips(chanpropnode *cpn, unsigned long long chanid)
           {
             /* Do something */
             dbwriteerror(retcode);
+            debwflag(180);
             sqlite3_finalize(stmt);
             return -1;
           }
@@ -2706,6 +2747,7 @@ int updateskips(chanpropnode *cpn, unsigned long long chanid)
       {
         /* Do Something */
         dbwriteerror(retcode);
+        debwflag(181);
         sqlite3_finalize(stmt);
         return -1;
       }
@@ -2737,6 +2779,7 @@ int updateskips(chanpropnode *cpn, unsigned long long chanid)
     {
       /* Do something */
       dbwriteerror(retcode);
+      debwflag(186);
       sqlite3_finalize(stmt);
       return -2;
     }
@@ -2745,6 +2788,7 @@ int updateskips(chanpropnode *cpn, unsigned long long chanid)
     {
       /* Do something */
       dbwriteerror(retcode);
+      debwflag(187);
       sqlite3_finalize(stmt);
       return -2;
     }
@@ -2762,6 +2806,7 @@ int updateskips(chanpropnode *cpn, unsigned long long chanid)
     {
       /* Do something */
       dbwriteerror(retcode);
+      debwflag(188);
       sqlite3_finalize(stmt);
       return -2;
     }
@@ -2770,6 +2815,7 @@ int updateskips(chanpropnode *cpn, unsigned long long chanid)
     {
       /* Do something */
       dbwriteerror(retcode);
+      debwflag(189);
       sqlite3_finalize(stmt);
       return -2;
     }
@@ -2787,6 +2833,7 @@ int updateskips(chanpropnode *cpn, unsigned long long chanid)
       {
         /* Do something */
         dbwriteerror(retcode);
+        debwflag(190);
         sqlite3_finalize(stmt);
         return -2;
       }
@@ -2795,6 +2842,7 @@ int updateskips(chanpropnode *cpn, unsigned long long chanid)
       {
         /* Do something */
         dbwriteerror(retcode);
+        debwflag(191);
         sqlite3_finalize(stmt);
         return -2;
       }
@@ -2808,6 +2856,7 @@ int updateskips(chanpropnode *cpn, unsigned long long chanid)
           {
             /* Do something */
             dbwriteerror(retcode);
+            debwflag(192);
             sqlite3_finalize(stmt);
             return -2;
           }
@@ -2823,6 +2872,7 @@ int updateskips(chanpropnode *cpn, unsigned long long chanid)
           {
             /* Do Something */
             dbwriteerror(retcode);
+            debwflag(193);
             sqlite3_finalize(stmt);
             return -2;
           }
@@ -2831,6 +2881,7 @@ int updateskips(chanpropnode *cpn, unsigned long long chanid)
           {
             /* Do something */
             dbwriteerror(retcode);
+            debwflag(194);
             sqlite3_finalize(stmt);
             return -2;
           }
@@ -2842,6 +2893,7 @@ int updateskips(chanpropnode *cpn, unsigned long long chanid)
       {
         /* Do Something */
         dbwriteerror(retcode);
+        debwflag(195);
         sqlite3_finalize(stmt);
         return -2;
       }
@@ -2947,6 +2999,7 @@ int updatechannelcategories(catnode *catsroot, unsigned long catchanid,
   if (rc != SQLITE_OK)
   {
     dbwriteerror(rc);
+    debwflag(201);
     sqlite3_finalize(stmt);
     rtn = -2;
     goto UCCFreeCansAndReturn;
@@ -2956,6 +3009,7 @@ int updatechannelcategories(catnode *catsroot, unsigned long catchanid,
   if (rc != SQLITE_OK)
   {
     dbwriteerror(rc);
+    debwflag(202);
     sqlite3_finalize(stmt);
     rtn = -2;
     goto UCCFreeCansAndReturn;
@@ -3040,6 +3094,7 @@ int updatechannelcategories(catnode *catsroot, unsigned long catchanid,
   {
     /* Errors here */
     dbwriteerror(rc);
+    debwflag(203);
     sqlite3_finalize(stmt);
     rtn = -2;
     goto UCCFreeCansAndReturn;
@@ -3051,6 +3106,7 @@ int updatechannelcategories(catnode *catsroot, unsigned long catchanid,
   {
     /* Errors here */
     dbwriteerror(rc);
+    debwflag(204);
     sqlite3_finalize(stmt);
     rtn = -2;
     goto UCCFreeCansAndReturn;
@@ -3076,6 +3132,7 @@ int updatechannelcategories(catnode *catsroot, unsigned long catchanid,
   {
     /* Errors here */
     dbwriteerror(rc);
+    debwflag(205);
     sqlite3_finalize(stmt);
     rtn = -2;
     goto UCCFreeCansAndReturn;
@@ -3105,6 +3162,7 @@ int updatechannelcategories(catnode *catsroot, unsigned long catchanid,
   else if (rc != SQLITE_OK)
   {
     dbwriteerror(rc);
+    debwflag(206);
     sqlite3_finalize(stmt);
     rtn = -2;
     goto UCCFreeCansAndReturn;
@@ -3114,6 +3172,7 @@ int updatechannelcategories(catnode *catsroot, unsigned long catchanid,
   if (rc != SQLITE_OK)
   {
     dbwriteerror(rc);
+    debwflag(207);
     sqlite3_finalize(stmt);
     rtn = -2;
     goto UCCFreeCansAndReturn;
@@ -3125,6 +3184,7 @@ int updatechannelcategories(catnode *catsroot, unsigned long catchanid,
   if (rc != SQLITE_OK)
   {
     dbwriteerror(rc);
+    debwflag(208);
     sqlite3_finalize(stmt);
     rtn = -2;
     goto UCCFreeCansAndReturn;
@@ -3158,6 +3218,7 @@ int updatechannelcategories(catnode *catsroot, unsigned long catchanid,
   else if (rc != SQLITE_OK)
   {
     dbwriteerror(rc);
+    debwflag(209);
     sqlite3_finalize(stmt);
     rtn = -2;
     goto UCCFreeCansAndReturn;
@@ -3167,6 +3228,7 @@ int updatechannelcategories(catnode *catsroot, unsigned long catchanid,
   if (rc != SQLITE_OK)
   {
     dbwriteerror(rc);
+    debwflag(210);
     sqlite3_finalize(stmt);
     rtn = -2;
     goto UCCFreeCansAndReturn;
@@ -3207,6 +3269,7 @@ int additemifmissing(unsigned long long dbchanid, itempropnode *item, char *ofn)
   if (rc != SQLITE_OK)
   {
     dbwriteerror(rc);
+    debwflag(221);
     sqlite3_finalize(stmt);
     return -2;
   }
@@ -3215,6 +3278,7 @@ int additemifmissing(unsigned long long dbchanid, itempropnode *item, char *ofn)
   if (rc != SQLITE_OK)
   {
     dbwriteerror(rc);
+    debwflag(222);
     sqlite3_finalize(stmt);
     return -2;
   }
@@ -3224,6 +3288,7 @@ int additemifmissing(unsigned long long dbchanid, itempropnode *item, char *ofn)
   if (rc != SQLITE_OK)
   {
     dbwriteerror(rc);
+    debwflag(223);
     sqlite3_finalize(stmt);
     return -2;
   }
@@ -3232,6 +3297,7 @@ int additemifmissing(unsigned long long dbchanid, itempropnode *item, char *ofn)
   if (rc != SQLITE_OK)
   {
     dbwriteerror(rc);
+    debwflag(224);
     sqlite3_finalize(stmt);
     return -2;
   }
@@ -3240,6 +3306,7 @@ int additemifmissing(unsigned long long dbchanid, itempropnode *item, char *ofn)
   if (rc != SQLITE_OK)
   {
     dbwriteerror(rc);
+    debwflag(225);
     sqlite3_finalize(stmt);
     return -2;
   }
@@ -3248,6 +3315,7 @@ int additemifmissing(unsigned long long dbchanid, itempropnode *item, char *ofn)
   if (rc != SQLITE_OK)
   {
     dbwriteerror(rc);
+    debwflag(226);
     sqlite3_finalize(stmt);
     return -2;
   }
@@ -3256,6 +3324,7 @@ int additemifmissing(unsigned long long dbchanid, itempropnode *item, char *ofn)
   if (rc != SQLITE_OK)
   {
     dbwriteerror(rc);
+    debwflag(227);
     sqlite3_finalize(stmt);
     return -2;
   }
@@ -3264,6 +3333,7 @@ int additemifmissing(unsigned long long dbchanid, itempropnode *item, char *ofn)
   if (rc != SQLITE_OK)
   {
     dbwriteerror(rc);
+    debwflag(228);
     sqlite3_finalize(stmt);
     return -2;
   }
@@ -3272,6 +3342,7 @@ int additemifmissing(unsigned long long dbchanid, itempropnode *item, char *ofn)
   if (rc != SQLITE_OK)
   {
     dbwriteerror(rc);
+    debwflag(229);
     sqlite3_finalize(stmt);
     return -2;
   }
@@ -3280,6 +3351,7 @@ int additemifmissing(unsigned long long dbchanid, itempropnode *item, char *ofn)
   if (rc != SQLITE_OK)
   {
     dbwriteerror(rc);
+    debwflag(230);
     sqlite3_finalize(stmt);
     return -2;
   }
@@ -3289,6 +3361,7 @@ int additemifmissing(unsigned long long dbchanid, itempropnode *item, char *ofn)
   if (rc != SQLITE_OK)
   {
     dbwriteerror(rc);
+    debwflag(231);
     sqlite3_finalize(stmt);
     return -2;
   }
@@ -3301,6 +3374,7 @@ int additemifmissing(unsigned long long dbchanid, itempropnode *item, char *ofn)
   else if (rc != SQLITE_OK && rc != SQLITE_DONE)
   {
     dbwriteerror(rc);
+    debwflag(232);
     sqlite3_finalize(stmt);
     return -2;
   }
@@ -3309,6 +3383,7 @@ int additemifmissing(unsigned long long dbchanid, itempropnode *item, char *ofn)
   if (rc != SQLITE_OK)
   {
     dbwriteerror(rc);
+    debwflag(233);
     sqlite3_finalize(stmt);
     return -2;
   }
@@ -3321,6 +3396,7 @@ int additemifmissing(unsigned long long dbchanid, itempropnode *item, char *ofn)
   if (rc != SQLITE_OK)
   {
     dbwriteerror(rc);
+    debwflag(234);
     sqlite3_finalize(stmt);
     return -2;
   }
@@ -3337,6 +3413,7 @@ int additemifmissing(unsigned long long dbchanid, itempropnode *item, char *ofn)
   if (rc != SQLITE_OK)
   {
     dbwriteerror(rc);
+    debwflag(235);
     sqlite3_finalize(stmt);
     return -2;
   }
@@ -3345,6 +3422,7 @@ int additemifmissing(unsigned long long dbchanid, itempropnode *item, char *ofn)
   if (rc != SQLITE_OK)
   {
     dbwriteerror(rc);
+    debwflag(236);
     sqlite3_finalize(stmt);
     return -2;
   }
@@ -3353,6 +3431,7 @@ int additemifmissing(unsigned long long dbchanid, itempropnode *item, char *ofn)
   if (rc != SQLITE_OK)
   {
     dbwriteerror(rc);
+    debwflag(237);
     sqlite3_finalize(stmt);
     return -2;
   }
@@ -3361,6 +3440,7 @@ int additemifmissing(unsigned long long dbchanid, itempropnode *item, char *ofn)
   if (rc != SQLITE_OK)
   {
     dbwriteerror(rc);
+    debwflag(238);
     sqlite3_finalize(stmt);
     return -2;
   }
@@ -3369,6 +3449,7 @@ int additemifmissing(unsigned long long dbchanid, itempropnode *item, char *ofn)
   if (rc != SQLITE_OK)
   {
     dbwriteerror(rc);
+    debwflag(239);
     sqlite3_finalize(stmt);
     return -2;
   }
@@ -3377,6 +3458,7 @@ int additemifmissing(unsigned long long dbchanid, itempropnode *item, char *ofn)
   if (rc != SQLITE_OK)
   {
     dbwriteerror(rc);
+    debwflag(240);
     sqlite3_finalize(stmt);
     return -2;
   }
@@ -3385,6 +3467,7 @@ int additemifmissing(unsigned long long dbchanid, itempropnode *item, char *ofn)
   if (rc != SQLITE_OK)
   {
     dbwriteerror(rc);
+    debwflag(241);
     sqlite3_finalize(stmt);
     return -2;
   }
@@ -3393,6 +3476,7 @@ int additemifmissing(unsigned long long dbchanid, itempropnode *item, char *ofn)
   if (rc != SQLITE_OK)
   {
     dbwriteerror(rc);
+    debwflag(242);
     sqlite3_finalize(stmt);
     return -2;
   }
@@ -3401,6 +3485,7 @@ int additemifmissing(unsigned long long dbchanid, itempropnode *item, char *ofn)
   if (rc != SQLITE_OK)
   {
     dbwriteerror(rc);
+    debwflag(243);
     sqlite3_finalize(stmt);
     return -2;
   }
@@ -3409,6 +3494,7 @@ int additemifmissing(unsigned long long dbchanid, itempropnode *item, char *ofn)
   if (rc != SQLITE_OK)
   {
     dbwriteerror(rc);
+    debwflag(244);
     sqlite3_finalize(stmt);
     return -2;
   }
@@ -3417,6 +3503,7 @@ int additemifmissing(unsigned long long dbchanid, itempropnode *item, char *ofn)
   if (rc != SQLITE_OK)
   {
     dbwriteerror(rc);
+    debwflag(245);
     sqlite3_finalize(stmt);
     return -2;
   }
@@ -3425,6 +3512,7 @@ int additemifmissing(unsigned long long dbchanid, itempropnode *item, char *ofn)
   if (rc != SQLITE_OK)
   {
     dbwriteerror(rc);
+    debwflag(246);
     sqlite3_finalize(stmt);
     return -2;
   }
@@ -3433,6 +3521,7 @@ int additemifmissing(unsigned long long dbchanid, itempropnode *item, char *ofn)
   if (rc != SQLITE_OK)
   {
     dbwriteerror(rc);
+    debwflag(247);
     sqlite3_finalize(stmt);
     return -2;
   }
@@ -3441,6 +3530,7 @@ int additemifmissing(unsigned long long dbchanid, itempropnode *item, char *ofn)
   if (rc != SQLITE_OK)
   {
     dbwriteerror(rc);
+    debwflag(248);
     sqlite3_finalize(stmt);
     return -2;
   }
@@ -3456,6 +3546,7 @@ int additemifmissing(unsigned long long dbchanid, itempropnode *item, char *ofn)
   {
     
     dbwriteerror(rc);
+    debwflag(249);
     sqlite3_finalize(stmt);
     return -2;
   }
@@ -3464,6 +3555,7 @@ int additemifmissing(unsigned long long dbchanid, itempropnode *item, char *ofn)
   if (rc != SQLITE_OK)
   {
     dbwriteerror(rc);
+    debwflag(250);
     sqlite3_finalize(stmt);
     return -2;
   }
@@ -3475,6 +3567,7 @@ int additemifmissing(unsigned long long dbchanid, itempropnode *item, char *ofn)
   if (rc != SQLITE_OK && rc != SQLITE_DONE && rc != SQLITE_ROW)
   {
     dbwriteerror(rc);
+    debwflag(251);
     fprintf(stderr, "(Returned Error: %s)\n", anerrmsg);
     sqlite3_free(anerrmsg);
     return -2;

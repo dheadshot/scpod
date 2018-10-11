@@ -5768,7 +5768,7 @@ int parseandupdatechannel(unsigned long long chanid, int dlcode)
   
   fclose(chf);
   
-  /* 5: Compare the channel details nodes with the DB and update if required (checkupdatechannel() and then categories!). (flag 15x-17x) */
+  /* 5: Compare the channel details nodes with the DB and update if required (checkupdatechannel() and then categories!). (flag 15x-21x) */
   
   cpptr = cproot;
   if (cpptr == NULL)
@@ -5797,7 +5797,6 @@ int parseandupdatechannel(unsigned long long chanid, int dlcode)
     return -2; /* Not technically correct as it could be a -1 error, but I can't tell from the retcode. */
   }
   
-  //flag
   retcode = updateskips(cpptr, chanid);
   if (retcode < 0)
   {
@@ -5824,7 +5823,7 @@ int parseandupdatechannel(unsigned long long chanid, int dlcode)
     return retcode;
   }
   
-  /* 6: Using GUIDs, check if items are new and, if so, mark them 'new' and add them to the DB */
+  /* 6: Using GUIDs, check if items are new and, if so, mark them 'new' and add them to the DB (flags 22x-25x) */
   
   for (ipptr = iproot; ipptr != NULL; ipptr = ipptr->next)
   {
@@ -5902,7 +5901,7 @@ int parseandupdatechannel(unsigned long long chanid, int dlcode)
     
   }
   
-  /* 7: If DLCode is NEW, download the new items, otherwise call the appropriate download routine as used in the download functions. */
+  /* 7: If DLCode is NEW, download the new items, otherwise call the appropriate download routine as used in the download functions. (flags 26x-27x) */
   
   int dlskips = 0;
   ci_identifier dummychan, dummyitem;
@@ -5954,6 +5953,7 @@ int parseandupdatechannel(unsigned long long chanid, int dlcode)
       printdownloadstatus(retcode);
       if (retcode < 1)
       {
+        debwflag(276);
         free(pdir);
         free(fname);
         free(dirsep);
