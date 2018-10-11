@@ -5607,7 +5607,7 @@ int parseandupdatechannel(unsigned long long chanid, int dlcode)
   /* TODO: Work from here! */
   
   /*  Steps Plan:  */
-  /* 1: Check the TTL has passed and we can download */
+  /* 1: Check the TTL has passed and we can download (flag 11x) */
   retcode = canupdatechannel(chanid);
   if (retcode == 0)
   {
@@ -5617,7 +5617,7 @@ int parseandupdatechannel(unsigned long long chanid, int dlcode)
   if (retcode == -1) return -2;
   if (retcode == -2) return 0;
   
-  /* 2: Get Download Directory and Title of channel from DB */
+  /* 2: Get Download Directory and Title of channel from DB (flag 12x) */
   
   char *dldir = (char *) malloc(sizeof(char)*2049);
   if (dldir == NULL)
@@ -5648,7 +5648,7 @@ int parseandupdatechannel(unsigned long long chanid, int dlcode)
     return 0;
   }
   
-  /* 3: Download Feed from Churl to (cleaned) <Download Directory>/<Title>.xml */
+  /* 3: Download Feed from Churl to (cleaned) <Download Directory>/<Title>.xml (flag 13x) */
   
   char *dirsep = getsettingdata("DIR_SEPARATOR");
   if (dirsep == NULL)
@@ -5703,7 +5703,7 @@ int parseandupdatechannel(unsigned long long chanid, int dlcode)
     return -5;
   }
   
-  /* 4: Open the Feed and Parse it into the Linked Lists */
+  /* 4: Open the Feed and Parse it into the Linked Lists (flag 14x) */
   
   char *pdir = getsettingdata("PODCAST_DIR");
   if (pdir == NULL)
@@ -5768,7 +5768,7 @@ int parseandupdatechannel(unsigned long long chanid, int dlcode)
   
   fclose(chf);
   
-  /* 5: Compare the channel details nodes with the DB and update if required (checkupdatechannel() and then categories!). */
+  /* 5: Compare the channel details nodes with the DB and update if required (checkupdatechannel() and then categories!). (flag 15x-17x) */
   
   cpptr = cproot;
   if (cpptr == NULL)
@@ -5797,6 +5797,7 @@ int parseandupdatechannel(unsigned long long chanid, int dlcode)
     return -2; /* Not technically correct as it could be a -1 error, but I can't tell from the retcode. */
   }
   
+  //flag
   retcode = updateskips(cpptr, chanid);
   if (retcode < 0)
   {

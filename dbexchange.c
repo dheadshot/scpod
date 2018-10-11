@@ -115,6 +115,8 @@ char *getsettingdata(char *setting)
   if (rc != SQLITE_OK && rc != SQLITE_DONE && rc != SQLITE_ROW)
   {
     dbwriteerror(rc);
+    debwflag(131);
+    debwflag(141);
     fprintf(stderr, "(Returned Error: %s)\n", anerrmsg);
     sqlite3_free(anerrmsg);
     return NULL;
@@ -288,6 +290,7 @@ unsigned long long getchannelidfromtitle(char *title)
   if (rc != SQLITE_OK && rc != SQLITE_DONE && rc != SQLITE_ROW)
   {
     dbwriteerror(rc);
+    debwflag(1);
 #ifdef DEBUG
     	printf("rc=%d, %d\n",rc, sqlite3_extended_errcode(db));
 #endif
@@ -311,6 +314,7 @@ unsigned long long getlatestupdatedchannel()
   if (rc != SQLITE_OK && rc != SQLITE_DONE && rc != SQLITE_ROW)
   {
     dbwriteerror(rc);
+    debwflag(2);
 #ifdef DEBUG
     	printf("rc=%d, %d\n",rc, sqlite3_extended_errcode(db));
 #endif
@@ -868,6 +872,7 @@ int checkupdatechannel(chanpropnode *achan, char *rss_version)
   if (rc != SQLITE_OK && rc != SQLITE_DONE && rc != SQLITE_ROW)
   {
     dbwriteerror(rc);
+    debwflag(151);
     fprintf(stderr, "(Returned Error: %s)\n", anerrmsg);
     sqlite3_free(anerrmsg);
     return 0;
@@ -907,6 +912,7 @@ int checkupdatechannel(chanpropnode *achan, char *rss_version)
     if (rc != SQLITE_OK && rc != SQLITE_DONE && rc != SQLITE_ROW)
     {
       dbwriteerror(rc);
+      debwflag(152);
       fprintf(stderr, "(Returned Error: %s)\n", anerrmsg);
       free(udsql);
       sqlite3_free(anerrmsg);
@@ -936,6 +942,7 @@ int checkupdatechannel(chanpropnode *achan, char *rss_version)
     if (rc != SQLITE_OK && rc != SQLITE_DONE && rc != SQLITE_ROW)
     {
       dbwriteerror(rc);
+      debwflag(153);
       fprintf(stderr, "(Returned Error: %s)\n", anerrmsg);
       free(udsql);
       sqlite3_free(anerrmsg);
@@ -965,6 +972,7 @@ int checkupdatechannel(chanpropnode *achan, char *rss_version)
     if (rc != SQLITE_OK && rc != SQLITE_DONE && rc != SQLITE_ROW)
     {
       dbwriteerror(rc);
+      debwflag(154);
       fprintf(stderr, "(Returned Error: %s)\n", anerrmsg);
       free(udsql);
       sqlite3_free(anerrmsg);
@@ -994,6 +1002,7 @@ int checkupdatechannel(chanpropnode *achan, char *rss_version)
     if (rc != SQLITE_OK && rc != SQLITE_DONE && rc != SQLITE_ROW)
     {
       dbwriteerror(rc);
+      debwflag(155);
       fprintf(stderr, "(Returned Error: %s)\n", anerrmsg);
       free(udsql);
       sqlite3_free(anerrmsg);
@@ -1023,6 +1032,7 @@ int checkupdatechannel(chanpropnode *achan, char *rss_version)
     if (rc != SQLITE_OK && rc != SQLITE_DONE && rc != SQLITE_ROW)
     {
       dbwriteerror(rc);
+      debwflag(156);
       fprintf(stderr, "(Returned Error: %s)\n", anerrmsg);
       free(udsql);
       sqlite3_free(anerrmsg);
@@ -1052,6 +1062,7 @@ int checkupdatechannel(chanpropnode *achan, char *rss_version)
     if (rc != SQLITE_OK && rc != SQLITE_DONE && rc != SQLITE_ROW)
     {
       dbwriteerror(rc);
+      debwflag(157);
       fprintf(stderr, "(Returned Error: %s)\n", anerrmsg);
       free(udsql);
       sqlite3_free(anerrmsg);
@@ -1081,6 +1092,7 @@ int checkupdatechannel(chanpropnode *achan, char *rss_version)
     if (rc != SQLITE_OK && rc != SQLITE_DONE && rc != SQLITE_ROW)
     {
       dbwriteerror(rc);
+      debwflag(158);
       fprintf(stderr, "(Returned Error: %s)\n", anerrmsg);
       free(udsql);
       sqlite3_free(anerrmsg);
@@ -1110,6 +1122,7 @@ int checkupdatechannel(chanpropnode *achan, char *rss_version)
     if (rc != SQLITE_OK && rc != SQLITE_DONE && rc != SQLITE_ROW)
     {
       dbwriteerror(rc);
+      debwflag(159);
       fprintf(stderr, "(Returned Error: %s)\n", anerrmsg);
       free(udsql);
       sqlite3_free(anerrmsg);
@@ -1139,6 +1152,7 @@ int checkupdatechannel(chanpropnode *achan, char *rss_version)
     if (rc != SQLITE_OK && rc != SQLITE_DONE && rc != SQLITE_ROW)
     {
       dbwriteerror(rc);
+      debwflag(160);
       fprintf(stderr, "(Returned Error: %s)\n", anerrmsg);
       free(udsql);
       sqlite3_free(anerrmsg);
@@ -1168,6 +1182,7 @@ int checkupdatechannel(chanpropnode *achan, char *rss_version)
     if (rc != SQLITE_OK && rc != SQLITE_DONE && rc != SQLITE_ROW)
     {
       dbwriteerror(rc);
+      debwflag(161);
       fprintf(stderr, "(Returned Error: %s)\n", anerrmsg);
       free(udsql);
       sqlite3_free(anerrmsg);
@@ -1197,6 +1212,7 @@ int checkupdatechannel(chanpropnode *achan, char *rss_version)
     if (rc != SQLITE_OK && rc != SQLITE_DONE && rc != SQLITE_ROW)
     {
       dbwriteerror(rc);
+      debwflag(162);
       fprintf(stderr, "(Returned Error: %s)\n", anerrmsg);
       free(udsql);
       sqlite3_free(anerrmsg);
@@ -1226,6 +1242,7 @@ int checkupdatechannel(chanpropnode *achan, char *rss_version)
     if (rc != SQLITE_OK && rc != SQLITE_DONE && rc != SQLITE_ROW)
     {
       dbwriteerror(rc);
+      debwflag(163);
       fprintf(stderr, "(Returned Error: %s)\n", anerrmsg);
       free(udsql);
       sqlite3_free(anerrmsg);
@@ -1255,6 +1272,7 @@ int checkupdatechannel(chanpropnode *achan, char *rss_version)
     if (rc != SQLITE_OK && rc != SQLITE_DONE && rc != SQLITE_ROW)
     {
       dbwriteerror(rc);
+      debwflag(164);
       fprintf(stderr, "(Returned Error: %s)\n", anerrmsg);
       free(udsql);
       sqlite3_free(anerrmsg);
@@ -1284,6 +1302,7 @@ int checkupdatechannel(chanpropnode *achan, char *rss_version)
     if (rc != SQLITE_OK && rc != SQLITE_DONE && rc != SQLITE_ROW)
     {
       dbwriteerror(rc);
+      debwflag(165);
       fprintf(stderr, "(Returned Error: %s)\n", anerrmsg);
       free(udsql);
       sqlite3_free(anerrmsg);
@@ -1313,6 +1332,7 @@ int checkupdatechannel(chanpropnode *achan, char *rss_version)
     if (rc != SQLITE_OK && rc != SQLITE_DONE && rc != SQLITE_ROW)
     {
       dbwriteerror(rc);
+      debwflag(166);
       fprintf(stderr, "(Returned Error: %s)\n", anerrmsg);
       free(udsql);
       sqlite3_free(anerrmsg);
@@ -1342,6 +1362,7 @@ int checkupdatechannel(chanpropnode *achan, char *rss_version)
     if (rc != SQLITE_OK && rc != SQLITE_DONE && rc != SQLITE_ROW)
     {
       dbwriteerror(rc);
+      debwflag(167);
       fprintf(stderr, "(Returned Error: %s)\n", anerrmsg);
       free(udsql);
       sqlite3_free(anerrmsg);
@@ -1371,6 +1392,7 @@ int checkupdatechannel(chanpropnode *achan, char *rss_version)
     if (rc != SQLITE_OK && rc != SQLITE_DONE && rc != SQLITE_ROW)
     {
       dbwriteerror(rc);
+      debwflag(168);
       fprintf(stderr, "(Returned Error: %s)\n", anerrmsg);
       free(udsql);
       sqlite3_free(anerrmsg);
@@ -1400,6 +1422,7 @@ int checkupdatechannel(chanpropnode *achan, char *rss_version)
     if (rc != SQLITE_OK && rc != SQLITE_DONE && rc != SQLITE_ROW)
     {
       dbwriteerror(rc);
+      debwflag(169);
       fprintf(stderr, "(Returned Error: %s)\n", anerrmsg);
       free(udsql);
       sqlite3_free(anerrmsg);
@@ -1429,6 +1452,7 @@ int checkupdatechannel(chanpropnode *achan, char *rss_version)
     if (rc != SQLITE_OK && rc != SQLITE_DONE && rc != SQLITE_ROW)
     {
       dbwriteerror(rc);
+      debwflag(170);
       fprintf(stderr, "(Returned Error: %s)\n", anerrmsg);
       free(udsql);
       sqlite3_free(anerrmsg);
@@ -1458,6 +1482,7 @@ int checkupdatechannel(chanpropnode *achan, char *rss_version)
     if (rc != SQLITE_OK && rc != SQLITE_DONE && rc != SQLITE_ROW)
     {
       dbwriteerror(rc);
+      debwflag(171);
       fprintf(stderr, "(Returned Error: %s)\n", anerrmsg);
       free(udsql);
       sqlite3_free(anerrmsg);
@@ -2343,6 +2368,7 @@ int getchanurlfromid(char *chanurlout, unsigned long maxurllen,
   if (retcode != SQLITE_OK)
   {
     dbwriteerror(retcode);
+    debwflag(101);
     sqlite3_finalize(stmt);
     return 0;
   }
@@ -2350,6 +2376,7 @@ int getchanurlfromid(char *chanurlout, unsigned long maxurllen,
   if (retcode != SQLITE_OK)
   {
     dbwriteerror(retcode);
+    debwflag(102);
     sqlite3_finalize(stmt);
     return 0;
   }
@@ -2363,6 +2390,7 @@ int getchanurlfromid(char *chanurlout, unsigned long maxurllen,
   if (retcode != SQLITE_ROW)
   {
     dbwriteerror(retcode);
+    debwflag(103);
     sqlite3_finalize(stmt);
     return 0;
   }
@@ -2383,6 +2411,7 @@ int canupdatechannel(unsigned long long chanid)
   if (retcode != SQLITE_OK)
   {
     dbwriteerror(retcode);
+    debwflag(111);
     sqlite3_finalize(stmt);
     return -1;
   }
@@ -2390,6 +2419,7 @@ int canupdatechannel(unsigned long long chanid)
   if (retcode != SQLITE_OK)
   {
     dbwriteerror(retcode);
+    debwflag(112);
     sqlite3_finalize(stmt);
     return -1;
   }
@@ -2403,6 +2433,7 @@ int canupdatechannel(unsigned long long chanid)
   if (retcode != SQLITE_ROW)
   {
     dbwriteerror(retcode);
+    debwflag(113);
     sqlite3_finalize(stmt);
     return -1;
   }
@@ -2413,6 +2444,7 @@ int canupdatechannel(unsigned long long chanid)
   if (retcode != SQLITE_OK)
   {
     dbwriteerror(retcode);
+    debwflag(114);
     sqlite3_finalize(stmt);
     return -1;
   }
@@ -2420,6 +2452,7 @@ int canupdatechannel(unsigned long long chanid)
   if (retcode != SQLITE_OK)
   {
     dbwriteerror(retcode);
+    debwflag(115);
     sqlite3_finalize(stmt);
     return -1;
   }
@@ -2433,6 +2466,7 @@ int canupdatechannel(unsigned long long chanid)
   if (retcode != SQLITE_ROW)
   {
     dbwriteerror(retcode);
+    debwflag(116);
     sqlite3_finalize(stmt);
     return -1;
   }
@@ -2443,6 +2477,7 @@ int canupdatechannel(unsigned long long chanid)
   if (retcode != SQLITE_OK)
   {
     dbwriteerror(retcode);
+    debwflag(117);
     sqlite3_finalize(stmt);
     return -1;
   }
@@ -2450,6 +2485,7 @@ int canupdatechannel(unsigned long long chanid)
   if (retcode != SQLITE_OK)
   {
     dbwriteerror(retcode);
+    debwflag(118);
     sqlite3_finalize(stmt);
     return -1;
   }
@@ -2463,6 +2499,7 @@ int canupdatechannel(unsigned long long chanid)
   if (retcode != SQLITE_ROW)
   {
     dbwriteerror(retcode);
+    debwflag(119);
     sqlite3_finalize(stmt);
     return -1;
   }
@@ -2484,6 +2521,7 @@ int getchanneldlstuff(char *downloaddir, unsigned long downloaddirlen,
   if (retcode != SQLITE_OK)
   {
     dbwriteerror(retcode);
+    debwflag(121);
     sqlite3_finalize(stmt);
     return -1;
   }
@@ -2491,6 +2529,7 @@ int getchanneldlstuff(char *downloaddir, unsigned long downloaddirlen,
   if (retcode != SQLITE_OK)
   {
     dbwriteerror(retcode);
+    debwflag(122);
     sqlite3_finalize(stmt);
     return -1;
   }
@@ -2504,6 +2543,7 @@ int getchanneldlstuff(char *downloaddir, unsigned long downloaddirlen,
   if (retcode != SQLITE_ROW)
   {
     dbwriteerror(retcode);
+    debwflag(123);
     sqlite3_finalize(stmt);
     return -1;
   }

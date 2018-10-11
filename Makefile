@@ -10,7 +10,7 @@ WINLIB = -lShlwapi -lKernel32
 LINLIB = 
 
 #Uncomment the below to turn on Debug mode:
-#DCFLAGS = ${DEBUGFLAGS}
+DCFLAGS = ${DEBUGFLAGS}
 
 #Change the below to OSWINDOWS from OSLINUX to compile in Windows:
 OSDEF = ${OSLINUX}
