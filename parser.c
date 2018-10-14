@@ -45,6 +45,7 @@ int createcategory(enum categorytype ctype, unsigned long refid, char *domain,
 {
   catnode *acat = (catnode *) malloc(sizeof(catnode));
   if (acat == NULL) return 0; /* OoM! */
+  memset(acat, 0, sizeof(catnode));
   acat->next = NULL;
   acat->type = ctype;
   if (ctype == channel_cat) acat->id.chanid = refid;
@@ -300,6 +301,7 @@ elementpnode *createelementpnode(char *name, char *data)
 {
   elementpnode *anepn = (elementpnode *) malloc(sizeof(elementpnode));
   if (anepn == NULL) return NULL; /* OoM! */
+  memset(anepn, 0, sizeof(elementpnode));
   anepn->next = NULL;
   anepn->attlist = NULL;
   anepn->isattribute = 0;
@@ -341,6 +343,7 @@ elementpnode *addatttoepn(char *name, char *data, elementpnode *epn)
   elementpnode *anepn = (elementpnode *) malloc(sizeof(elementpnode));
   elementpnode *epnaptr;
   if (anepn == NULL) return NULL; /* OoM! */
+  memset(anepn, 0, sizeof(elementpnode));
   anepn->next = NULL;
   anepn->attlist = NULL;
   anepn->isattribute = 1;
@@ -406,6 +409,7 @@ void freeepn(elementpnode *epn)
     if (tepn == NULL) eproot = epptr->next;
     else tepn->next = epptr->next;
     free(epn);
+    epptr = NULL;
   }
   else free(epn);
 }
@@ -454,7 +458,7 @@ int parsersstoll(FILE *rf)
         cedi = 0;
         indq = 0; /* Force indq to be off, as quotes outside the tag don't matter! */
       }
-    }
+    } /* ENDIF '<' */
     else if (cchar == '?' || cchar == '!')
     {
       if (inelename)
@@ -494,22 +498,23 @@ int parsersstoll(FILE *rf)
           cedi++;
           curelementdata[cedi] = 0;
           if (endwith_(curelementdata,"]]>"))
-          {
+          { /* Shouldn't happen */
             cedi -= (3*sizeof(char));
             curelementdata[cedi] = 0;
           }
         }
         
       }
-    }
+    } /* ENDIF '?' or '!' */
     else if (cchar == '\r')
     {
       /* Ignore these */
-    }
+    } /* ENDIF '\r' */
     else if (cchar == ' ' || cchar == '\t' || cchar == '\n')
     {
       if (ineletag && inelename && !inctag && ceni>0)
       {
+        /* End of the name, going into an attribute. */
         inelename = 0;
         curelementname[ceni] = 0;
 #ifdef DEBUG
@@ -539,10 +544,10 @@ int parsersstoll(FILE *rf)
       else if (ineletag && inattdata)
       {
         if (indq)
-        {
+        { /* Inside attribute data quoted text */
           /* Add to whatever... */
           if (ineletag && inelename && ceni<MAX_ELEN)
-          {
+          { /* Shouldn't happen? */
             curelementname[ceni] = cchar;
             ceni++;
             curelementname[ceni] = 0;
@@ -556,7 +561,7 @@ int parsersstoll(FILE *rf)
             }
           }
           else if (ineletag && inattname && cani<MAX_ATTN)
-          {
+          { /* Also shouldn't happen? */
             curattname[cani] = cchar;
             cani++;
           }
@@ -566,7 +571,7 @@ int parsersstoll(FILE *rf)
             cadi++;
           }
           else if ((!ineletag) && curepn != NULL && cedi<MAX_ELED)
-          {
+          { /* Also shouldn't happen? */
             curelementdata[cedi] = cchar;
             cedi++;
             curelementdata[cedi] = 0;
@@ -578,7 +583,7 @@ int parsersstoll(FILE *rf)
           }
         }
         else
-        {
+        { /* Outside double quotes - end of attribute data */
           inattdata = 0;
           inattname = 1;
           curattdata[cadi] = 0;
@@ -594,10 +599,10 @@ int parsersstoll(FILE *rf)
         }
       }
       else
-      {
+      { /* !ineletag || (inctag && !(inattname || inattdata)) || ceni==0 */
         /* Add to whatever... */
         if (ineletag && inelename && !inctag && ceni>0 && ceni<MAX_ELEN) /* Warning: non-standard! */
-        {
+        { /* Shouldn't happen if my boolean algebra is correct. */
           curelementname[ceni] = cchar;
           ceni++;
           curelementname[ceni] = 0;
@@ -611,12 +616,12 @@ int parsersstoll(FILE *rf)
           }
         }
         else if (ineletag && inattname && cani<MAX_ATTN)
-        {
+        { /* Shouldn't really happen either?!  */
           curattname[cani] = cchar;
           cani++;
         }
         else if (ineletag && inattdata && cadi<MAX_ATTD)
-        {
+        { /* Shouldn't really happen either */
           curattdata[cadi] = cchar;
           cadi++;
         }
@@ -631,8 +636,12 @@ int parsersstoll(FILE *rf)
             curelementdata[cedi] = 0;
           }
         }
+        /* else would be ((!ineletag && curepn==NULL) || (!ineletag && edi>=MAX_ELED) || (inctag && !(inattname || inattdata) && (ineletag || curepn==NULL || cedi>=MAX_ELED))
+                          || ((ceni==0) && ineletag) || ((ceni==0) && curepn==NULL) || ((ceni==0) && cedi>=MAX_ELED))
+           i.e.: text on the feed outside any tags at all, tag data out of range, in a closing tag name, in a closing tag while element data is at/out of range, at the start of a tag, Outside everything, at the start of the first element, OR element data is out of range.
+           I don't think we need to account for these cases, but I could be wrong. */
       }
-    }
+    } /* ENDIF '\n' or ' ' or '\t' */
     else if (cchar == '"')
     {
       indq = 1 - indq;
@@ -754,7 +763,7 @@ int parsersstoll(FILE *rf)
             inelename = 0;
             ineletag = 0;
             ceni = 0;
-            cedi = strlen(curelementdata); /* !? Might need +1 added?! <--- */
+            cedi = strlen(curelementdata); /* !? Might need +1 added?! <--- NOPE! */
           }
         }
         else if (ineletag && inattname && cani<MAX_ATTN)
