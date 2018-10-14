@@ -647,12 +647,12 @@ int parsersstoll(FILE *rf)
       indq = 1 - indq;
       /* Add to whatever... */
       if (ineletag && inelename && ceni<MAX_ELEN)
-      {
+      { /* In the name of the tag and in range so add it to name.  Not sure why I do this? */
         curelementname[ceni] = cchar;
         ceni++;
         curelementname[ceni] = 0;
         if (issingletag && (endwith_(curelementname,"[CDATA[") || endwith_(curelementname,"![CDATA[")))
-        {
+        { /* This shouldn't happen. */
           issingletag = 0;
           inelename = 0;
           ineletag = 0;
@@ -661,12 +661,12 @@ int parsersstoll(FILE *rf)
         }
       }
       else if (ineletag && inattname && cani<MAX_ATTN)
-      {
+      { /* In the attribute name of a tag and there's space, so add it to the name.  I wonder if this combined with the inverting of indq is causing problems? */
         curattname[cani] = cchar;
         cani++;
       }
       else if (ineletag && inattdata && cadi<MAX_ATTD)
-      {
+      { /* ERK!  I don't think I should be doing this!!!  TODO: Check that they're being taken out or insq is on! */
         curattdata[cadi] = cchar;
         cadi++;
       }
@@ -681,8 +681,8 @@ int parsersstoll(FILE *rf)
           curelementdata[cedi] = 0;
         }
       }
-      
-    }
+      /* Else conditions: See logic684.txt */
+    } /* ENDIF '"' */
     else if (cchar == '=')
     {
       if (inattname && ineletag)

@@ -1,0 +1,20 @@
+Parser.c line 684
+
+
+(!ineletag || !inelename || ceni>=MAX_ELEN) && 
+(!ineletag || !inattname || cani>=MAX_ATTN) && 
+(!ineletag || !inattdata || cadi>=MAX_ATTD) &&
+(ineletag || curepn==NULL || cedi>=MAX_ELED)
+
+=========================
+
+(   (!ineletag && curepn==NULL) || (!ineletag && curepn==NULL && !inattdata) || (!ineletag && curepn==NULL && cadi>=MAX_ATTD) || 
+   (!ineletag && cedi>=MAX_ELED && (!ineletag || !inattdata || cadi>=MAX_ATTD)) || 
+
+(!inelename && ineletag && (!ineletag || !inattdata || cadi>=MAX_ATTD)) || (!inelename && curepn==NULL && (!ineletag || !inattdata || cadi>=MAX_ATTD)) || (!inelename && cedi>=MAX_ELED && (!ineletag || !inattdata || cadi>=MAX_ATTD)) || 
+(ceni>=MAX_ELEN && ineletag && (!ineletag || !inattdata || cadi>=MAX_ATTD)) || (ceni>=MAX_ELEN && curepn==NULL && (!ineletag || !inattdata || cadi>=MAX_ATTD)) || (ceni>=MAX_ELEN && cedi>=MAX_ELED && (!ineletag || !inattdata || cadi>=MAX_ATTD))
+
+) && (!ineletag || !inattname || cani>=MAX_ATTN)
+
+
+
