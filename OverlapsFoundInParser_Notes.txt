@@ -4,3 +4,18 @@ Overlaps found in parser:
 	-	Item Description
 
 Possibly caused by overflow on item (ttato S1E2)?!
+
+Possibly linked to the incorporation of elements into <itunes:image> tag (which shouldn't happen).
+This itself seems to be caused by a space somehow ending a tag (shouldn't happen) and thus causing the end of the tag to be treated as a new STAG!
+This results in the following debug output.
+```
+Found element "itunes:image"[4]
+Double Quotes turned to 1
+Double Quotes turned to 0
+Attribute [of 'itunes:image'] 'href' = 'https://deow9bq0xqvbj.cloudfront.net/image-logo/3171093/JWJBGHsm.jpg'
+[5]Found element ""
+End of element "".
+STAG: ''
+[5]Found element "image"
+``` 
+Also, why is the '[4]' at the end?  It should always be at the beginning!!!

@@ -539,7 +539,7 @@ int parsersstoll(FILE *rf)
       }
       else if (ineletag && inattname)
       {
-        /* Do Nothing. Trribute names shouldn't contain spaces, so let's assume it's a typo */
+        /* Do Nothing. Attribute names shouldn't contain spaces, so let's assume it's a typo */
       }
       else if (ineletag && inattdata)
       {
@@ -584,8 +584,8 @@ int parsersstoll(FILE *rf)
         }
         else
         { /* Outside double quotes - end of attribute data */
-          inattdata = 0;
           inattname = 1;
+          inattdata = 0;
           curattdata[cadi] = 0;
           cadi = 0;
           if (addatttoepn(curattname, curattdata, curepn) == NULL)
@@ -645,6 +645,9 @@ int parsersstoll(FILE *rf)
     else if (cchar == '"')
     {
       indq = 1 - indq;
+#ifdef DEBUG
+      	printf("Double Quotes turned to %d\n", indq);
+#endif
       /* Add to whatever... */
       if (ineletag && inelename && ceni<MAX_ELEN)
       { /* In the name of the tag and in range so add it to name.  Not sure why I do this? */
@@ -667,6 +670,7 @@ int parsersstoll(FILE *rf)
       }
       else if (ineletag && inattdata && cadi<MAX_ATTD)
       { /* ERK!  I don't think I should be doing this!!!  TODO: Check that they're being taken out or insq is on! */
+        /* ---Possibly remove?!--- */
         curattdata[cadi] = cchar;
         cadi++;
       }
@@ -791,7 +795,7 @@ int parsersstoll(FILE *rf)
     {
       if (ineletag && inelename)
       {
-        if (ceni==0)
+        if (ceni==0 || (ceni==1 && curelementname[0]==' '))
         {
           /* Closing tag */
           inctag = 1;
@@ -804,6 +808,14 @@ int parsersstoll(FILE *rf)
       else if (ineletag && inattname)
       {
         issingletag = 1;
+      }
+      else if (inattname)
+      {
+        /* Should never trigger */
+        issingletag = 1;
+#ifdef DEBUG
+        	printf("Belt & Braces for inattname was triggered!\n");
+#endif
       }
       else if (ineletag != 0 && inattdata != 0 && indq == 0)
       {
@@ -903,6 +915,13 @@ int parsersstoll(FILE *rf)
         { /* BRs are always single tags! */
           issingletag = 1;
         }
+        if (streq_i(curelementname, "itunes:image"))
+        { /* Always single tags!  If this bodge gets used it's indicative of a wider problem though... */
+          issingletag = 1;
+#ifdef DEBUG
+          printf("Bodge used to avoid issue - check parser code!\n");
+#endif
+        }
         if (!inctag)
         {
           curepn = createelementpnode(curelementname,NULL);
@@ -994,9 +1013,9 @@ int parsersstoll(FILE *rf)
       
       if (inctag)
       {
-        if (!streq_i(curelementname,curepn->name)
+        if (!streq_i(curelementname,curepn->name))
         {
-          fprintf(stderr, "Warning: Mismatched XML tags!  '%s' is not '%s'!\n", curelementname, curepn->name);
+          fprintf(stderr, "Warning: Mismatched XML tags! '%s' is not '%s'!\n", curelementname, curepn->name);
         }
         if (cedi>0)
         {
