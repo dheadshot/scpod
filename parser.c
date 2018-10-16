@@ -539,7 +539,7 @@ int parsersstoll(FILE *rf)
       }
       else if (ineletag && inattname)
       {
-        /* Do Nothing. */
+        /* Do Nothing. Trribute names shouldn't contain spaces, so let's assume it's a typo */
       }
       else if (ineletag && inattdata)
       {
@@ -734,6 +734,7 @@ int parsersstoll(FILE *rf)
     {
       if (inattname && ineletag)
       {
+        /* Should we REALLY be ignoring Double Quotes here?  I'm not sure... */
         inattname = 0;
         inattdata = 1;
         curattname[cani] = 0;
@@ -763,6 +764,9 @@ int parsersstoll(FILE *rf)
         {
           curattname[cani] = cchar;
           cani++;
+#ifdef DEBUG
+          	fprintf(stderr, "This is an error you should never see: something has gone VERY wrong!\n");
+#endif
         }
         else if (ineletag && inattdata && cadi<MAX_ATTD)
         {
@@ -780,27 +784,36 @@ int parsersstoll(FILE *rf)
             curelementdata[cedi] = 0;
           }
         }
-        
+        /* I ought to do some logical analysis checking here - TODO: Check this and fix any problems! */
       }
     }
     else if (cchar == '/')
     {
-      if (ineletag && inelename && ceni==0)
+      if (ineletag && inelename)
       {
-        /* Closing tag */
-        inctag = 1;
+        if (ceni==0)
+        {
+          /* Closing tag */
+          inctag = 1;
+        }
+        else if (indq == 0)
+        {
+          issingletag = 1;
+        }
       }
       else if (ineletag && inattname)
       {
         issingletag = 1;
       }
       else if (ineletag != 0 && inattdata != 0 && indq == 0)
+      {
         issingletag = 1;
+      }
       else
       {
         /* Add to whatever... */
         if (ineletag && inelename && ceni<MAX_ELEN)
-        {
+        { /* Only occurs if quoted! */
           curelementname[ceni] = cchar;
           ceni++;
           curelementname[ceni] = 0;
@@ -814,12 +827,12 @@ int parsersstoll(FILE *rf)
           }
         }
         else if (ineletag && inattname && cani<MAX_ATTN)
-        {
+        { /* Shouldn't occur! */
           curattname[cani] = cchar;
           cani++;
         }
         else if (ineletag && inattdata && cadi<MAX_ATTD)
-        {
+        { /* Should only occur if quoted */
           curattdata[cadi] = cchar;
           cadi++;
         }
@@ -834,14 +847,14 @@ int parsersstoll(FILE *rf)
             curelementdata[cedi] = 0;
           }
         }
-        
+        /* Probably ought to do more logical analysis checks here.  TODO: Do it and fix anything it flags up! */
       }
     }
     else if (cchar == '>' && ineletag == 0)
     {
       /* Add to whatever... */
       if (ineletag && inelename && ceni<MAX_ELEN)
-      {
+      { /* Shouldn't happen! */
         curelementname[ceni] = cchar;
         ceni++;
         curelementname[ceni] = 0;
@@ -855,12 +868,12 @@ int parsersstoll(FILE *rf)
         }
       }
       else if (ineletag && inattname && cani<MAX_ATTN)
-      {
+      { /* Shouldn't happen! */
         curattname[cani] = cchar;
         cani++;
       }
       else if (ineletag && inattdata && cadi<MAX_ATTD)
-      {
+      { /* Shouldn't happen! */
         curattdata[cadi] = cchar;
         cadi++;
       }
@@ -873,6 +886,7 @@ int parsersstoll(FILE *rf)
         {
 #ifdef DEBUG
             printf("Fixing ']]>'\t'%s'\t",curelementdata);
+            /* This is the most likely time for it to occur! */
 #endif
           cedi -= (3*sizeof(char));
           curelementdata[cedi] = 0;
@@ -880,13 +894,13 @@ int parsersstoll(FILE *rf)
       }
     }
     else if (cchar == '>' && ineletag != 0)
-    {
-      if (inelename)
+    { /* Ending the tag */
+      if (inelename || (inattname && cani==0)) /* Changed to account for "<tag >". */
       {
         inelename = 0;
         curelementname[ceni] = 0;
         if (streq_i(curelementname, "br"))
-        {
+        { /* BRs are always single tags! */
           issingletag = 1;
         }
         if (!inctag)
@@ -943,7 +957,7 @@ int parsersstoll(FILE *rf)
       {
         /* Add to whatever... (Non-Standard) */
         if (inattname && cani<MAX_ATTN)
-        {
+        { /* Shouldn't happen! */
           curattname[cani] = cchar;
           cani++;
         }
@@ -953,7 +967,7 @@ int parsersstoll(FILE *rf)
           cadi++;
         }
         else if ((!ineletag) && curepn != NULL && cedi<MAX_ELED)
-        {
+        { /* Ought not to occur, but could if inattdata is not reset going into tag data! */
           curelementdata[cedi] = cchar;
           cedi++;
           curelementdata[cedi] = 0;
@@ -980,6 +994,10 @@ int parsersstoll(FILE *rf)
       
       if (inctag)
       {
+        if (!streq_i(curelementname,curepn->name)
+        {
+          fprintf(stderr, "Warning: Mismatched XML tags!  '%s' is not '%s'!\n", curelementname, curepn->name);
+        }
         if (cedi>0)
         {
           curelementdata[cedi] = 0;
@@ -993,6 +1011,7 @@ int parsersstoll(FILE *rf)
             /* Free everything and end! */
             goto OOMEMERROR;
           }
+          curepn->data[0] = 0;
           strtrimws(curepn->data, curelementdata); /* Copy and trim data */
 #ifdef DEBUG
         	printf("Element data: \"%s\"\n",curepn->data);
@@ -1009,6 +1028,7 @@ int parsersstoll(FILE *rf)
             /* Free everything and end! */
             goto OOMEMERROR;
           }
+          cepntstr[0] = 0;
           strcpy(cepntstr, curepn->data);
           strcat(cepntstr, curelementdata);
           free(curepn->data);
@@ -1040,7 +1060,7 @@ int parsersstoll(FILE *rf)
         inattdata = 0;
         inattname = 0;*/
         /*...*/
-        if (startsame_i(curepn->name, "[CDATA[") || startsame_i(curepn->name,"![CDATA["))
+        if (startswith_i(curepn->name, "[CDATA[") || startswith_i(curepn->name,"![CDATA["))
         {
 #ifdef DEBUG
           	printf("\tUnfiltered CDATA!\n");
@@ -1051,7 +1071,10 @@ int parsersstoll(FILE *rf)
             if (epptr->next == curepn) break;
           }
 #ifdef DEBUG
-            	if (epptr != NULL) printf("CDATA: above epn is %s\n",epptr->name);
+            	if (epptr != NULL) 
+            	  printf("CDATA: above epn is %s\n",epptr->name);
+            	else
+            	  printf("CDATA: epn is root!\n");
 #endif
           if (epptr != NULL)
           {
@@ -1063,6 +1086,7 @@ int parsersstoll(FILE *rf)
                 /* Free everything and end. */
                 goto OOMEMERROR;
               }
+              cdattstr[0] = 0;
               strcpy(cdattstr, epptr->data);
               strcat(cdattstr, curepn->name+(strlen("[CDATA[")*sizeof(char)));
               if (cdattstr[strlen(cdattstr)-1] == '>') cdattstr[strlen(cdattstr)-1] = 0;
@@ -1080,6 +1104,7 @@ int parsersstoll(FILE *rf)
                 /* Free everything and end. */
                 goto OOMEMERROR;
               }
+              epptr->data[0] = 0;
               strcpy(epptr->data, curepn->name+(strlen("[CDATA[")*sizeof(char)));
               if (epptr->data[strlen(epptr->data)-1] == '>') epptr->data[strlen(epptr->data)-1] = 0;
               if (epptr->data[strlen(epptr->data)-1] == '[') epptr->data[strlen(epptr->data)-1] = 0;
@@ -1106,6 +1131,7 @@ int parsersstoll(FILE *rf)
                   /* Free everything and end. */
                   goto OOMEMERROR;
                 }
+                rssversion[0] = 0;
                 if (epptr->data[0] == '"' && epptr->data[strlen(epptr->data)-1] == '"')
                 {
                   epptr->data[strlen(epptr->data)-1] = 0;
@@ -1213,6 +1239,7 @@ int parsersstoll(FILE *rf)
               /* Free everything and end. */
               goto OOMEMERROR;
             }
+            title[0] = 0;
             strcpy(title,curepn->data);
             if (initem && !inimage && !intxtinp)
             {
@@ -1242,6 +1269,7 @@ int parsersstoll(FILE *rf)
                   /* Free everything and end. */
                   goto OOMEMERROR;
                 }
+                curitem->title[0] = 0;
                 strcpy(curitem->title, title);
                 free(title);
                 title = NULL;
@@ -1272,6 +1300,7 @@ int parsersstoll(FILE *rf)
                   /* Free everything and end. */
                   goto OOMEMERROR;
                 }
+                curchan->title[0] = 0;
                 strcpy(curchan->title, title);
                 free(title);
                 title = NULL;
@@ -1336,6 +1365,7 @@ int parsersstoll(FILE *rf)
               /* Free everything and end. */
               goto OOMEMERROR;
             }
+            link[0] = 0;
             strcpy(link,curepn->data);
             if (initem && !inimage && !intxtinp)
             {
@@ -1365,6 +1395,7 @@ int parsersstoll(FILE *rf)
                   /* Free everything and end. */
                   goto OOMEMERROR;
                 }
+                curitem->link[0] = 0;
                 strcpy(curitem->link, link);
                 free(link);
                 link = NULL;
@@ -1396,6 +1427,7 @@ int parsersstoll(FILE *rf)
                   /* Free everything and end. */
                   goto OOMEMERROR;
                 }
+                curchan->link[0] = 0;
                 strcpy(curchan->link, link);
                 free(link);
                 link = NULL;
@@ -1457,6 +1489,7 @@ int parsersstoll(FILE *rf)
               /* Free everything and end. */
               goto OOMEMERROR;
             }
+            desc[0] = 0;
             strcpy(desc,curepn->data);
             if (initem && !inimage && !intxtinp)
             {
@@ -1486,6 +1519,7 @@ int parsersstoll(FILE *rf)
                   /* Free everything and end. */
                   goto OOMEMERROR;
                 }
+                curitem->description[0] = 0;
                 strcpy(curitem->description, desc);
                 free(desc);
                 desc = NULL;
@@ -1522,6 +1556,7 @@ int parsersstoll(FILE *rf)
                   /* Free everything and end. */
                   goto OOMEMERROR;
                 }
+                curchan->description[0] = 0;
                 strcpy(curchan->description, desc);
 #ifdef DEBUG
                 	printf("Written channel description.\n");
@@ -1612,12 +1647,14 @@ int parsersstoll(FILE *rf)
                   /* Free everything and end. */
                   goto OOMEMERROR;
                 }
+                curchan->language_main[0] = 0;
                 curchan->language_sub = (char *) malloc(sizeof(char)*(1+strlen(dashloc)));
                 if (curchan->language_sub == NULL)
                 {
                   /* Free everything and end. */
                   goto OOMEMERROR;
                 }
+                curchan->language_sub[0] = 0;
                 strcpy(curchan->language_main,curepn->data);
                 strcpy(curchan->language_sub, dashloc);
               }
@@ -1663,6 +1700,7 @@ int parsersstoll(FILE *rf)
                 /* Free everything and end. */
                 goto OOMEMERROR;
               }
+              curchan->copyright[0] = 0;
               strcpy(curchan->copyright,curepn->data);
             }
             
@@ -1695,6 +1733,7 @@ int parsersstoll(FILE *rf)
                 /* Free everything and end. */
                 goto OOMEMERROR;
               }
+              curchan->managingeditor[0] = 0;
               strcpy(curchan->managingeditor,curepn->data);
             }
             
@@ -1727,6 +1766,7 @@ int parsersstoll(FILE *rf)
                 /* Free everything and end. */
                 goto OOMEMERROR;
               }
+              curchan->webmaster[0] = 0;
               strcpy(curchan->webmaster,curepn->data);
             }
             
@@ -1762,6 +1802,7 @@ int parsersstoll(FILE *rf)
                 /* Free everything and end. */
                 goto OOMEMERROR;
               }
+              curitem->pubdate.fulldate[0] = 0;
               strcpy(curitem->pubdate.fulldate,curepn->data);
               /* Create other date items... */
               char *datetok = NULL;
@@ -2045,6 +2086,7 @@ int parsersstoll(FILE *rf)
                 /* Free everything and end. */
                 goto OOMEMERROR;
               }
+              curchan->pubdate.fulldate[0] = 0;
               strcpy(curchan->pubdate.fulldate,curepn->data);
               /* Create other date items... */
               char *datetok = NULL;
@@ -2331,6 +2373,7 @@ int parsersstoll(FILE *rf)
                 /* Free everything and end. */
                 goto OOMEMERROR;
               }
+              curchan->lastbuilddate.fulldate[0] = 0;
               strcpy(curchan->lastbuilddate.fulldate,curepn->data);
               /* Create other date items... */
               char *datetok = NULL;
@@ -2680,6 +2723,7 @@ int parsersstoll(FILE *rf)
                 /* Free everything and end. */
                 goto OOMEMERROR;
               }
+              curchan->generator[0] = 0;
               strcpy(curchan->generator,curepn->data);
             }
             
@@ -2712,6 +2756,7 @@ int parsersstoll(FILE *rf)
                 /* Free everything and end. */
                 goto OOMEMERROR;
               }
+              curchan->docs[0] = 0;
               strcpy(curchan->docs,curepn->data);
             }
             
@@ -2795,6 +2840,7 @@ int parsersstoll(FILE *rf)
                     /* Free everything and end. */
                     goto OOMEMERROR;
                   }
+                  curitem->image.url[0] = 0;
                   strcpy(curitem->image.url,epptr->data);
                 }
               }
@@ -2824,6 +2870,7 @@ int parsersstoll(FILE *rf)
                     /* Free everything and end. */
                     goto OOMEMERROR;
                   }
+                  curitem->image.title[0] = 0;
                   strcpy(curitem->image.title,epptr->data);
                 }
               }
@@ -2837,6 +2884,7 @@ int parsersstoll(FILE *rf)
                     /* Free everything and end. */
                     goto OOMEMERROR;
                   }
+                  curchan->image.title[0] = 0;
                   strcpy(curchan->image.title,epptr->data);
                 }
               }
@@ -2853,6 +2901,7 @@ int parsersstoll(FILE *rf)
                     /* Free everything and end. */
                     goto OOMEMERROR;
                   }
+                  curitem->image.link[0] = 0;
                   strcpy(curitem->image.link,epptr->data);
                 }
               }
@@ -2866,6 +2915,7 @@ int parsersstoll(FILE *rf)
                     /* Free everything and end. */
                     goto OOMEMERROR;
                   }
+                  curchan->image.link[0] = 0;
                   strcpy(curchan->image.link,epptr->data);
                 }
               }
@@ -2882,6 +2932,7 @@ int parsersstoll(FILE *rf)
                     /* Free everything and end. */
                     goto OOMEMERROR;
                   }
+                  curitem->image.description[0] = 0;
                   strcpy(curitem->image.description,epptr->data);
                 }
               }
@@ -2895,6 +2946,7 @@ int parsersstoll(FILE *rf)
                     /* Free everything and end. */
                     goto OOMEMERROR;
                   }
+                  curchan->image.description[0] = 0;
                   strcpy(curchan->image.description,epptr->data);
                 }
               }
@@ -3017,13 +3069,13 @@ int parsersstoll(FILE *rf)
             }
             if (curchan->skipdays == NULL)
             {
-              curchan->skipdays = (ntsa) malloc(sizeof(char *)*(daysn+1));
+              curchan->skipdays = (ntsa) malloc(sizeof(char *) * (daysn+1));
               if (curchan->skipdays == NULL)
               {
                 /* Free everything and end. */
                 goto OOMEMERROR;
               }
-              memset(curchan->skipdays,0,sizeof(char *)*(daysn+1));
+              memset(curchan->skipdays,0,sizeof(char *) * (daysn+1));
               curchan->skipdays[daysn] = NULL;
               for (epptr = curepn->attlist; epptr != NULL; epptr = epptr->next)
               {
@@ -3040,6 +3092,7 @@ int parsersstoll(FILE *rf)
                       /* Free everything and end. */
                       goto OOMEMERROR;
                     }
+                    curchan->skipdays[daysi][0] = 0;
                     strcpy(curchan->skipdays[daysi],epptr->data);
                     daysi++;
                   }
@@ -3080,6 +3133,7 @@ int parsersstoll(FILE *rf)
                   /* Free everything and end. */
                   goto OOMEMERROR;
                 }
+                epptr->data[0] = 0;
                 strcpy(epptr->data, curepn->data);
 #ifdef DEBUG
                 	printf("New data: '%s'\n",epptr->data);
@@ -3093,6 +3147,7 @@ int parsersstoll(FILE *rf)
                   /* Free everything and end. */
                   goto OOMEMERROR;
                 }
+                tstr[0] = 0;
                 strcpy(tstr,epptr->data);
                 strcat(tstr,curepn->data);
                 free(epptr->data);
@@ -3274,6 +3329,7 @@ int parsersstoll(FILE *rf)
                 /* Free everything and end. */
                 goto OOMEMERROR;
               }
+              curitem->author[0] = 0;
               strcpy(curitem->author,curepn->data);
             }
           }
@@ -3308,6 +3364,7 @@ int parsersstoll(FILE *rf)
                 /* Free everything and end. */
                 goto OOMEMERROR;
               }
+              curitem->comments[0] = 0;
               strcpy(curitem->comments,curepn->data);
             }
           }
@@ -3348,6 +3405,7 @@ int parsersstoll(FILE *rf)
                       /* Free everything and end. */
                       goto OOMEMERROR;
                     }
+                    curitem->enclosure.url[0] = 0;
                     if (epptr->data[0] == '"' && epptr->data[strlen(epptr->data)-1] == '"')
                     {
                       strcpy(curitem->enclosure.url,epptr->data + sizeof(char));
@@ -3378,6 +3436,7 @@ int parsersstoll(FILE *rf)
                       /* Free everything and end. */
                       goto OOMEMERROR;
                     }
+                    curitem->enclosure.type[0] = 0;
                     if (epptr->data[0] == '"' && epptr->data[strlen(epptr->data)-1] == '"')
                     {
                       strcpy(curitem->enclosure.type,epptr->data + sizeof(char));
@@ -3422,6 +3481,7 @@ int parsersstoll(FILE *rf)
                 /* Free everything and end. */
                 goto OOMEMERROR;
               }
+              curitem->guid.guid[0] = 0;
               strcpy(curitem->guid.guid,curepn->data);
               curitem->guid.ispermalink = 0;
               for (epptr = curepn->attlist; epptr != NULL; epptr = epptr->next)
@@ -3471,6 +3531,7 @@ int parsersstoll(FILE *rf)
                 /* Free everything and end. */
                 goto OOMEMERROR;
               }
+              curitem->source.name[0] = 0;
               strcpy(curitem->source.name,curepn->data);
               for (epptr = curepn->attlist; epptr != NULL; epptr = epptr->next)
               {
@@ -3482,6 +3543,7 @@ int parsersstoll(FILE *rf)
                     /* Free everything and end. */
                     goto OOMEMERROR;
                   }
+                  curitem->source.url[0] = 0;
                   if (epptr->data[0] == '"' && epptr->data[strlen(epptr->data)-1] == '"' && strlen(epptr->data)>1)
                   {
                     epptr->data[strlen(epptr->data)-1] = 0;
@@ -3547,7 +3609,7 @@ int parsersstoll(FILE *rf)
         
       }
     }
-    else
+    else /* Data character */
     {
       /* Add to whatever... */
       if (ineletag && inelename && ceni<MAX_ELEN)
@@ -3606,7 +3668,9 @@ int parsersstoll(FILE *rf)
     /* Free stuff that we don't need... */
     /* Free local strings */
     free(curelementdata);
+    curelementdata = NULL;
     free(curattdata);
+    curattdata = NULL;
     if (title != NULL) free(title);
     title = NULL;
     if (link != NULL) free(link);
