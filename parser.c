@@ -681,7 +681,54 @@ int parsersstoll(FILE *rf)
           curelementdata[cedi] = 0;
         }
       }
-      /* Else conditions: See logic684.txt */
+      /* Else conditions:                  (Analysis was logic684.txt)
+              (!ineletag && curepn==NULL) ||  (cedi>=MAX_ELED && !ineletag) || 
+              (!inelename && ineletag && !inattdata && !inattname) || (!inelename && ineletag && !inattdata && cani>=MAX_ATTN) || 
+              (!inelename && ineletag && cadi>=MAX_ATTD && !inattname) || (!inelename && ineletag && cadi>=MAX_ATTD && cani>=MAX_ATTN) || 
+              (!inelename && curepn==NULL && !inattdata && !inattname )|| (!inelename && curepn==NULL && !inattdata && cani>=MAX_ATTN) || 
+              (!inelename && curepn==NULL && cadi>=MAX_ATTD && !inattname) || (!inelename && curepn==NULL && cadi>=MAX_ATTD && cani>=MAX_ATTN) || 
+              (!inelename && cedi>=MAX_ELED && !inattdata && !inattname) || (!inelename && cedi>=MAX_ELED && !inattdata && cani>=MAX_ATTN) || 
+              (!inelename && cedi>=MAX_ELED && cadi>=MAX_ATTD && !inattname) || (!inelename && cedi>=MAX_ELED && cadi>=MAX_ATTD && cani>=MAX_ATTN) || 
+              (ceni>=MAX_ELEN && ineletag && !inattdata && !inattname) || (ceni>=MAX_ELEN && ineletag && !inattdata && cani>=MAX_ATTN) || 
+              (ceni>=MAX_ELEN && ineletag && cadi>=MAX_ATTD && !inattname) || (ceni>=MAX_ELEN && ineletag && cadi>=MAX_ATTD && cani>=MAX_ATTN) || 
+              (ceni>=MAX_ELEN && curepn==NULL && !inattdata && !inattname) || (ceni>=MAX_ELEN && curepn==NULL && !inattdata && cani>=MAX_ATTN) || 
+              (ceni>=MAX_ELEN && curepn==NULL && cadi>=MAX_ATTD && !inattname) || (ceni>=MAX_ELEN && curepn==NULL && cadi>=MAX_ATTD && cani>=MAX_ATTN) || 
+              (ceni>=MAX_ELEN && cedi>=MAX_ELED && !inattdata && !inattname) || (ceni>=MAX_ELEN && cedi>=MAX_ELED && !inattdata && cani>=MAX_ATTN) || 
+              (ceni>=MAX_ELEN && cedi>=MAX_ELED && cadi>=MAX_ATTD && !inattname) || (ceni>=MAX_ELEN && cedi>=MAX_ELED && cadi>=MAX_ATTD && cani>=MAX_ATTN)
+         i.e.: Not in a tag and outside the RSS feed, 
+         >      Not in a tag and data is at/out of range,
+               In a tag but not in the name or attribute (impossible),
+         >      In a tag's attribute name when the name is at/out of range,
+         >      In a tag's arttribute data when the data is at/out of range,
+         >      In a tag's attribute (name or data) when the name and data are at/out of range,
+               Outside the RSS feed and not in any tag field (functionally equivalent to first of these conditions),
+         >      Outside the RSS feed and maybe in an attribute name but the attribute name is at/out of range,
+         >      Outside the RSS feed and maybe in an attribute's data but the attribute data is at/out of range,
+         >      Outside the RSS feed and maybe in an attribute but the attribute's name and data are at/out of range,
+         >      In the data of a tag but it's at/out of range,
+         >      In the attribute's name or the tag's data but both are at/out of range,
+         >      In the attribute's or tag's data but both are at/out of range,
+         >      At some point after the tag name but everything else is at/out of range,
+         >      In the tag name but it's at/out of range,
+         >      In tag's or attribute's name but they're both at/out of range,
+         >      In the tag's name or attribute's data but both are at/out of range,
+         >      In the tag but all tag fields are at/out of range,
+               The RSS feed's first tag name is at/out of range,
+               The RSS feed's first tag's and tag's attribute name is at/out of range,
+               The RSS feed's first tag name and attribuute data are at/out of range,
+               The RSS feed's first tag's fields are all att/out of range,
+         >      In a tag's name or (more likely) data and they're both at/out of range,
+         >      In a tag's or attribute's name or (more likely) data and they're all at/out of range,
+         >      In a tag's name or attribute's or (most likely) tag's data and they're all at/out of range,
+         >      All a tag's fields and data are out of range.
+         Result: I need to add some conditions... */
+      else if ((inelename && ceni>=MAX_ELEN) || (inattname && cani>=MAX_ATTN) ||
+               (inattdata && cadi>=MAX_ATTD) || (!ineletag && cedi>=MAX_ELED))
+      {
+        /* Ensure double quotes are OFF (fix for lines marked with '>'). */
+        /* Wait!  This could cause problems with a '>' or a '=' that has been quoted but is out of range!  To be safe, I'm commenting this out. */
+        /*indq = 0;*/
+      }
     } /* ENDIF '"' */
     else if (cchar == '=')
     {
